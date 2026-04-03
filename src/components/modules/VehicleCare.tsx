@@ -8,9 +8,10 @@ const tips = [
 ];
 
 const alerts = [
-  { type: "Breakdown Assistance", customer: "Rajesh Kumar", vehicle: "Thar – MH 02 AB 1234", location: "Mumbai-Pune Expressway", time: "5 min ago", severity: "critical" },
-  { type: "Accident Support", customer: "Priya Sharma", vehicle: "XUV700 – DL 04 CD 5678", location: "Ring Road, Delhi", time: "20 min ago", severity: "critical" },
-  { type: "Battery Drain Alert", customer: "Amit Patel", vehicle: "Scorpio N – KA 01 EF 9012", location: "Parked – Home", time: "1 hr ago", severity: "warning" },
+  { type: "Breakdown assistance", customer: "Rajesh Kumar", vehicle: "Thar – MH 02 AB 1234", location: "Mumbai-Pune Expressway", time: "5 min ago", severity: "critical" },
+  { type: "Accident support", customer: "Priya Sharma", vehicle: "XUV700 – DL 04 CD 5678", location: "Ring Road, Delhi", time: "20 min ago", severity: "critical" },
+  { type: "Insurance claim help", customer: "Sneha Reddy", vehicle: "XUV300 – TS 09 GH 3344", location: "Workshop intake", time: "35 min ago", severity: "critical" },
+  { type: "Battery drain alert", customer: "Amit Patel", vehicle: "Scorpio N – KA 01 EF 9012", location: "Parked – Home", time: "1 hr ago", severity: "warning" },
 ];
 
 const insights = [
@@ -22,13 +23,10 @@ const insights = [
 const VehicleCare = () => {
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-xl font-bold text-foreground">Vehicle Care & Education</h2>
-        <p className="text-sm text-muted-foreground">Customer education, alerts & driver insights</p>
-      </div>
+      <p className="text-sm text-muted-foreground">Education, critical alerts & driver insights (IoT-ready)</p>
 
       {/* Critical Alerts */}
-      <div className="glass-card rounded-xl p-6 border-l-4 border-destructive">
+      <div className="surface-card p-6 lg:p-7 border-l-4 border-destructive">
         <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
           <AlertTriangle size={18} className="text-destructive" /> Critical Alerts
         </h3>
@@ -49,11 +47,21 @@ const VehicleCare = () => {
         </div>
       </div>
 
+      <div className="surface-card p-5 lg:p-6 border border-info/25 bg-info/[0.06]">
+        <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
+          <Gauge size={16} className="text-info" /> Instrument cluster & education
+        </h3>
+        <p className="text-xs text-muted-foreground">
+          Push bite-sized videos / carousels: warning lamps, regen levels, 4WD modes, service indicators. Tie to vehicle VIN
+          where available.
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Tips */}
-        <div className="glass-card rounded-xl p-6">
+        <div className="surface-card p-6 lg:p-7">
           <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
-            <BookOpen size={18} className="text-primary" /> Do's & Don'ts
+            <BookOpen size={18} className="text-primary" /> Do's, don'ts & maintenance tips
           </h3>
           <div className="space-y-3">
             {tips.map((tip, i) => (
@@ -74,7 +82,7 @@ const VehicleCare = () => {
         </div>
 
         {/* Driver Performance */}
-        <div className="glass-card rounded-xl p-6">
+        <div className="surface-card p-6 lg:p-7">
           <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
             <Gauge size={18} className="text-primary" /> Driver Performance
           </h3>

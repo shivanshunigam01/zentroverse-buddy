@@ -11,11 +11,11 @@ interface Props {
 
 const StatCard = ({ title, value, change, trend, icon: Icon, gradient }: Props) => {
   return (
-    <div className="glass-card rounded-xl p-5 stat-shadow hover:shadow-lg transition-all group">
+    <div className="surface-card p-5 lg:p-6 stat-shadow hover:shadow-lg transition-all duration-300 group">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm text-muted-foreground font-medium">{title}</p>
-          <p className="text-2xl font-bold text-foreground mt-1">{value}</p>
+          <p className="text-2xl lg:text-3xl font-bold text-foreground font-display mt-1 tabular-nums">{value}</p>
           <div className="flex items-center gap-1 mt-2">
             {trend === "up" ? (
               <TrendingUp size={14} className="text-success" />

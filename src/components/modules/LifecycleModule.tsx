@@ -1,4 +1,4 @@
-import { Car, Wrench, Shield, Gift, Bell, Clock, CheckCircle, AlertTriangle, FileText } from "lucide-react";
+import { Car, Wrench, Shield, Gift, Clock, CheckCircle, AlertTriangle, FileText, Sparkles, PartyPopper } from "lucide-react";
 
 const stages = [
   {
@@ -33,6 +33,7 @@ const stages = [
       { task: "Work in progress", status: "pending" },
       { task: "Vehicle ready", status: "pending" },
       { task: "Bill generated", status: "pending" },
+      { task: "SOA shared", status: "pending" },
     ],
   },
 ];
@@ -42,6 +43,19 @@ const renewals = [
   { type: "Tax Renewal", customer: "Priya Sharma", due: "22 Apr 2026", urgency: "warning" },
   { type: "Fitness Certificate", customer: "Amit Patel", due: "10 May 2026", urgency: "normal" },
   { type: "AMC Renewal", customer: "Sneha Reddy", due: "30 Apr 2026", urgency: "warning" },
+];
+
+const aiLifecycle = [
+  { rule: "Ignores service reminders 2×", action: "Escalate to outbound call", priority: "High" },
+  { rule: "High LTV / repeat buyer", action: "Priority lane + dedicated SPOC", priority: "High" },
+  { rule: "Inactive 90+ days", action: "Reactivation WhatsApp + offer", priority: "Medium" },
+];
+
+const engagement = [
+  { name: "Festival greetings", status: "Scheduled — Diwali", reach: "12.4k" },
+  { name: "Loyalty rewards", status: "Active tier program", reach: "3.1k" },
+  { name: "Referral program", status: "Payouts this month", reach: "892" },
+  { name: "New vehicle launch", status: "Teaser blast", reach: "5.6k" },
 ];
 
 const upsells = [
@@ -54,15 +68,15 @@ const upsells = [
 const LifecycleModule = () => {
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-xl font-bold text-foreground">Lifecycle Automation</h2>
-        <p className="text-sm text-muted-foreground">Post-sale customer journey • 892 active customers</p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Trigger: <span className="font-semibold text-foreground">delivery complete</span> •{" "}
+        <span className="font-semibold text-foreground">892</span> active customers
+      </p>
 
       {/* Stages */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {stages.map((stage) => (
-          <div key={stage.title} className="glass-card rounded-xl p-5">
+          <div key={stage.title} className="surface-card p-5 lg:p-6">
             <div className="flex items-center gap-2 mb-4">
               <div className={`w-9 h-9 rounded-lg ${stage.color} flex items-center justify-center`}>
                 <stage.icon size={18} />
@@ -88,8 +102,38 @@ const LifecycleModule = () => {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="surface-card p-6 xl:col-span-2">
+          <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
+            <Sparkles size={18} className="text-primary" /> AI in lifecycle
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {aiLifecycle.map((a) => (
+              <div key={a.rule} className="p-3 bg-secondary/40 rounded-lg border border-border/50">
+                <p className="text-xs font-semibold text-foreground">{a.rule}</p>
+                <p className="text-xs text-primary mt-1">{a.action}</p>
+                <span className="text-[10px] text-muted-foreground">{a.priority} priority</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="surface-card p-6 xl:col-span-2">
+          <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
+            <PartyPopper size={18} className="text-accent" /> Continuous engagement
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {engagement.map((e) => (
+              <div key={e.name} className="p-3 bg-secondary/30 rounded-lg">
+                <p className="text-sm font-semibold text-foreground">{e.name}</p>
+                <p className="text-xs text-muted-foreground mt-1">{e.status}</p>
+                <p className="text-[10px] text-success font-bold mt-2">Reach: {e.reach}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Renewals */}
-        <div className="glass-card rounded-xl p-6">
+        <div className="surface-card p-6 lg:p-7">
           <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
             <Shield size={18} className="text-primary" /> Renewals & Compliance
           </h3>
@@ -108,7 +152,7 @@ const LifecycleModule = () => {
         </div>
 
         {/* Upsell */}
-        <div className="glass-card rounded-xl p-6">
+        <div className="surface-card p-6 lg:p-7">
           <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
             <Gift size={18} className="text-primary" /> Upsell & Revenue
           </h3>

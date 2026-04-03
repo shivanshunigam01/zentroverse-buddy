@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @layer base {
   :root {
@@ -72,12 +72,14 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans;
-    font-family: 'Inter', sans-serif;
+    @apply bg-background text-foreground font-sans antialiased;
   }
 }
 
 @layer utilities {
+  .font-display {
+    font-family: "DM Sans", Inter, system-ui, sans-serif;
+  }
   .gradient-primary {
     background: var(--gradient-primary);
   }
@@ -91,9 +93,67 @@
     background: var(--gradient-danger);
   }
   .glass-card {
-    @apply bg-card/80 backdrop-blur-xl border border-border/50 shadow-sm;
+    @apply bg-card/90 backdrop-blur-xl border border-border/60 shadow-sm rounded-2xl;
+  }
+  .surface-card {
+    @apply bg-card/95 backdrop-blur-xl border border-border/70 shadow-md rounded-2xl;
+    box-shadow:
+      0 1px 2px hsl(var(--foreground) / 0.04),
+      0 12px 40px -12px hsl(var(--primary) / 0.08);
+  }
+  .bg-app {
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(ellipse 120% 80% at 100% -20%, hsl(var(--primary) / 0.09), transparent 50%),
+      radial-gradient(ellipse 90% 60% at -10% 60%, hsl(var(--accent) / 0.07), transparent 45%);
+  }
+  .input-app {
+    @apply bg-secondary/80 border border-border/80 rounded-xl text-sm text-foreground placeholder:text-muted-foreground outline-none transition-shadow;
+    @apply focus:ring-2 focus:ring-primary/25 focus:border-primary/30;
+  }
+
+  /* Login — no horizontal padding here so pl-/pr- on the input always win (avoids overlap with leading icons) */
+  .input-login {
+    @apply w-full rounded-xl border border-slate-200/90 bg-white py-3 text-sm text-foreground shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)];
+    @apply placeholder:text-slate-400 outline-none transition-all duration-200;
+    @apply hover:border-slate-300 focus:border-transparent focus:ring-2 focus:ring-primary/35 focus:ring-offset-0;
+    @apply focus:shadow-[0_0_0_3px_hsl(var(--primary)/0.12)];
+  }
+
+  .link-brand {
+    @apply text-sm font-semibold bg-gradient-to-r from-[hsl(217,91%,52%)] to-[hsl(262,83%,54%)] bg-clip-text text-transparent;
+    @apply hover:opacity-85 transition-opacity underline-offset-4 decoration-primary/30 hover:underline;
   }
   .stat-shadow {
-    box-shadow: 0 4px 24px -4px hsl(var(--primary) / 0.12);
+    box-shadow:
+      0 1px 2px hsl(var(--foreground) / 0.04),
+      0 8px 28px -8px hsl(var(--primary) / 0.15);
+  }
+
+  /* Sidebar nav — thin, theme-aware scrollbar */
+  .scrollbar-sidebar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--sidebar-border) / 0.9) transparent;
+  }
+  .scrollbar-sidebar::-webkit-scrollbar {
+    width: 5px;
+  }
+  .scrollbar-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px 0;
+  }
+  .scrollbar-sidebar::-webkit-scrollbar-thumb {
+    background: hsl(var(--sidebar-border));
+    border-radius: 9999px;
+  }
+  .scrollbar-sidebar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--sidebar-foreground) / 0.25);
+  }
+
+  /* Horizontal flow strip — touch scroll (no edge mask: masks can break hit-testing on some browsers) */
+  .journey-strip-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
   }
 }

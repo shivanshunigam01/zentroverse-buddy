@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="ZENTROVERSE">
+  <defs>
+    <linearGradient id="z1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1e3a8a"/>
+      <stop offset="100%" style="stop-color:#06b6d4"/>
+    </linearGradient>
+    <linearGradient id="z2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#5b21b6"/>
+      <stop offset="100%" style="stop-color:#d946ef"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="#0f172a"/>
+  <path fill="url(#z1)" d="M6 8h18l-2 3H10L6 8zm0 0l6 8-6 8h4l5-6.5 2 2.5H26l-8-10 2-2H6z" opacity="0.95"/>
+  <path fill="url(#z2)" d="M8 22l5-6 3 3.5H24l-2.5 2.5H8z" opacity="0.9"/>
+</svg>

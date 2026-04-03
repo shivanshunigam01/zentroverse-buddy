@@ -23,15 +23,16 @@ const NotificationsModule = () => {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-foreground">Notifications</h2>
-          <p className="text-sm text-muted-foreground">{unread} unread notifications</p>
+          <p className="text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">{unread}</span> unread
+          </p>
         </div>
         <button onClick={markAllRead} className="text-sm text-primary font-semibold hover:underline flex items-center gap-1">
           <Check size={14} /> Mark all read
         </button>
       </div>
 
-      <div className="glass-card rounded-xl divide-y divide-border/50">
+      <div className="surface-card divide-y divide-border/60 overflow-hidden">
         {items.map((n) => (
           <div
             key={n.id}

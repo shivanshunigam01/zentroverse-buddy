@@ -23,15 +23,14 @@ const rules = [
 const AIClassification = () => {
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-xl font-bold text-foreground">AI Classification Engine</h2>
-        <p className="text-sm text-muted-foreground">Real-time lead scoring & categorization • 1,248 leads classified</p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Real-time scoring • <span className="font-semibold text-foreground">1,248</span> leads classified
+      </p>
 
       {/* Category Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {categories.map((cat) => (
-          <div key={cat.name} className="glass-card rounded-xl p-4 hover:shadow-md transition-all">
+          <div key={cat.name} className="surface-card p-4 hover:shadow-lg transition-all duration-300">
             <div className="flex items-center justify-between mb-3">
               <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${cat.color} ${cat.textColor}`}>{cat.name}</span>
               <span className="text-lg font-bold text-foreground">{cat.count}</span>
@@ -45,7 +44,7 @@ const AIClassification = () => {
       </div>
 
       {/* Classification Rules */}
-      <div className="glass-card rounded-xl p-6">
+      <div className="surface-card p-6 lg:p-7">
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-base font-bold text-foreground flex items-center gap-2">
             <Brain size={18} className="text-primary" /> Classification Rules
@@ -56,7 +55,7 @@ const AIClassification = () => {
         </div>
         <div className="space-y-3">
           {rules.map((rule, i) => (
-            <div key={i} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+            <div key={i} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-xl border border-border/40">
               <div className="flex-1">
                 <p className="text-sm font-medium text-foreground">{rule.condition}</p>
               </div>

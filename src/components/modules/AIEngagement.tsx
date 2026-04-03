@@ -33,22 +33,49 @@ const AIEngagement = () => {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-xl font-bold text-foreground">AI Engagement Engine</h2>
-        <p className="text-sm text-muted-foreground">WhatsApp Bot • 2,341 messages sent today</p>
+      <div className="surface-card p-4 lg:p-5 text-sm text-muted-foreground space-y-2">
+        <p className="font-bold text-foreground font-display">Bot flow</p>
+        <p className="text-xs">
+          Trigger: <span className="font-semibold text-foreground">on lead create</span> • 2,341 messages today
+        </p>
+        <p>
+          Greeting → ask intent: <strong className="text-foreground">Buy now</strong> /{" "}
+          <strong className="text-foreground">Exploring</strong> / <strong className="text-foreground">Finance</strong> /{" "}
+          <strong className="text-foreground">Service</strong> → capture reply → quick options:{" "}
+          <strong className="text-foreground">Price</strong> / <strong className="text-foreground">Finance</strong> /{" "}
+          <strong className="text-foreground">Callback</strong> / <strong className="text-foreground">Visit</strong> →
+          sync to CRM.
+        </p>
+        <p>WhatsApp Business API: templates + conversational flow; responses stored as interactions.</p>
       </div>
 
-      <div className="flex gap-2 mb-2">
-        <button onClick={() => setTab("conversations")} className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === "conversations" ? "gradient-primary text-primary-foreground shadow" : "bg-card text-muted-foreground border border-border"}`}>
-          Live Conversations
+      <div className="flex gap-2 flex-wrap">
+        <button
+          type="button"
+          onClick={() => setTab("conversations")}
+          className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+            tab === "conversations"
+              ? "gradient-primary text-primary-foreground shadow-md"
+              : "bg-card text-muted-foreground border border-border/80 hover:border-border"
+          }`}
+        >
+          Live conversations
         </button>
-        <button onClick={() => setTab("templates")} className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${tab === "templates" ? "gradient-primary text-primary-foreground shadow" : "bg-card text-muted-foreground border border-border"}`}>
-          Bot Templates
+        <button
+          type="button"
+          onClick={() => setTab("templates")}
+          className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+            tab === "templates"
+              ? "gradient-primary text-primary-foreground shadow-md"
+              : "bg-card text-muted-foreground border border-border/80 hover:border-border"
+          }`}
+        >
+          Bot templates
         </button>
       </div>
 
       {tab === "conversations" ? (
-        <div className="glass-card rounded-xl overflow-hidden flex h-[520px]">
+        <div className="surface-card overflow-hidden flex h-[520px] rounded-2xl">
           {/* Conversation List */}
           <div className="w-80 border-r border-border overflow-y-auto">
             {conversations.map((c) => (
@@ -117,7 +144,7 @@ const AIEngagement = () => {
           </div>
         </div>
       ) : (
-        <div className="glass-card rounded-xl overflow-hidden">
+        <div className="surface-card overflow-hidden rounded-2xl">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-secondary/50">

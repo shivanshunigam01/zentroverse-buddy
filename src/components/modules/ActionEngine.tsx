@@ -1,4 +1,4 @@
-import { Phone, PhoneCall, PhoneOff, PhoneMissed, Play, Pause, SkipForward, Volume2 } from "lucide-react";
+import { Phone, PhoneCall, PhoneOff, PhoneMissed, Play, Pause, SkipForward, Users, RefreshCw, Route } from "lucide-react";
 
 const dialerQueue = [
   { name: "Vikram Singh", phone: "+91 54321 09876", attempts: 3, lastAttempt: "2 hrs ago", interest: "Bolero", priority: "High" },
@@ -25,9 +25,64 @@ const outcomeColors: Record<string, string> = {
 const ActionEngine = () => {
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-xl font-bold text-foreground">Action Engine</h2>
-        <p className="text-sm text-muted-foreground">Auto Dialer & Sales Routing • 156 calls today</p>
+      <p className="text-sm text-muted-foreground">
+        Dialer + sales routing • <span className="font-semibold text-foreground">156</span> calls today
+      </p>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="surface-card p-5 lg:p-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Route size={18} className="text-primary" />
+            <h3 className="text-sm font-bold text-foreground">Decision logic</h3>
+          </div>
+          <ul className="space-y-2 text-sm text-muted-foreground">
+            <li>
+              <span className="font-semibold text-success">If responsive</span> → route to{" "}
+              <span className="text-foreground">sales team</span> (queue, owner, SLA).
+            </li>
+            <li>
+              <span className="font-semibold text-warning">If not responsive</span> →{" "}
+              <span className="text-foreground">auto dialer</span> with script; capture Interested / Not interested /
+              Follow-up.
+            </li>
+            <li>
+              After each call → <span className="text-foreground">outcome tags → CRM</span> → back to classification.
+            </li>
+          </ul>
+        </div>
+        <div className="surface-card p-5 lg:p-6 border-primary/20 bg-gradient-to-br from-primary/[0.07] to-accent/[0.05]">
+          <div className="flex items-center gap-2 mb-3">
+            <RefreshCw size={18} className="text-primary" />
+            <h3 className="text-sm font-bold text-foreground">Intelligence loop</h3>
+          </div>
+          <p className="text-xs text-muted-foreground mb-2">Repeat until converted, lost, or recycled:</p>
+          <p className="text-sm font-mono text-foreground leading-relaxed">
+            Lead → Bot → Classification → Action → Classification → Action → …
+          </p>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <span className="text-[10px] px-2 py-1 rounded-full bg-success/15 text-success font-bold">Converted</span>
+            <span className="text-[10px] px-2 py-1 rounded-full bg-destructive/15 text-destructive font-bold">Lost</span>
+            <span className="text-[10px] px-2 py-1 rounded-full bg-warning/15 text-warning font-bold">Recycled</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="surface-card p-4 lg:p-5 flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-2">
+          <Users size={18} className="text-success" />
+          <div>
+            <p className="text-xs font-bold text-foreground">Sales queue</p>
+            <p className="text-[10px] text-muted-foreground">Hot / warm / finance / test drive</p>
+          </div>
+        </div>
+        <div className="h-8 w-px bg-border hidden sm:block" />
+        <div className="flex items-center gap-2">
+          <Phone size={18} className="text-primary" />
+          <div>
+            <p className="text-xs font-bold text-foreground">Dialer queue</p>
+            <p className="text-[10px] text-muted-foreground">Unresponsive & no bot reply</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -37,7 +92,7 @@ const ActionEngine = () => {
           { label: "No Answer", value: "41", icon: PhoneMissed, gradient: "gradient-warning" },
           { label: "Rejected", value: "17", icon: PhoneOff, gradient: "gradient-danger" },
         ].map((s) => (
-          <div key={s.label} className="glass-card rounded-xl p-4 flex items-center gap-4">
+          <div key={s.label} className="surface-card p-4 flex items-center gap-4">
             <div className={`w-11 h-11 rounded-xl ${s.gradient} flex items-center justify-center`}>
               <s.icon size={20} className="text-primary-foreground" />
             </div>
@@ -51,7 +106,7 @@ const ActionEngine = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Dialer Queue */}
-        <div className="glass-card rounded-xl p-6">
+        <div className="surface-card p-6 lg:p-7">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-foreground">Dialer Queue</h3>
             <div className="flex items-center gap-2">
@@ -80,7 +135,7 @@ const ActionEngine = () => {
         </div>
 
         {/* Call History */}
-        <div className="glass-card rounded-xl p-6">
+        <div className="surface-card p-6 lg:p-7">
           <h3 className="text-base font-bold text-foreground mb-4">Recent Calls</h3>
           <div className="space-y-3">
             {callHistory.map((call, i) => (

@@ -1,15 +1,16 @@
 import { useState } from "react";
-import { Search, Filter, Plus, MoreVertical, MessageSquare, Phone, Mail, ChevronDown, Eye } from "lucide-react";
+import { Search, Plus, MoreVertical, MessageSquare, Phone, Eye, Inbox, Link2 } from "lucide-react";
+import { DEDUP_PRIMARY_KEY, LEAD_SOURCES } from "@/domain/platform";
 
 const allLeads = [
-  { id: 1, name: "Rajesh Kumar", phone: "+91 98765 43210", email: "rajesh@email.com", source: "Meta Ads", interest: "Thar", status: "Hot", assignee: "Anil S.", date: "2 min ago", score: 92 },
-  { id: 2, name: "Priya Sharma", phone: "+91 87654 32109", email: "priya@email.com", source: "Walk-in", interest: "XUV700", status: "Warm", assignee: "Meera K.", date: "15 min ago", score: 74 },
-  { id: 3, name: "Amit Patel", phone: "+91 76543 21098", email: "amit@email.com", source: "Website", interest: "Scorpio N", status: "New", assignee: "Unassigned", date: "32 min ago", score: 45 },
-  { id: 4, name: "Sneha Reddy", phone: "+91 65432 10987", email: "sneha@email.com", source: "Referral", interest: "XUV300", status: "Engaged", assignee: "Rahul P.", date: "1 hr ago", score: 68 },
-  { id: 5, name: "Vikram Singh", phone: "+91 54321 09876", email: "vikram@email.com", source: "Google Ads", interest: "Bolero", status: "Unresponsive", assignee: "Anil S.", date: "2 hrs ago", score: 22 },
-  { id: 6, name: "Kavita Joshi", phone: "+91 43210 98765", email: "kavita@email.com", source: "Field Team", interest: "XUV700", status: "Hot", assignee: "Meera K.", date: "3 hrs ago", score: 88 },
-  { id: 7, name: "Deepak Verma", phone: "+91 32109 87654", email: "deepak@email.com", source: "Meta Ads", interest: "Thar", status: "Lost", assignee: "Rahul P.", date: "5 hrs ago", score: 15 },
-  { id: 8, name: "Anita Desai", phone: "+91 21098 76543", email: "anita@email.com", source: "Website", interest: "Scorpio N", status: "Finance Required", assignee: "Anil S.", date: "1 day ago", score: 61 },
+  { id: 1, name: "Rajesh Kumar", phone: "+91 98765 43210", email: "rajesh@email.com", source: "Meta Ads", location: "Mumbai", interest: "Thar", status: "Hot", assignee: "Anil S.", date: "2 min ago", score: 92 },
+  { id: 2, name: "Priya Sharma", phone: "+91 87654 32109", email: "priya@email.com", source: "Walk-in", location: "Delhi NCR", interest: "XUV700", status: "Warm", assignee: "Meera K.", date: "15 min ago", score: 74 },
+  { id: 3, name: "Amit Patel", phone: "+91 76543 21098", email: "amit@email.com", source: "Website / App", location: "Pune", interest: "Scorpio N", status: "New", assignee: "Unassigned", date: "32 min ago", score: 45 },
+  { id: 4, name: "Sneha Reddy", phone: "+91 65432 10987", email: "sneha@email.com", source: "Referral / Call", location: "Hyderabad", interest: "XUV300", status: "Engaged", assignee: "Rahul P.", date: "1 hr ago", score: 68 },
+  { id: 5, name: "Vikram Singh", phone: "+91 54321 09876", email: "vikram@email.com", source: "Google Ads", location: "Jaipur", interest: "Bolero", status: "Unresponsive", assignee: "Anil S.", date: "2 hrs ago", score: 22 },
+  { id: 6, name: "Kavita Joshi", phone: "+91 43210 98765", email: "kavita@email.com", source: "Field Team App", location: "Bengaluru", interest: "XUV700", status: "Hot", assignee: "Meera K.", date: "3 hrs ago", score: 88 },
+  { id: 7, name: "Deepak Verma", phone: "+91 32109 87654", email: "deepak@email.com", source: "Meta Ads", location: "Lucknow", interest: "Thar", status: "Lost", assignee: "Rahul P.", date: "5 hrs ago", score: 15 },
+  { id: 8, name: "Anita Desai", phone: "+91 21098 76543", email: "anita@email.com", source: "Website / App", location: "Chennai", interest: "Scorpio N", status: "Finance Required", assignee: "Anil S.", date: "1 day ago", score: 61 },
 ];
 
 const statusColors: Record<string, string> = {
@@ -31,7 +32,10 @@ const LeadManagement = () => {
 
   const filteredLeads = allLeads.filter((lead) => {
     const matchesFilter = filter === "All" || lead.status === filter;
-    const matchesSearch = lead.name.toLowerCase().includes(searchQuery.toLowerCase()) || lead.interest.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch =
+      lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lead.interest.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lead.location.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -41,13 +45,45 @@ const LeadManagement = () => {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-foreground">Lead Management</h2>
-          <p className="text-sm text-muted-foreground">{allLeads.length} total leads • {allLeads.filter(l => l.status === "Hot").length} hot leads</p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <p className="text-sm text-muted-foreground">
+          <span className="font-semibold text-foreground">{allLeads.length}</span> leads •{" "}
+          <span className="font-semibold text-foreground">{allLeads.filter((l) => l.status === "Hot").length}</span> hot
+          • Dedup: <span className="font-medium text-foreground">{DEDUP_PRIMARY_KEY}</span>
+        </p>
+        <button
+          type="button"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl gradient-primary text-primary-foreground text-sm font-semibold shadow-md hover:opacity-95 transition-opacity"
+        >
+          <Plus size={16} /> Add lead
+        </button>
+      </div>
+
+      <div className="surface-card p-4 lg:p-5 flex flex-col lg:flex-row lg:items-center gap-4">
+        <div className="flex items-start gap-3 flex-1">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <Inbox size={18} className="text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-foreground">Stage 1 — Lead intake engine</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              API ingestion from walk-in, website/app, Meta/Google, field app, referral/call. Tag: source, location, product
+              interest. Merge duplicates on mobile.
+            </p>
+          </div>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 rounded-lg gradient-primary text-primary-foreground text-sm font-semibold shadow-md hover:opacity-90 transition-opacity">
-          <Plus size={16} /> Add Lead
+        <div className="flex flex-wrap gap-1.5 lg:max-w-md">
+          {LEAD_SOURCES.map((s) => (
+            <span key={s} className="text-[10px] px-2 py-1 rounded-full bg-secondary text-muted-foreground font-medium">
+              {s}
+            </span>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="flex items-center gap-2 text-xs font-semibold text-primary hover:underline whitespace-nowrap"
+        >
+          <Link2 size={14} /> Webhook docs
         </button>
       </div>
 
@@ -58,8 +94,8 @@ const LeadManagement = () => {
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by name, vehicle..."
-            className="w-full pl-9 pr-4 py-2 text-sm bg-card rounded-lg border border-border outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground"
+            placeholder="Search name, vehicle, city..."
+            className="w-full pl-9 pr-4 py-2.5 text-sm input-app bg-card/80"
           />
         </div>
         <div className="flex items-center gap-1.5">
@@ -78,7 +114,7 @@ const LeadManagement = () => {
       </div>
 
       {/* Table */}
-      <div className="glass-card rounded-xl overflow-hidden">
+      <div className="surface-card overflow-hidden rounded-2xl">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-secondary/50">
@@ -87,6 +123,7 @@ const LeadManagement = () => {
               </th>
               <th className="text-left p-3 font-semibold text-muted-foreground">Lead</th>
               <th className="text-left p-3 font-semibold text-muted-foreground">Interest</th>
+              <th className="text-left p-3 font-semibold text-muted-foreground">Location</th>
               <th className="text-left p-3 font-semibold text-muted-foreground">Source</th>
               <th className="text-left p-3 font-semibold text-muted-foreground">Status</th>
               <th className="text-left p-3 font-semibold text-muted-foreground">Score</th>
@@ -112,6 +149,7 @@ const LeadManagement = () => {
                   </div>
                 </td>
                 <td className="p-3 font-medium text-foreground">{lead.interest}</td>
+                <td className="p-3 text-muted-foreground text-xs">{lead.location}</td>
                 <td className="p-3 text-muted-foreground">{lead.source}</td>
                 <td className="p-3">
                   <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold ${statusColors[lead.status] || "bg-muted text-muted-foreground"}`}>{lead.status}</span>

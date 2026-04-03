@@ -26,15 +26,12 @@ const engagementScores = [
 const AnalyticsDashboard = () => {
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-xl font-bold text-foreground">Analytics Dashboard</h2>
-        <p className="text-sm text-muted-foreground">Performance metrics & insights • Last 30 days</p>
-      </div>
+      <p className="text-sm text-muted-foreground">Performance & insights • Last 30 days</p>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className="glass-card rounded-xl p-5 stat-shadow">
+          <div key={kpi.label} className="surface-card p-5 lg:p-6 stat-shadow">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm text-muted-foreground font-medium">{kpi.label}</p>
@@ -54,7 +51,7 @@ const AnalyticsDashboard = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Source Performance */}
-        <div className="glass-card rounded-xl p-6">
+        <div className="surface-card p-6 lg:p-7">
           <h3 className="text-base font-bold text-foreground mb-4">Lead Source Performance</h3>
           <table className="w-full text-sm">
             <thead>
@@ -81,7 +78,7 @@ const AnalyticsDashboard = () => {
         </div>
 
         {/* Engagement Score */}
-        <div className="glass-card rounded-xl p-6">
+        <div className="surface-card p-6 lg:p-7">
           <h3 className="text-base font-bold text-foreground mb-4">Customer Engagement Score</h3>
           <div className="space-y-4">
             {engagementScores.map((seg, i) => (
