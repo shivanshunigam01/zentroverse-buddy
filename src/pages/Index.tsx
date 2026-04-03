@@ -23,10 +23,12 @@ const Index = () => {
       </div>
 
       <div className="relative z-10 w-full max-w-md px-6">
-        <div className="glass-card rounded-2xl p-8 shadow-xl">
+        <div className="glass-card rounded-2xl p-8 shadow-xl overflow-hidden">
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
-            <img src={zentroverseLogo} alt="Zentroverse" className="h-12 mb-3 invert" />
+            <div className="bg-foreground rounded-xl p-3 mb-3">
+              <img src={zentroverseLogo} alt="Zentroverse" className="h-10" />
+            </div>
             <h1 className="text-xl font-bold text-foreground">Welcome Back</h1>
             <p className="text-sm text-muted-foreground mt-1">Sign in to your Zentroverse panel</p>
           </div>
