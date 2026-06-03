@@ -110,7 +110,7 @@ export const ACTION_REGISTRY: Record<string, ActionEffect> = {
   "Assign Executive": { navigateTo: "action-engine" },
   "Start Automation": { navigateTo: "action-engine", eventType: "lead.created" },
   "Save Lead": { navigateTo: "lead-inbox", eventType: "lead.created" },
-  "Generate IDs": { description: "Customer + Opportunity IDs generated" },
+  "Generate IDs": { description: "Lead ID · Customer ID · Opportunity ID generated" },
   "Run Duplicate Check": { eventType: "contact.verified", description: "Duplicate check complete" },
 
   "Create Rule": { description: "Automation rule created" },

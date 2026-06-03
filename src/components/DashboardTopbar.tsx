@@ -29,7 +29,7 @@ const DashboardTopbar = ({ activeModule, onMenuClick, showMenu }: Props) => {
         l.mobile.includes(term),
     );
     if (match) {
-      viewLead(match.leadId);
+      viewLead(match.opportunityId);
     } else {
       toast.info("No match", { description: `No opportunity found for "${q}"` });
       navigate("lead-inbox");

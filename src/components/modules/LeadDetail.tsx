@@ -89,7 +89,7 @@ const LeadDetail = ({ leadId }: Props) => {
         </div>
         <div className="mt-4 flex flex-wrap gap-2 border-t border-border/60 pt-4">
           <Btn onClick={() => callLead(lead.mobile, lead.customerName)}>Call Customer</Btn>
-          <Btn variant="outline" onClick={() => openWhatsApp(lead.leadId)}>
+          <Btn variant="outline" onClick={() => openWhatsApp(lead.opportunityId)}>
             WhatsApp
           </Btn>
         </div>

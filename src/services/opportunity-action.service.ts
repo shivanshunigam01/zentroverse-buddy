@@ -13,6 +13,7 @@ import {
   exportLeadsToExcel,
   exportPipelineReportToExcel,
 } from "@/services/excel-export.service";
+import { generateLeadIds } from "@/services/id-generation.service";
 import { scoringService } from "@/services/scoring.service";
 import { contactHealthService } from "@/services/contact-health.service";
 import { validateSingleOwner } from "@/services/ownership.service";
@@ -94,6 +95,28 @@ export async function performOpportunityAction(
     }
     exportPipelineReportToExcel(leads);
     toast.success("Pipeline report exported", { description: `${leads.length} leads in report` });
+    return;
+  }
+
+  if (label === "Generate IDs") {
+    const opp = resolveOpportunity(options.opportunityId);
+    if (opp) {
+      const customer = store.getCustomer(opp.customer_id);
+      const name = customer?.name ?? "Customer";
+      const ids = generateLeadIds(name);
+      store.upsertOpportunity({
+        ...opp,
+        lead_id: ids.leadId,
+        updated_at: new Date().toISOString(),
+      });
+      toast.success("IDs generated", {
+        description: `Lead ${ids.leadId} · Customer ${opp.customer_id} · Opportunity ${opp.opportunity_id}`,
+      });
+      return;
+    }
+    toast.info("Generate IDs", {
+      description: "Load Excel rows first, then click Generate IDs before Import Leads",
+    });
     return;
   }
 

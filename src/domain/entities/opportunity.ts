@@ -20,6 +20,8 @@ export type PriorityCode = "P1" | "P2" | "P3" | "P4" | "P5";
  */
 export interface OpportunityMaster {
   opportunity_id: string;
+  /** Display lead reference — {PREFIX}-LD-{seq} */
+  lead_id: string;
   customer_id: string;
   product: string;
   variant: string | null;

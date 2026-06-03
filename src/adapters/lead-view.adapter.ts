@@ -79,7 +79,7 @@ export function opportunityToLead(opp: OpportunityMaster, customer: CustomerMast
   const microLabel = MICRO_TITLE[opp.current_micro_stage] ?? opp.current_micro_stage;
 
   return {
-    leadId: opp.opportunity_id,
+    leadId: opp.lead_id ?? opp.opportunity_id,
     customerId: customer.customer_id,
     opportunityId: opp.opportunity_id,
     customerName: customer.name,

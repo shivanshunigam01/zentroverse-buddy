@@ -5,6 +5,7 @@ import type { OpportunityMaster } from "@/domain/entities/opportunity";
 
 const baseOpp = (overrides: Partial<OpportunityMaster>): OpportunityMaster => ({
   opportunity_id: "OP-TEST",
+  lead_id: "TEST-LD-2026-001",
   customer_id: "CU-TEST",
   product: "Tata Ace",
   variant: null,

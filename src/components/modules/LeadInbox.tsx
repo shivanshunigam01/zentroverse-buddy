@@ -73,9 +73,9 @@ const LeadInbox = () => {
       <div className="space-y-3 md:hidden">
         {leads.map((l) => (
           <div key={l.leadId} className="space-y-2">
-            <LeadCardStrip lead={l} onClick={() => viewLead(l.leadId)} />
+            <LeadCardStrip lead={l} onClick={() => viewLead(l.opportunityId)} />
             <div className="flex flex-wrap gap-2 px-1">
-              <IconBtn icon={Eye} label="View" onClick={() => viewLead(l.leadId)} />
+              <IconBtn icon={Eye} label="View" onClick={() => viewLead(l.opportunityId)} />
               <IconBtn icon={ArrowRightLeft} label="Move" onClick={() => setMoveLead(l)} />
               <IconBtn icon={Phone} label="Call" onClick={() => callLead(l.mobile, l.customerName)} />
               <IconBtn icon={MessageCircle} label="WA" onClick={() => openWhatsApp(l.leadId)} />
@@ -113,7 +113,7 @@ const LeadInbox = () => {
               <td className="px-3 py-3 text-xs">{l.status}</td>
               <td className="px-3 py-3">
                 <div className="flex flex-wrap gap-1">
-                  <MiniBtn onClick={() => viewLead(l.leadId)}>View</MiniBtn>
+                  <MiniBtn onClick={() => viewLead(l.opportunityId)}>View</MiniBtn>
                   <MiniBtn onClick={() => setMoveLead(l)}>Move</MiniBtn>
                   <MiniBtn onClick={() => callLead(l.mobile, l.customerName)}>Call</MiniBtn>
                   <MiniBtn onClick={() => openWhatsApp(l.leadId)}>WA</MiniBtn>

@@ -4,6 +4,7 @@ import ModuleShell, { Btn, Section, ActionBar } from "@/components/shared/Module
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useZentroFlowStore } from "@/store/opportunity-store";
 import {
+  assignIdsToRows,
   importLeadRows,
   parseExcelFile,
   type ExcelLeadRow,
@@ -55,6 +56,21 @@ const LeadUpload = () => {
     } catch {
       toast.error("Could not read file", { description: "Use .xlsx or .csv with the sample columns" });
     }
+  };
+
+  const runGenerateIds = () => {
+    if (parsedRows.length === 0) {
+      toast.error("No file loaded", { description: "Upload an Excel file first" });
+      return;
+    }
+    const withIds = assignIdsToRows(parsedRows);
+    setParsedRows(withIds);
+    const sample = withIds[0];
+    toast.success("IDs generated", {
+      description: sample
+        ? `${withIds.length} rows · e.g. Lead ${sample.leadId} · CU ${sample.customerId} · OP ${sample.opportunityId}`
+        : `${withIds.length} rows updated`,
+    });
   };
 
   const runValidate = () => {
@@ -136,6 +152,9 @@ const LeadUpload = () => {
           <Btn onClick={runValidate} disabled={parsedRows.length === 0}>
             Validate Data
           </Btn>
+          <Btn variant="secondary" onClick={runGenerateIds} disabled={parsedRows.length === 0}>
+            Generate IDs
+          </Btn>
           <Btn onClick={() => void runImport()} disabled={parsedRows.length === 0}>
             Import Leads
           </Btn>
@@ -178,12 +197,15 @@ const LeadUpload = () => {
       {parsedRows.length > 0 && (
         <Section title="Preview (first 5 rows)">
           <div className="table-scroll">
-            <table className="w-full min-w-[640px] text-left text-xs">
+            <table className="w-full min-w-[960px] text-left text-xs">
               <thead>
                 <tr className="border-b text-muted-foreground">
                   <th className="py-2 pr-3">Customer</th>
                   <th className="py-2 pr-3">Mobile</th>
                   <th className="py-2 pr-3">Product</th>
+                  <th className="py-2 pr-3">Lead ID</th>
+                  <th className="py-2 pr-3">Customer ID</th>
+                  <th className="py-2 pr-3">Opportunity ID</th>
                   <th className="py-2">Branch</th>
                 </tr>
               </thead>
@@ -193,6 +215,11 @@ const LeadUpload = () => {
                     <td className="py-2 pr-3 font-medium">{r.customerName}</td>
                     <td className="py-2 pr-3">{r.mobile}</td>
                     <td className="py-2 pr-3">{r.product}</td>
+                    <td className="py-2 pr-3 font-mono text-[10px] text-primary">
+                      {r.leadId ?? "— click Generate IDs"}
+                    </td>
+                    <td className="py-2 pr-3 font-mono text-[10px]">{r.customerId ?? "—"}</td>
+                    <td className="py-2 pr-3 font-mono text-[10px]">{r.opportunityId ?? "—"}</td>
                     <td className="py-2">{r.branch}</td>
                   </tr>
                 ))}

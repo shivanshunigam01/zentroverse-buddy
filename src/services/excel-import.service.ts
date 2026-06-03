@@ -3,6 +3,7 @@ import type { CustomerMaster } from "@/domain/entities/customer";
 import type { OpportunityMaster } from "@/domain/entities/opportunity";
 import { classifyDuplicate } from "@/domain/duplicate/rules";
 import { eventBus, createCorrelationId } from "@/domain/events/event-bus";
+import { generateLeadIds } from "@/services/id-generation.service";
 
 export type ExcelLeadRow = {
   customerName: string;
@@ -17,6 +18,10 @@ export type ExcelLeadRow = {
   branch: string;
   executive: string;
   remarks?: string;
+  /** Assigned when user clicks Generate IDs */
+  leadId?: string;
+  customerId?: string;
+  opportunityId?: string;
 };
 
 export type ImportRowResult =
@@ -77,6 +82,22 @@ function id(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 }
 
+function idsForRow(row: ExcelLeadRow): { leadId: string; customerId: string; opportunityId: string } {
+  if (row.leadId && row.customerId && row.opportunityId) {
+    return {
+      leadId: row.leadId,
+      customerId: row.customerId,
+      opportunityId: row.opportunityId,
+    };
+  }
+  const generated = generateLeadIds(row.customerName);
+  return {
+    leadId: generated.leadId,
+    customerId: generated.customerId,
+    opportunityId: generated.opportunityId,
+  };
+}
+
 export function parseExcelFile(buffer: ArrayBuffer): ExcelLeadRow[] {
   const wb = XLSX.read(buffer, { type: "array" });
   const sheet = wb.Sheets[wb.SheetNames[0]];
@@ -107,6 +128,18 @@ export function buildSampleCsv(): string {
     "Walk-in", "Q2 Fleet", "Tata Ace", "New", "Chennai Central", "Sales Executive", "Fleet enquiry",
   ];
   return `${headers.join(",")}\n${sample.join(",")}\n`;
+}
+
+export function assignIdsToRows(rows: ExcelLeadRow[]): ExcelLeadRow[] {
+  return rows.map((row) => {
+    const ids = generateLeadIds(row.customerName);
+    return {
+      ...row,
+      leadId: ids.leadId,
+      customerId: ids.customerId,
+      opportunityId: ids.opportunityId,
+    };
+  });
 }
 
 export async function importLeadRows(
@@ -148,10 +181,11 @@ export async function importLeadRows(
     const mobileNorm = normalizeMobile(row.mobile);
     let customer = customersByMobile.get(mobileNorm);
     const now = new Date().toISOString();
+    const ids = idsForRow(row);
 
     if (!customer) {
       customer = {
-        customer_id: id("CU"),
+        customer_id: ids.customerId,
         name: row.customerName,
         mobile: row.mobile,
         mobile_normalized: mobileNorm,
@@ -187,7 +221,8 @@ export async function importLeadRows(
 
     const nextActionDate = new Date(Date.now() + 4 * 3600000).toISOString();
     const opportunity: OpportunityMaster = {
-      opportunity_id: id("OP"),
+      opportunity_id: ids.opportunityId,
+      lead_id: ids.leadId,
       customer_id: customer.customer_id,
       product: row.product,
       variant: null,

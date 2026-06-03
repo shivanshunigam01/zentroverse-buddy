@@ -47,7 +47,7 @@ const Autodialer = () => {
     <Section title="Queue">
       <div className="space-y-3">
         {leads.slice(0, 3).map((l) => (
-          <LeadCardStrip key={l.leadId} lead={l} onClick={() => viewLead(l.leadId)} />
+          <LeadCardStrip key={l.leadId} lead={l} onClick={() => viewLead(l.opportunityId)} />
         ))}
       </div>
     </Section>
