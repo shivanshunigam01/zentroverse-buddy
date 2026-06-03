@@ -1,8 +1,10 @@
 import { useState } from "react";
 import ModuleShell, { Btn, Section, StagePills, ActionBar } from "@/components/shared/ModuleShell";
+import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { C1_MICRO_STAGES, C1_OBJECTION_CATEGORIES } from "@/domain/platform";
 
 const SalesPipeline = () => {
+  const { runAction } = useDashboardActions();
   const [active, setActive] = useState(0);
   const stage = C1_MICRO_STAGES[active];
 
@@ -24,7 +26,14 @@ const SalesPipeline = () => {
         <Section title="Objection categories">
           <div className="flex flex-wrap gap-1.5">
             {C1_OBJECTION_CATEGORIES.map((o) => (
-              <span key={o} className="chip-filter">{o}</span>
+              <button
+                key={o}
+                type="button"
+                onClick={() => runAction("Objection captured", { description: o })}
+                className="chip-filter"
+              >
+                {o}
+              </button>
             ))}
           </div>
         </Section>

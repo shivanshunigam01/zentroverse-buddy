@@ -1,40 +1,69 @@
-import { useState } from "react";
-import ModuleShell, { Btn, Section, FilterChips, DataTable } from "@/components/shared/ModuleShell";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import ModuleShell, { Section, FilterChips, DataTable } from "@/components/shared/ModuleShell";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
 import MoveStageDialog from "@/components/shared/MoveStageDialog";
-import { MOCK_LEADS, type Lead } from "@/domain/leads";
+import type { Lead } from "@/adapters/lead-view.adapter";
+import { useOpportunityLeads } from "@/store/selectors";
+import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { Phone, MessageCircle, Eye, ArrowRightLeft } from "lucide-react";
-
-type Props = { onViewLead: (leadId: string) => void };
 
 const FILTERS = ["All", "Stage", "Owner", "Priority", "Hot/Warm/Cold", "Source", "SLA Missed", "Today Follow-up"];
 
-const LeadInbox = ({ onViewLead }: Props) => {
+function filterLeads(leads: Lead[], filter: string): Lead[] {
+  switch (filter) {
+    case "SLA Missed":
+      return leads.filter((l) => l.slaCountdown === "Overdue");
+    case "Today Follow-up":
+      return leads.filter((l) => l.nextActionAt.toLowerCase().includes("today"));
+    case "Hot/Warm/Cold":
+      return leads.filter((l) => ["Hot", "Warm", "Cold"].includes(l.scoreLabel));
+    default:
+      return leads;
+  }
+}
+
+const LeadInbox = () => {
+  const { viewLead, callLead, openWhatsApp } = useDashboardActions();
+  const allLeads = useOpportunityLeads();
   const [moveLead, setMoveLead] = useState<Lead | null>(null);
   const [filter, setFilter] = useState("All");
+
+  const leads = useMemo(() => filterLeads(allLeads, filter), [allLeads, filter]);
+
+  const onFilterSelect = (f: string) => {
+    setFilter(f);
+    if (["Stage", "Owner", "Priority", "Source"].includes(f)) {
+      toast.info(`${f} filter`, { description: "Use inbox columns · full filter UI coming with API" });
+    }
+  };
 
   return (
     <ModuleShell moduleId="lead-inbox">
       <Section title="Filters">
-        <FilterChips items={FILTERS} active={filter} onSelect={setFilter} />
+        <FilterChips items={FILTERS} active={filter} onSelect={onFilterSelect} />
+        {filter !== "All" && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Showing {leads.length} of {allLeads.length} leads
+          </p>
+        )}
       </Section>
 
-      {/* Mobile: cards */}
       <div className="space-y-3 md:hidden">
-        {MOCK_LEADS.map((l) => (
+        {leads.map((l) => (
           <div key={l.leadId} className="space-y-2">
-            <LeadCardStrip lead={l} onClick={() => onViewLead(l.leadId)} />
+            <LeadCardStrip lead={l} onClick={() => viewLead(l.leadId)} />
             <div className="flex flex-wrap gap-2 px-1">
-              <IconBtn icon={Eye} label="View" onClick={() => onViewLead(l.leadId)} />
+              <IconBtn icon={Eye} label="View" onClick={() => viewLead(l.leadId)} />
               <IconBtn icon={ArrowRightLeft} label="Move" onClick={() => setMoveLead(l)} />
-              <IconBtn icon={Phone} label="Call" />
-              <IconBtn icon={MessageCircle} label="WA" />
+              <IconBtn icon={Phone} label="Call" onClick={() => callLead(l.mobile, l.customerName)} />
+              <IconBtn icon={MessageCircle} label="WA" onClick={() => openWhatsApp(l.leadId)} />
             </div>
           </div>
         ))}
+        {leads.length === 0 && <EmptyInbox />}
       </div>
 
-      {/* Desktop: table */}
       <DataTable minWidth={1100}>
         <thead>
           <tr className="border-b bg-secondary/40 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
@@ -44,7 +73,7 @@ const LeadInbox = ({ onViewLead }: Props) => {
           </tr>
         </thead>
         <tbody>
-          {MOCK_LEADS.map((l) => (
+          {leads.map((l) => (
             <tr key={l.leadId} className="border-b border-border/50 transition-colors hover:bg-secondary/25">
               <td className="whitespace-nowrap px-3 py-3 font-mono text-xs">{l.leadId}</td>
               <td className="px-3 py-3 font-semibold">{l.customerName}</td>
@@ -62,15 +91,18 @@ const LeadInbox = ({ onViewLead }: Props) => {
               </td>
               <td className="px-3 py-3 text-xs">{l.status}</td>
               <td className="px-3 py-3">
-                <div className="flex gap-1">
-                  <MiniBtn onClick={() => onViewLead(l.leadId)}>View</MiniBtn>
+                <div className="flex flex-wrap gap-1">
+                  <MiniBtn onClick={() => viewLead(l.leadId)}>View</MiniBtn>
                   <MiniBtn onClick={() => setMoveLead(l)}>Move</MiniBtn>
+                  <MiniBtn onClick={() => callLead(l.mobile, l.customerName)}>Call</MiniBtn>
+                  <MiniBtn onClick={() => openWhatsApp(l.leadId)}>WA</MiniBtn>
                 </div>
               </td>
             </tr>
           ))}
         </tbody>
       </DataTable>
+      {leads.length === 0 && <div className="hidden md:block"><EmptyInbox /></div>}
 
       {moveLead && (
         <MoveStageDialog open lead={moveLead} onClose={() => setMoveLead(null)} onConfirm={() => setMoveLead(null)} />
@@ -78,6 +110,12 @@ const LeadInbox = ({ onViewLead }: Props) => {
     </ModuleShell>
   );
 };
+
+const EmptyInbox = () => (
+  <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+    No leads match this filter.
+  </p>
+);
 
 const MiniBtn = ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
   <button type="button" onClick={onClick} className="rounded-lg bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary hover:bg-primary/20">

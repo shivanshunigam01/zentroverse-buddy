@@ -1,6 +1,7 @@
 import { useState } from "react";
 import DashboardSidebar from "@/components/DashboardSidebar";
 import DashboardTopbar from "@/components/DashboardTopbar";
+import { DashboardProvider } from "@/context/DashboardContext";
 import { MOBILE_BREAKPOINT, useMediaQuery } from "@/hooks/use-media-query";
 import type { AppModuleId } from "@/domain/app-nav";
 import MainDashboard from "@/components/modules/MainDashboard";
@@ -28,15 +29,7 @@ const Dashboard = () => {
 
   const sidebarW = isMobile ? 0 : collapsed ? 72 : 260;
 
-  const navigate = (module: AppModuleId) => {
-    setActiveModule(module);
-    if (isMobile) setMobileNavOpen(false);
-  };
-
-  const viewLead = (leadId: string) => {
-    setSelectedLeadId(leadId);
-    navigate("lead-detail");
-  };
+  const closeMobileNav = () => setMobileNavOpen(false);
 
   const renderModule = () => {
     switch (activeModule) {
@@ -45,7 +38,7 @@ const Dashboard = () => {
       case "lead-upload":
         return <LeadUpload />;
       case "lead-inbox":
-        return <LeadInbox onViewLead={viewLead} />;
+        return <LeadInbox />;
       case "lead-detail":
         return <LeadDetail leadId={selectedLeadId} />;
       case "action-engine":
@@ -76,28 +69,35 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-app">
-      <DashboardSidebar
-        activeModule={activeModule}
-        onModuleChange={navigate}
-        collapsed={collapsed}
-        onCollapsedChange={setCollapsed}
-        isMobile={isMobile}
-        mobileOpen={mobileNavOpen}
-        onMobileClose={() => setMobileNavOpen(false)}
-      />
-      <main
-        className="relative z-10 min-w-0 overflow-x-hidden transition-[margin] duration-300 ease-out"
-        style={{ marginLeft: sidebarW }}
-      >
-        <DashboardTopbar
+    <DashboardProvider
+      activeModule={activeModule}
+      setActiveModule={setActiveModule}
+      setSelectedLeadId={setSelectedLeadId}
+      onMobileNavClose={closeMobileNav}
+    >
+      <div className="min-h-screen bg-app">
+        <DashboardSidebar
           activeModule={activeModule}
-          onMenuClick={() => setMobileNavOpen(true)}
-          showMenu={isMobile}
+          onModuleChange={setActiveModule}
+          collapsed={collapsed}
+          onCollapsedChange={setCollapsed}
+          isMobile={isMobile}
+          mobileOpen={mobileNavOpen}
+          onMobileClose={closeMobileNav}
         />
-        <div className="page-content">{renderModule()}</div>
-      </main>
-    </div>
+        <main
+          className="relative z-10 min-w-0 overflow-x-hidden transition-[margin] duration-300 ease-out"
+          style={{ marginLeft: sidebarW }}
+        >
+          <DashboardTopbar
+            activeModule={activeModule}
+            onMenuClick={() => setMobileNavOpen(true)}
+            showMenu={isMobile}
+          />
+          <div className="page-content">{renderModule()}</div>
+        </main>
+      </div>
+    </DashboardProvider>
   );
 };
 

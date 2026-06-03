@@ -1,5 +1,7 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import ModuleShell, { StatCard, Section } from "@/components/shared/ModuleShell";
+import { useDashboardActions } from "@/hooks/use-dashboard-actions";
+import type { AppModuleId } from "@/domain/app-nav";
 
 const sourceData = [
   { name: "Meta", value: 420 },
@@ -22,19 +24,46 @@ const ChartWrap = ({ children }: { children: React.ReactNode }) => (
   <div className="h-48 w-full min-h-[12rem] sm:h-56">{children}</div>
 );
 
-const MainDashboard = () => (
+const STAT_LINKS: Partial<Record<string, AppModuleId>> = {
+  "Total Leads": "lead-inbox",
+  "New Leads": "lead-upload",
+  "Hot Leads": "lead-inbox",
+  "Pending Follow-ups": "action-engine",
+  "SLA Missed": "lead-inbox",
+  "Quotes Shared": "sales-pipeline",
+  "Finance Pending": "finance-desk",
+  Bookings: "booking-billing",
+  Deliveries: "delivery-desk",
+  "Dormant Leads": "re-engagement",
+};
+
+const MainDashboard = () => {
+  const { navigate } = useDashboardActions();
+
+  return (
   <ModuleShell moduleId="dashboard">
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
-      <StatCard label="Total Leads" value="1,248" accent="primary" />
-      <StatCard label="New Leads" value="186" sub="+24 today" accent="success" />
-      <StatCard label="Hot Leads" value="89" accent="destructive" />
-      <StatCard label="Pending Follow-ups" value="156" accent="warning" />
-      <StatCard label="SLA Missed" value="23" sub="4 critical" accent="destructive" />
-      <StatCard label="Quotes Shared" value="412" />
-      <StatCard label="Finance Pending" value="67" />
-      <StatCard label="Bookings" value="98" accent="success" />
-      <StatCard label="Deliveries" value="34" />
-      <StatCard label="Dormant Leads" value="201" />
+      {[
+        { label: "Total Leads", value: "1,248", accent: "primary" as const },
+        { label: "New Leads", value: "186", sub: "+24 today", accent: "success" as const },
+        { label: "Hot Leads", value: "89", accent: "destructive" as const },
+        { label: "Pending Follow-ups", value: "156", accent: "warning" as const },
+        { label: "SLA Missed", value: "23", sub: "4 critical", accent: "destructive" as const },
+        { label: "Quotes Shared", value: "412" },
+        { label: "Finance Pending", value: "67" },
+        { label: "Bookings", value: "98", accent: "success" as const },
+        { label: "Deliveries", value: "34" },
+        { label: "Dormant Leads", value: "201" },
+      ].map((s) => (
+        <StatCard
+          key={s.label}
+          label={s.label}
+          value={s.value}
+          sub={s.sub}
+          accent={s.accent}
+          onClick={STAT_LINKS[s.label] ? () => navigate(STAT_LINKS[s.label]!) : undefined}
+        />
+      ))}
     </div>
 
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
@@ -98,7 +127,8 @@ const MainDashboard = () => (
       </Section>
     </div>
   </ModuleShell>
-);
+  );
+};
 
 const KpiBlock = ({ label, value, warn, primary }: { label: string; value: string; warn?: boolean; primary?: boolean }) => (
   <div className="rounded-2xl bg-secondary/40 px-4 py-5 text-center">

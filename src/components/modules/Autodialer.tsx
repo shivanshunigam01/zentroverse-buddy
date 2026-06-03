@@ -1,14 +1,20 @@
 import ModuleShell, { Btn, Section, ActionBar } from "@/components/shared/ModuleShell";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
-import { MOCK_LEADS } from "@/domain/leads";
+import { useOpportunityLeads } from "@/store/selectors";
 import { DIALER_PRIORITIES } from "@/domain/platform";
+import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 
 const CALL_RESULTS = [
   "Connected Interested", "Callback Later", "No Answer", "Busy", "Switched Off",
   "Wrong Number", "Not Interested", "Purchased Competitor",
 ];
 
-const Autodialer = () => (
+const Autodialer = () => {
+  const leads = useOpportunityLeads();
+  const { runAction, viewLead, callLead } = useDashboardActions();
+  const queueLead = leads[1] ?? leads[0];
+
+  return (
   <ModuleShell moduleId="autodialer">
     <Section title="C0.5 · Priority queue">
       <div className="grid grid-cols-1 gap-2 xs:grid-cols-2 lg:grid-cols-5">
@@ -24,8 +30,8 @@ const Autodialer = () => (
 
     <Section title="Queue">
       <div className="space-y-3">
-        {MOCK_LEADS.slice(0, 3).map((l) => (
-          <LeadCardStrip key={l.leadId} lead={l} />
+        {leads.slice(0, 3).map((l) => (
+          <LeadCardStrip key={l.leadId} lead={l} onClick={() => viewLead(l.leadId)} />
         ))}
       </div>
     </Section>
@@ -33,11 +39,18 @@ const Autodialer = () => (
     <Section title="Call result">
       <div className="flex flex-wrap gap-2">
         {CALL_RESULTS.map((r) => (
-          <button key={r} type="button" className="chip-filter text-left">{r}</button>
+          <button
+            key={r}
+            type="button"
+            onClick={() => runAction("Call result logged", { description: r })}
+            className="chip-filter text-left"
+          >
+            {r}
+          </button>
         ))}
       </div>
       <ActionBar>
-        <Btn>Call Now</Btn>
+        <Btn onClick={() => queueLead && callLead(queueLead.mobile, queueLead.customerName)}>Call Now</Btn>
         <Btn variant="outline">Schedule Retry</Btn>
         <Btn variant="secondary">Assign Executive</Btn>
         <Btn variant="secondary">Move Dormant</Btn>
@@ -45,6 +58,7 @@ const Autodialer = () => (
       </ActionBar>
     </Section>
   </ModuleShell>
-);
+  );
+};
 
 export default Autodialer;

@@ -1,6 +1,39 @@
 import type { ReactNode } from "react";
 import type { AppModuleId } from "@/domain/app-nav";
 import { MODULE_TITLES } from "@/domain/app-nav";
+import { useDashboardActions, type DashboardActions } from "@/context/DashboardContext";
+
+function buttonLabel(children: ReactNode): string {
+  if (typeof children === "string") return children.trim();
+  if (typeof children === "number") return String(children);
+  return "Action completed";
+}
+
+type MoveStage = Parameters<DashboardActions["moveToStage"]>[0];
+
+const MOVE_STAGE_RE = /^Move to (C0|C1A|C1|C2|C3|Lifecycle)$/i;
+
+const LABEL_NAV: Partial<Record<string, AppModuleId>> = {
+  "Move to Bot": "whatsapp-bot",
+  "Move to Dialer": "autodialer",
+  "Move to Nurture": "re-engagement",
+  "Check WhatsApp": "whatsapp-bot",
+  "Send Bot Message": "whatsapp-bot",
+  "Send Test Message": "whatsapp-bot",
+  "View Reply": "whatsapp-bot",
+  "Resend Message": "whatsapp-bot",
+  "Transfer to Executive": "action-engine",
+  "Assign Executive": "action-engine",
+  "Call Now": "autodialer",
+  "Schedule Retry": "autodialer",
+  "Start Automation": "action-engine",
+  "Start Nurture Campaign": "re-engagement",
+  "Activate Lifecycle": "lifecycle-crm",
+  "Create Service Task": "lifecycle-crm",
+  "Upload Excel": "lead-upload",
+  "Import Leads": "lead-inbox",
+  "Save Lead": "lead-inbox",
+};
 
 const ModuleShell = ({ moduleId, children, actions }: { moduleId: AppModuleId; children: ReactNode; actions?: ReactNode }) => {
   const meta = MODULE_TITLES[moduleId];
@@ -24,15 +57,25 @@ export const Btn = ({
   children,
   variant = "primary",
   onClick,
+  action,
+  navigateTo,
   className = "",
   fullWidth,
+  disabled,
+  type = "button",
 }: {
   children: ReactNode;
   variant?: "primary" | "secondary" | "outline" | "danger" | "ghost";
   onClick?: () => void;
+  /** Shorthand: toast + optional navigation when onClick omitted */
+  action?: string;
+  navigateTo?: AppModuleId;
   className?: string;
   fullWidth?: boolean;
+  disabled?: boolean;
+  type?: "button" | "submit" | "reset";
 }) => {
+  const { runAction, moveToStage } = useDashboardActions();
   const cls = {
     primary: "gradient-primary text-primary-foreground shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/25",
     secondary: "bg-secondary text-foreground hover:bg-secondary/80",
@@ -40,27 +83,51 @@ export const Btn = ({
     danger: "border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/15",
     ghost: "text-primary hover:bg-primary/10",
   }[variant];
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+      return;
+    }
+    const label = action ?? buttonLabel(children);
+    const move = MOVE_STAGE_RE.exec(label);
+    if (move) {
+      const raw = move[1];
+      const stage: MoveStage =
+        raw.toLowerCase() === "lifecycle" ? "lifecycle" : (raw.toUpperCase() as MoveStage);
+      moveToStage(stage);
+      return;
+    }
+    runAction(label, { navigateTo: navigateTo ?? LABEL_NAV[label] });
+  };
+
   return (
     <button
-      type="button"
-      onClick={onClick}
-      className={`btn-touch ${fullWidth ? "w-full sm:w-auto" : ""} ${cls} ${className}`}
+      type={type}
+      onClick={type === "submit" ? undefined : handleClick}
+      disabled={disabled}
+      className={`btn-touch ${fullWidth ? "w-full sm:w-auto" : ""} ${cls} ${disabled ? "cursor-not-allowed opacity-50" : ""} ${className}`}
     >
       {children}
     </button>
   );
 };
 
+/** Button that only works inside DashboardProvider — use in modules */
+export const ActionBtn = Btn;
+
 export const StatCard = ({
   label,
   value,
   sub,
   accent,
+  onClick,
 }: {
   label: string;
   value: string | number;
   sub?: string;
   accent?: "primary" | "success" | "warning" | "destructive";
+  onClick?: () => void;
 }) => {
   const accentBar = {
     primary: "from-primary/60 to-accent/40",
@@ -69,13 +136,20 @@ export const StatCard = ({
     destructive: "from-destructive/60 to-destructive/20",
   }[accent ?? "primary"];
 
+  const Wrapper = onClick ? "button" : "div";
   return (
-    <div className="surface-card group relative overflow-hidden p-4 transition-shadow hover:shadow-lg sm:p-5">
+    <Wrapper
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className={`surface-card group relative w-full overflow-hidden p-4 text-left transition-shadow sm:p-5 ${
+        onClick ? "cursor-pointer hover:shadow-lg hover:ring-2 hover:ring-primary/20 active:scale-[0.99]" : ""
+      }`}
+    >
       <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${accentBar}`} />
       <p className="text-2xl font-bold tabular-nums tracking-tight text-foreground sm:text-[1.65rem]">{value}</p>
       <p className="mt-1 text-xs font-medium leading-snug text-muted-foreground">{label}</p>
       {sub && <p className="mt-1.5 text-[11px] font-semibold text-primary">{sub}</p>}
-    </div>
+    </Wrapper>
   );
 };
 

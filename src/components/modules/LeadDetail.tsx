@@ -1,8 +1,10 @@
 import { useState } from "react";
 import ModuleShell, { Btn, Section, FormGrid, ActionBar } from "@/components/shared/ModuleShell";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
-import { DEFAULT_LEAD, getLeadById, type Lead } from "@/domain/leads";
 import { SCORING_RULES } from "@/domain/platform";
+import { getLeadsSnapshot, type Lead } from "@/domain/leads";
+import { useLeadById } from "@/store/selectors";
+import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Props = { leadId?: string };
@@ -30,8 +32,10 @@ const MetaItem = ({
 );
 
 const LeadDetail = ({ leadId }: Props) => {
-  const lead = (leadId ? getLeadById(leadId) : undefined) ?? DEFAULT_LEAD;
+  const resolved = useLeadById(leadId);
+  const lead = resolved ?? getLeadsSnapshot()[0];
   const [tab, setTab] = useState<string>("Overview");
+  const { callLead, openWhatsApp } = useDashboardActions();
 
   return (
     <ModuleShell moduleId="lead-detail">
@@ -60,7 +64,13 @@ const LeadDetail = ({ leadId }: Props) => {
             <MetaItem label="SLA" value={lead.slaCountdown ?? lead.slaTime} highlight className="col-span-2" />
           </div>
         </div>
-        <div className="mt-4 border-t border-border/60 pt-4">
+        <div className="mt-4 flex flex-wrap gap-2 border-t border-border/60 pt-4">
+          <Btn onClick={() => callLead(lead.mobile, lead.customerName)}>Call Customer</Btn>
+          <Btn variant="outline" onClick={() => openWhatsApp(lead.leadId)}>
+            WhatsApp
+          </Btn>
+        </div>
+        <div className="mt-3">
           <LeadCardStrip lead={lead} />
         </div>
       </div>

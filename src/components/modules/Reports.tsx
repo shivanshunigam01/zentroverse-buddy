@@ -1,4 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { toast } from "sonner";
 import ModuleShell, { Section, StatCard } from "@/components/shared/ModuleShell";
 
 const execData = [
@@ -10,10 +11,26 @@ const execData = [
 const Reports = () => (
   <ModuleShell moduleId="reports">
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <StatCard label="Source-wise conversion" value="11.2%" />
-      <StatCard label="Stage funnel drop" value="C1→C1A 45%" />
-      <StatCard label="SLA missed %" value="4.2%" />
-      <StatCard label="Campaign ROI" value="3.2x" />
+      <StatCard
+        label="Source-wise conversion"
+        value="11.2%"
+        onClick={() => toast.success("Source-wise conversion", { description: "Drill-down report (demo)" })}
+      />
+      <StatCard
+        label="Stage funnel drop"
+        value="C1→C1A 45%"
+        onClick={() => toast.success("Stage funnel drop", { description: "C1 → C1A 45% · export CSV (demo)" })}
+      />
+      <StatCard
+        label="SLA missed %"
+        value="4.2%"
+        onClick={() => toast.success("SLA missed %", { description: "4.2% of active leads · last 7 days" })}
+      />
+      <StatCard
+        label="Campaign ROI"
+        value="3.2x"
+        onClick={() => toast.success("Campaign ROI", { description: "3.2x blended across Meta + Google" })}
+      />
     </div>
 
     <Section title="Executive performance">
@@ -32,7 +49,15 @@ const Reports = () => (
     <Section title="Report types">
       <ul className="grid gap-2 text-sm sm:grid-cols-2">
         {["Lead source wise", "Stage wise funnel", "Executive performance", "Campaign ROI", "Lead aging", "Conversion %", "Lost by reason", "Dormant revived"].map((r) => (
-          <li key={r} className="rounded-lg bg-secondary/30 px-3 py-2 font-medium">{r}</li>
+          <li key={r}>
+            <button
+              type="button"
+              onClick={() => toast.success(r, { description: "Report generated (demo)" })}
+              className="w-full rounded-lg bg-secondary/30 px-3 py-2 text-left font-medium transition-colors hover:bg-secondary/50"
+            >
+              {r}
+            </button>
+          </li>
         ))}
       </ul>
     </Section>

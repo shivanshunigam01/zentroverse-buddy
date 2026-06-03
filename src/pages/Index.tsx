@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import zentroverseLogo from "@/assets/zentroverse-logo.png";
 
@@ -105,7 +106,13 @@ const Index = () => {
                 />
                 <span className="truncate">Remember me</span>
               </label>
-              <button type="button" className="link-brand self-start sm:self-auto sm:shrink-0">
+              <button
+                type="button"
+                onClick={() =>
+                  toast.info("Password reset", { description: "Contact your admin to reset credentials (demo)" })
+                }
+                className="link-brand self-start sm:self-auto sm:shrink-0"
+              >
                 Forgot password?
               </button>
             </div>

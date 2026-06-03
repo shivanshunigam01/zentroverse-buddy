@@ -1,10 +1,14 @@
 import ModuleShell, { Btn, Section, ActionBar } from "@/components/shared/ModuleShell";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
-import { DEFAULT_LEAD } from "@/domain/leads";
+import { useOpportunityLeads } from "@/store/selectors";
 
-const ActionEngineModule = () => (
+const ActionEngineModule = () => {
+  const leads = useOpportunityLeads();
+  const sample = leads[0];
+
+  return (
   <ModuleShell moduleId="action-engine">
-    <LeadCardStrip lead={DEFAULT_LEAD} />
+    {sample && <LeadCardStrip lead={sample} />}
 
     <div className="rounded-2xl border border-destructive/25 bg-destructive/[0.05] p-4 sm:p-5">
       <p className="text-sm font-bold text-destructive">Golden rule</p>
@@ -36,6 +40,7 @@ const ActionEngineModule = () => (
       </ActionBar>
     </Section>
   </ModuleShell>
-);
+  );
+};
 
 export default ActionEngineModule;

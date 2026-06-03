@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { Search, Bell, Menu } from "lucide-react";
 import type { AppModuleId } from "@/domain/app-nav";
 import { MODULE_TITLES } from "@/domain/app-nav";
@@ -49,6 +50,11 @@ const DashboardTopbar = ({ activeModule, onMenuClick, showMenu }: Props) => {
 
           <button
             type="button"
+            onClick={() =>
+              toast.info("Notifications", {
+                description: "3 SLA alerts · 2 finance pending · 1 delivery ready",
+              })
+            }
             className="relative flex h-10 w-10 touch-manipulation items-center justify-center rounded-xl hover:bg-secondary"
             aria-label="Notifications"
           >
@@ -56,9 +62,14 @@ const DashboardTopbar = ({ activeModule, onMenuClick, showMenu }: Props) => {
             <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-card" />
           </button>
 
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary text-sm font-bold text-primary-foreground shadow-md">
+          <button
+            type="button"
+            onClick={() => toast.success("Profile", { description: "Admin · ZentroFlow workspace" })}
+            className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary text-sm font-bold text-primary-foreground shadow-md"
+            aria-label="Account"
+          >
             A
-          </div>
+          </button>
         </div>
       </div>
 

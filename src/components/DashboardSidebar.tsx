@@ -23,6 +23,7 @@ import {
 import zentroverseLogo from "@/assets/zentroverse-logo.png";
 import { MAIN_SIDEBAR, type AppModuleId } from "@/domain/app-nav";
 import { POSITIONING } from "@/domain/platform";
+import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 
 const MODULE_ICONS: Record<AppModuleId, LucideIcon> = {
   dashboard: LayoutDashboard,
@@ -64,6 +65,7 @@ const DashboardSidebar = ({
   mobileOpen,
   onMobileClose,
 }: Props) => {
+  const { logout } = useDashboardActions();
   const expanded = isMobile || !collapsed;
   const width = isMobile ? 280 : collapsed ? 72 : 260;
 
@@ -140,7 +142,10 @@ const DashboardSidebar = ({
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => onModuleChange(item.id)}
+                  onClick={() => {
+                    onModuleChange(item.id);
+                    if (isMobile) onMobileClose();
+                  }}
                   title={!expanded ? item.label : undefined}
                   className={`flex w-full min-h-11 touch-manipulation items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${
                     active ? navActive : navIdle
@@ -164,7 +169,11 @@ const DashboardSidebar = ({
         </nav>
 
         <div className="shrink-0 border-t border-[hsl(220,20%,20%)] px-2 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <button type="button" className={`flex w-full min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${navIdle}`}>
+          <button
+            type="button"
+            onClick={logout}
+            className={`flex w-full min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${navIdle}`}
+          >
             <LogOut size={20} />
             {expanded && <span>Logout</span>}
           </button>
