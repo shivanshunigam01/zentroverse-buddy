@@ -14,9 +14,6 @@ export function getLeadsSnapshot(): Lead[] {
   return opportunitiesToLeads(store.listOpportunities(), store.customers);
 }
 
-/** @deprecated Use getLeadsSnapshot() or useOpportunityLeads() hook */
-export const MOCK_LEADS: Lead[] = getLeadsSnapshot();
-
 export function getLeadById(opportunityId: string): Lead | undefined {
   const store = getZentroFlowStore();
   const opp = store.getOpportunity(opportunityId);
@@ -24,5 +21,3 @@ export function getLeadById(opportunityId: string): Lead | undefined {
   if (!opp || !customer) return undefined;
   return opportunitiesToLeads([opp], { [customer.customer_id]: customer })[0];
 }
-
-export const DEFAULT_LEAD: Lead = getLeadsSnapshot()[0];

@@ -1,7 +1,11 @@
 import { useState } from "react";
 import ModuleShell, { Btn, Section, StagePills, ActionBar } from "@/components/shared/ModuleShell";
-import { useDashboardActions } from "@/hooks/use-dashboard-actions";
+import EmptyState from "@/components/shared/EmptyState";
 import { C1_MICRO_STAGES, C1_OBJECTION_CATEGORIES } from "@/domain/platform";
+import { useDashboardActions } from "@/hooks/use-dashboard-actions";
+import { useOpportunityLeads } from "@/store/selectors";
+import { getNextMicroStage } from "@/domain/stages/stage-gates";
+import { useZentroFlowStore } from "@/store/opportunity-store";
 
 const SALES_ACTIONS = [
   "Create Quote", "Send Quote", "Capture Objection", "Schedule Demo",
@@ -10,15 +14,36 @@ const SALES_ACTIONS = [
 
 const SalesPipeline = () => {
   const { performAction, selectedLeadId } = useDashboardActions();
+  const leads = useOpportunityLeads();
   const [active, setActive] = useState(0);
   const stage = C1_MICRO_STAGES[active];
+  const opp = useZentroFlowStore((s) =>
+    selectedLeadId ? s.opportunities[selectedLeadId] : undefined,
+  );
+  const nextStep = opp ? getNextMicroStage(opp) : null;
 
   const run = (label: string) => {
     void performAction(label, { macroId: "c1", stageIndex: active, opportunityId: selectedLeadId });
   };
 
+  if (leads.length === 0) {
+    return (
+      <ModuleShell moduleId="sales-pipeline">
+        <EmptyState
+          title="Sales pipeline locked"
+          description="Complete C0 (through C0.10) for at least one lead, then upload or open leads here for C1."
+        />
+      </ModuleShell>
+    );
+  }
+
   return (
     <ModuleShell moduleId="sales-pipeline">
+      {nextStep && (
+        <p className="rounded-xl bg-primary/5 px-4 py-2 text-sm text-primary">
+          Selected lead next step: <strong>{nextStep}</strong>
+        </p>
+      )}
       <StagePills stages={C1_MICRO_STAGES} activeIndex={active} onSelect={setActive} />
 
       <Section title={`${stage.code} · ${stage.title}`}>

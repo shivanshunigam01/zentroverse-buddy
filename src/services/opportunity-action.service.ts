@@ -9,6 +9,7 @@ import { getZentroFlowStore } from "@/store/opportunity-store";
 import { scoringService } from "@/services/scoring.service";
 import { contactHealthService } from "@/services/contact-health.service";
 import { validateSingleOwner } from "@/services/ownership.service";
+import { canPerformAction } from "@/domain/stages/stage-gates";
 
 export type PerformActionOptions = {
   opportunityId?: string;
@@ -54,9 +55,21 @@ export async function performOpportunityAction(
       : undefined);
 
   if (opp && microStage) {
+    const gate = canPerformAction(opp, label, microStage);
+    if (!gate.allowed) {
+      toast.error("Action blocked", { description: gate.reason });
+      return;
+    }
     try {
       if (options.owner) validateSingleOwner(options.owner);
-      await store.moveStage(opp.opportunity_id, microStage, "Current User", options.reason ?? label, true);
+      const isManualOverride = Boolean(options.reason && options.manualMicroStage);
+      await store.moveStage(
+        opp.opportunity_id,
+        microStage,
+        "Current User",
+        options.reason ?? label,
+        isManualOverride,
+      );
       const updated = store.getOpportunity(opp.opportunity_id);
       if (updated) {
         store.upsertOpportunity({

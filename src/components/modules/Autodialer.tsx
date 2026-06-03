@@ -1,5 +1,6 @@
 import { toast } from "sonner";
 import ModuleShell, { Btn, Section, ActionBar } from "@/components/shared/ModuleShell";
+import EmptyState from "@/components/shared/EmptyState";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
 import { useOpportunityLeads } from "@/store/selectors";
 import { DIALER_PRIORITIES } from "@/domain/platform";
@@ -24,6 +25,13 @@ const Autodialer = () => {
 
   return (
   <ModuleShell moduleId="autodialer">
+    {leads.length === 0 ? (
+      <EmptyState
+        title="No leads in queue"
+        description="Upload and import leads from Excel. Autodialer queue fills from opportunities in the C0 funnel."
+      />
+    ) : (
+      <>
     <Section title="C0.5 · Priority queue">
       <div className="grid grid-cols-1 gap-2 xs:grid-cols-2 lg:grid-cols-5">
         {DIALER_PRIORITIES.map((p) => (
@@ -65,6 +73,8 @@ const Autodialer = () => {
         <Btn variant="danger" onClick={() => queueLead && performAction("Mark Lost", { opportunityId: queueLead.opportunityId })}>Mark Lost</Btn>
       </ActionBar>
     </Section>
+      </>
+    )}
   </ModuleShell>
   );
 };

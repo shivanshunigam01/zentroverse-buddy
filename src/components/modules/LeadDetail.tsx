@@ -1,11 +1,13 @@
 import { useState } from "react";
 import ModuleShell, { Btn, Section, FormGrid, ActionBar } from "@/components/shared/ModuleShell";
+import EmptyState from "@/components/shared/EmptyState";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
 import { SCORING_RULES } from "@/domain/platform";
-import { getLeadsSnapshot, type Lead } from "@/domain/leads";
-import { useLeadById } from "@/store/selectors";
+import { useLeadById, useOpportunityLeads } from "@/store/selectors";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useOpportunityActions } from "@/hooks/use-opportunity-actions";
+import { getNextMicroStage } from "@/domain/stages/stage-gates";
+import { useZentroFlowStore } from "@/store/opportunity-store";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Props = { leadId?: string };
@@ -33,14 +35,33 @@ const MetaItem = ({
 );
 
 const LeadDetail = ({ leadId }: Props) => {
+  const leads = useOpportunityLeads();
   const resolved = useLeadById(leadId);
-  const lead = resolved ?? getLeadsSnapshot()[0];
+  const lead = resolved ?? leads[0];
+  const opp = useZentroFlowStore((s) => (lead ? s.opportunities[lead.opportunityId] : undefined));
+  const nextStep = opp ? getNextMicroStage(opp) : null;
   const [tab, setTab] = useState<string>("Overview");
   const { callLead, openWhatsApp } = useDashboardActions();
-  const { run } = useOpportunityActions(lead.opportunityId);
+  const { run } = useOpportunityActions(lead?.opportunityId);
+
+  if (!lead) {
+    return (
+      <ModuleShell moduleId="lead-detail">
+        <EmptyState
+          title="No lead selected"
+          description="Upload Excel leads first, then open a lead from the inbox to work through C0 → C3 step by step."
+        />
+      </ModuleShell>
+    );
+  }
 
   return (
     <ModuleShell moduleId="lead-detail">
+      {nextStep && (
+        <p className="rounded-xl bg-primary/5 px-4 py-2 text-sm text-primary">
+          Next step: <strong>{nextStep}</strong> — only the matching action button is enabled.
+        </p>
+      )}
       {/* Top header */}
       <div className="surface-card overflow-hidden p-4 sm:p-6">
         <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:gap-6">
@@ -96,7 +117,7 @@ const LeadDetail = ({ leadId }: Props) => {
           <OverviewTab lead={lead} run={run} />
         </TabsContent>
         <TabsContent value="Activity Timeline" className="mt-4">
-          <TimelineTab />
+          <TimelineTab leadId={lead.opportunityId} />
         </TabsContent>
         <TabsContent value="Contact Health" className="mt-4">
           <ContactHealthTab run={run} />
@@ -133,8 +154,15 @@ const LeadDetail = ({ leadId }: Props) => {
   );
 };
 
-const OverviewTab = ({ lead, run }: { lead: Lead; run: (label: string) => void }) => (
+const OverviewTab = ({ lead, run }: { lead: import("@/adapters/lead-view.adapter").Lead; run: (label: string) => void }) => (
   <>
+    <Section title={`${lead.microStage} · Current stage`}>
+      <p className="text-sm text-muted-foreground">{lead.currentAction}</p>
+      <ActionBar>
+        <Btn onClick={() => run("Complete Contact")}>Complete Contact</Btn>
+        <Btn variant="outline" onClick={() => run("Verify Number")}>Verify Number</Btn>
+      </ActionBar>
+    </Section>
     <Section title="C0.8 · Lead scoring">
       <div className="grid gap-2 sm:grid-cols-2">
         {SCORING_RULES.map((r) => (
@@ -151,6 +179,7 @@ const OverviewTab = ({ lead, run }: { lead: Lead; run: (label: string) => void }
       <p className="text-sm text-muted-foreground">Owner: {lead.currentOwner} · SLA: {lead.slaTime} · Escalation: {lead.escalationOwner}</p>
       <ActionBar>
         <Btn onClick={() => run("Accept Action")}>Accept Action</Btn>
+        <Btn onClick={() => run("Pass Score Gate")}>Pass Score Gate</Btn>
         <Btn variant="outline" onClick={() => run("Change Action")}>Change Action</Btn>
         <Btn variant="outline" onClick={() => run("Assign Owner")}>Assign Owner</Btn>
       </ActionBar>
@@ -208,11 +237,20 @@ const QualificationTab = ({ run }: { run: (label: string) => void }) => (
   <>
     <Section title="C0.6 · Discovery">
       <FormGrid fields={["Usage", "Route", "Load", "Current Vehicle", "Pain Point", "Budget", "Timeline", "Buyer Type", "Finance Need"]} />
-      <Btn className="mt-3" onClick={() => run("Save Discovery")}>Save Discovery</Btn>
+      <ActionBar>
+        <Btn onClick={() => run("Save Discovery")}>Save Discovery</Btn>
+        <Btn variant="outline" onClick={() => run("Lock Variant")}>Lock Variant</Btn>
+        <Btn variant="outline" onClick={() => run("Confirm Budget")}>Confirm Budget</Btn>
+      </ActionBar>
     </Section>
     <Section title="C0.7 · Qualification">
       <FormGrid fields={["Vehicle Type", "Variant", "Budget", "Finance", "Exchange", "Decision Maker", "Competition", "Timeline"]} />
-      <Btn className="mt-3" onClick={() => run("Mark Qualified")}>Mark Qualified</Btn>
+      <ActionBar>
+        <Btn onClick={() => run("Mark Qualified")}>Mark Qualified</Btn>
+        <Btn variant="outline" onClick={() => run("Add Competitor Offer")}>Add Competitor Offer</Btn>
+        <Btn variant="outline" onClick={() => run("Schedule Demo")}>Schedule Demo</Btn>
+        <Btn variant="outline" onClick={() => run("Confirm Authority")}>Confirm Authority</Btn>
+      </ActionBar>
     </Section>
   </>
 );
@@ -265,7 +303,7 @@ const BookingTab = ({ run }: { run: (label: string) => void }) => (
       "PDI",
     ]} />
     <div className="mt-4 flex flex-wrap gap-2">
-      {["Create Booking", "Allocate Vehicle", "Lock Variant", "Upload Billing Docs", "Update Disbursement", "Collect Down Payment", "Create Insurance", "Start Registration", "Update HSRP", "Complete PDI", "Move to C3"].map((b) => (
+      {["Create Booking", "Allocate Vehicle", "Lock Booking Variant", "Upload Billing Docs", "Update Disbursement", "Collect Down Payment", "Create Insurance", "Start Registration", "Update HSRP", "Complete PDI", "Move to C3"].map((b) => (
         <Btn key={b} variant="outline" onClick={() => run(b)}>{b}</Btn>
       ))}
     </div>
@@ -305,20 +343,25 @@ const LifecycleTab = ({ run }: { run: (label: string) => void }) => (
   </Section>
 );
 
-const TimelineTab = () => (
+const TimelineTab = ({ leadId }: { leadId?: string }) => {
+  const activities = useZentroFlowStore((s) =>
+    leadId ? s.activities.filter((a) => a.opportunity_id === leadId) : s.activities,
+  );
+  return (
   <Section title="Activity timeline">
-    {[
-      "Lead created · Meta Ads",
-      "Duplicate check passed · Cross-sell opportunity",
-      "WhatsApp welcome sent",
-      "Customer replied · asked EMI",
-      "Score updated · 72 Warm",
-      "Moved to C1.5 Finance Discussion",
-    ].map((e, i) => (
-      <div key={i} className="border-l-2 border-primary/30 py-2 pl-4 text-sm">{e}</div>
-    ))}
+    {activities.length === 0 ? (
+      <p className="text-sm text-muted-foreground">No activity yet — actions you take will appear here.</p>
+    ) : (
+      activities.map((e) => (
+        <div key={e.activity_id} className="border-l-2 border-primary/30 py-2 pl-4 text-sm">
+          {e.remarks}
+          <span className="ml-2 text-xs text-muted-foreground">{new Date(e.created_at).toLocaleString()}</span>
+        </div>
+      ))
+    )}
   </Section>
-);
+  );
+};
 
 const StatusGrid = ({ items }: { items: [string, string][] }) => (
   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">

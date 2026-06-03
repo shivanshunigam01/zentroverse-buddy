@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import ModuleShell, { Section, FilterChips, DataTable } from "@/components/shared/ModuleShell";
+import EmptyState from "@/components/shared/EmptyState";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
 import MoveStageDialog from "@/components/shared/MoveStageDialog";
 import type { Lead } from "@/adapters/lead-view.adapter";
@@ -40,6 +41,13 @@ const LeadInbox = () => {
 
   return (
     <ModuleShell moduleId="lead-inbox">
+      {allLeads.length === 0 ? (
+        <EmptyState
+          title="Inbox is empty"
+          description="Import leads from Excel — each opportunity starts at C0.1 Contact. Complete stages in order before moving to C1."
+        />
+      ) : (
+        <>
       <Section title="Filters">
         <FilterChips items={FILTERS} active={filter} onSelect={onFilterSelect} />
         {filter !== "All" && (
@@ -106,6 +114,8 @@ const LeadInbox = () => {
 
       {moveLead && (
         <MoveStageDialog open lead={moveLead} onClose={() => setMoveLead(null)} onConfirm={() => setMoveLead(null)} />
+      )}
+        </>
       )}
     </ModuleShell>
   );

@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 import type { AppModuleId } from "@/domain/app-nav";
 import { MODULE_TITLES } from "@/domain/app-nav";
+import { ACTION_REGISTRY } from "@/domain/actions/action-registry";
+import { canPerformAction } from "@/domain/stages/stage-gates";
+import { useZentroFlowStore } from "@/store/opportunity-store";
 import { useDashboardActions, type DashboardActions } from "@/context/DashboardContext";
 
 function buttonLabel(children: ReactNode): string {
@@ -62,6 +65,7 @@ export const Btn = ({
   className = "",
   fullWidth,
   disabled,
+  title,
   type = "button",
 }: {
   children: ReactNode;
@@ -73,9 +77,21 @@ export const Btn = ({
   className?: string;
   fullWidth?: boolean;
   disabled?: boolean;
+  title?: string;
   type?: "button" | "submit" | "reset";
 }) => {
-  const { performAction, moveToStage } = useDashboardActions();
+  const { performAction, moveToStage, selectedLeadId } = useDashboardActions();
+  const opportunities = useZentroFlowStore((s) => s.listOpportunities());
+  const selectedOpp = useZentroFlowStore((s) =>
+    selectedLeadId ? s.opportunities[selectedLeadId] : undefined,
+  );
+  const opp = selectedOpp ?? opportunities[0];
+  const label = action ?? buttonLabel(children);
+  const effect = ACTION_REGISTRY[label];
+  const gate =
+    effect?.microStage && opp ? canPerformAction(opp, label, effect.microStage) : { allowed: true };
+  const isDisabled = disabled || !gate.allowed;
+  const tooltip = title ?? (!gate.allowed ? gate.reason : undefined);
   const cls = {
     primary: "gradient-primary text-primary-foreground shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/25",
     secondary: "bg-secondary text-foreground hover:bg-secondary/80",
@@ -105,8 +121,9 @@ export const Btn = ({
     <button
       type={type}
       onClick={type === "submit" ? undefined : handleClick}
-      disabled={disabled}
-      className={`btn-touch ${fullWidth ? "w-full sm:w-auto" : ""} ${cls} ${disabled ? "cursor-not-allowed opacity-50" : ""} ${className}`}
+      disabled={isDisabled}
+      title={tooltip}
+      className={`btn-touch ${fullWidth ? "w-full sm:w-auto" : ""} ${cls} ${isDisabled ? "cursor-not-allowed opacity-50" : ""} ${className}`}
     >
       {children}
     </button>

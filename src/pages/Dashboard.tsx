@@ -21,7 +21,7 @@ import Reports from "@/components/modules/Reports";
 import MastersSettings from "@/components/modules/MastersSettings";
 
 const Dashboard = () => {
-  const [activeModule, setActiveModule] = useState<AppModuleId>("dashboard");
+  const [activeModule, setActiveModule] = useState<AppModuleId>("lead-upload");
   const [selectedLeadId, setSelectedLeadId] = useState<string | undefined>();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);

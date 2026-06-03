@@ -7,6 +7,7 @@ import { microStageToMacro, isLifecycleStage } from "@/domain/stages/types";
 import { eventBus, createCorrelationId } from "@/domain/events/event-bus";
 import { actionEngineService } from "./action-engine.service";
 import { validateSingleOwner } from "./ownership.service";
+import { validateSequentialTransition } from "@/domain/stages/stage-gates";
 
 export interface StageTransitionRequest {
   opportunity: OpportunityMaster;
@@ -65,6 +66,7 @@ export function validateMicroStageTransition(
 export async function transitionStage(req: StageTransitionRequest): Promise<StageTransitionResult> {
   if (!req.force) {
     validateMicroStageTransition(req.opportunity.current_micro_stage, req.new_micro_stage);
+    validateSequentialTransition(req.opportunity, req.new_micro_stage, false);
   }
   validateSingleOwner(req.opportunity.current_owner);
 

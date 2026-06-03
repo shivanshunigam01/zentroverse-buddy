@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useMemo, type ReactNode } from 
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import type { AppModuleId } from "@/domain/app-nav";
+import { canAccessModule } from "@/domain/stages/stage-gates";
+import { getZentroFlowStore } from "@/store/opportunity-store";
 import {
   performOpportunityAction,
   confirmManualStageMove,
@@ -56,6 +58,11 @@ export function DashboardProvider({
 
   const navigate = useCallback(
     (module: AppModuleId) => {
+      const access = canAccessModule(module, getZentroFlowStore().listOpportunities());
+      if (!access.allowed) {
+        toast.error("Module locked", { description: access.reason });
+        return;
+      }
       setActiveModule(module);
       onMobileNavClose?.();
     },

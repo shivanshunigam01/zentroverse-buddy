@@ -26,9 +26,9 @@ export type NavItem = {
 export const MAIN_SIDEBAR: NavItem[] = [
   { id: "dashboard", label: "Dashboard" },
   { id: "lead-upload", label: "Lead Upload" },
-  { id: "lead-inbox", label: "Lead Inbox", badge: 142 },
+  { id: "lead-inbox", label: "Lead Inbox" },
   { id: "lead-detail", label: "Lead Detail View" },
-  { id: "action-engine", label: "Action Engine", badge: 23 },
+  { id: "action-engine", label: "Action Engine" },
   { id: "autodialer", label: "Autodialer" },
   { id: "whatsapp-bot", label: "WhatsApp Bot" },
   { id: "sales-pipeline", label: "Sales Pipeline" },

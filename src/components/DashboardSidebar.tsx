@@ -24,6 +24,8 @@ import zentroverseLogo from "@/assets/zentroverse-logo.png";
 import { MAIN_SIDEBAR, type AppModuleId } from "@/domain/app-nav";
 import { POSITIONING } from "@/domain/platform";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
+import { useStageGates } from "@/hooks/use-stage-gates";
+import { toast } from "sonner";
 
 const MODULE_ICONS: Record<AppModuleId, LucideIcon> = {
   dashboard: LayoutDashboard,
@@ -66,6 +68,7 @@ const DashboardSidebar = ({
   onMobileClose,
 }: Props) => {
   const { logout } = useDashboardActions();
+  const { moduleAccess } = useStageGates();
   const expanded = isMobile || !collapsed;
   const width = isMobile ? 280 : collapsed ? 72 : 260;
 
@@ -138,17 +141,24 @@ const DashboardSidebar = ({
             {MAIN_SIDEBAR.map((item) => {
               const Icon = MODULE_ICONS[item.id];
               const active = activeModule === item.id;
+              const access = moduleAccess[item.id];
+              const locked = !access.allowed;
               return (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => {
+                    if (locked) {
+                      toast.error("Module locked", { description: access.reason });
+                      return;
+                    }
                     onModuleChange(item.id);
                     if (isMobile) onMobileClose();
                   }}
-                  title={!expanded ? item.label : undefined}
+                  title={locked ? access.reason : !expanded ? item.label : undefined}
+                  disabled={locked}
                   className={`flex w-full min-h-11 touch-manipulation items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${
-                    active ? navActive : navIdle
+                    locked ? "cursor-not-allowed opacity-45" : active ? navActive : navIdle
                   }`}
                 >
                   <Icon size={20} className="shrink-0" strokeWidth={active ? 2.25 : 2} />

@@ -1,10 +1,22 @@
 import ModuleShell, { Btn, Section, ActionBar } from "@/components/shared/ModuleShell";
+import EmptyState from "@/components/shared/EmptyState";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
 import { useOpportunityLeads } from "@/store/selectors";
 
 const ActionEngineModule = () => {
   const leads = useOpportunityLeads();
   const sample = leads[0];
+
+  if (leads.length === 0) {
+    return (
+      <ModuleShell moduleId="action-engine">
+        <EmptyState
+          title="No opportunities yet"
+          description="Import leads from Excel first. The action engine assigns one owner, one stage, and one current action per opportunity."
+        />
+      </ModuleShell>
+    );
+  }
 
   return (
   <ModuleShell moduleId="action-engine">

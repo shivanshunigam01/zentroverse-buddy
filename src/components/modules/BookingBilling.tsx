@@ -4,7 +4,7 @@ import { C2_MICRO_STAGES } from "@/domain/platform";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 
 const BOOKING_ACTIONS = [
-  "Create Booking", "Allocate Vehicle", "Lock Variant", "Upload Billing Docs",
+  "Create Booking", "Allocate Vehicle", "Lock Booking Variant", "Upload Billing Docs",
   "Update Disbursement", "Collect Down Payment", "Create Insurance", "Start Registration",
   "Update HSRP", "Complete PDI", "Move to C3",
 ];
