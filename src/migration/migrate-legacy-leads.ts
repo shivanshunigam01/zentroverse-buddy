@@ -48,7 +48,7 @@ const LEGACY_MICRO_MAP: Record<string, string> = {
   "C0.5 Autodialer": "C0.1",
   "C0.9 Next Best Action": "C0.9",
   "C1.5 Finance Discussion": "C1.5",
-  "C2.4 Billing Docs": "C2.3",
+  "C2.4 Billing Docs": "C2.4",
 };
 
 function normalizeMobile(mobile: string): string {

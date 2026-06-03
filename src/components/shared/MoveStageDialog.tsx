@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { toast } from "sonner";
 import { Btn } from "@/components/shared/ModuleShell";
 import type { Lead } from "@/domain/leads";
+import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 
 type Props = {
   open: boolean;
@@ -12,15 +13,17 @@ type Props = {
 
 const MoveStageDialog = ({ open, lead, onClose, onConfirm }: Props) => {
   const formRef = useRef<HTMLFormElement>(null);
+  const { confirmStageMove } = useDashboardActions();
 
   if (!open) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const fd = new FormData(formRef.current!);
     const newStage = String(fd.get("newStage") ?? "").trim();
     const newAction = String(fd.get("newAction") ?? "").trim();
     const owner = String(fd.get("owner") ?? "").trim();
+    const reason = String(fd.get("reason") ?? "").trim();
 
     if (!newStage || !newAction || !owner) {
       toast.error("Required fields missing", {
@@ -29,10 +32,13 @@ const MoveStageDialog = ({ open, lead, onClose, onConfirm }: Props) => {
       return;
     }
 
-    toast.success("Stage moved", {
-      description: `${lead.leadId} → ${newStage} · Owner: ${owner}`,
+    const ok = await confirmStageMove(lead.opportunityId, {
+      newStage,
+      newAction,
+      owner,
+      reason: reason || undefined,
     });
-    onConfirm();
+    if (ok) onConfirm();
   };
 
   return (
@@ -54,12 +60,12 @@ const MoveStageDialog = ({ open, lead, onClose, onConfirm }: Props) => {
           Move Stage
         </h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Stage, action, owner, next action, and SLA are required
+          Enter micro stage code e.g. C1A.5 or C1 · C1.3 Objection
         </p>
 
         <div className="mt-5 space-y-4 text-sm">
           <Row label="Current stage" value={`${lead.currentStage} · ${lead.microStage}`} />
-          <Field name="newStage" label="New stage" placeholder="e.g. C1 · C1.3 Objection Captured" required />
+          <Field name="newStage" label="New stage" placeholder="e.g. C1A.5 or C1 · C1.3 Objection" required />
           <Field name="reason" label="Reason" placeholder="Why moving stage" />
           <Row label="Current action" value={lead.currentAction} />
           <Field name="newAction" label="New action" placeholder="Required" required />

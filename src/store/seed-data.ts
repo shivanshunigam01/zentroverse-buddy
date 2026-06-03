@@ -158,7 +158,7 @@ export const SEED_OPPORTUNITIES: OpportunityMaster[] = [
     opportunity_type: "Existing Customer",
     current_stage: "C2",
     lifecycle_stage: null,
-    current_micro_stage: "C2.3",
+    current_micro_stage: "C2.4",
     current_owner: "Billing Executive",
     current_action: "Collect billing documents",
     next_action: "Update disbursement status",

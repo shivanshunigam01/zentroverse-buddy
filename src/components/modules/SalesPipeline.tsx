@@ -3,10 +3,19 @@ import ModuleShell, { Btn, Section, StagePills, ActionBar } from "@/components/s
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { C1_MICRO_STAGES, C1_OBJECTION_CATEGORIES } from "@/domain/platform";
 
+const SALES_ACTIONS = [
+  "Create Quote", "Send Quote", "Capture Objection", "Schedule Demo",
+  "Check Affordability", "Start Finance", "Escalate Manager", "Move to Nurture", "Move to C1A",
+];
+
 const SalesPipeline = () => {
-  const { runAction } = useDashboardActions();
+  const { performAction, selectedLeadId } = useDashboardActions();
   const [active, setActive] = useState(0);
   const stage = C1_MICRO_STAGES[active];
+
+  const run = (label: string) => {
+    void performAction(label, { macroId: "c1", stageIndex: active, opportunityId: selectedLeadId });
+  };
 
   return (
     <ModuleShell moduleId="sales-pipeline">
@@ -29,7 +38,7 @@ const SalesPipeline = () => {
               <button
                 key={o}
                 type="button"
-                onClick={() => runAction("Objection captured", { description: o })}
+                onClick={() => run("Capture Objection")}
                 className="chip-filter"
               >
                 {o}
@@ -41,8 +50,8 @@ const SalesPipeline = () => {
 
       <Section title="Actions">
         <ActionBar>
-          {["Create Quote", "Send Quote", "Capture Objection", "Schedule Demo", "Check Affordability", "Start Finance", "Escalate Manager", "Move to Nurture", "Move to C1A"].map((a) => (
-            <Btn key={a} variant={a.includes("Move") ? "primary" : "outline"}>{a}</Btn>
+          {SALES_ACTIONS.map((a) => (
+            <Btn key={a} variant={a.includes("Move") ? "primary" : "outline"} onClick={() => run(a)}>{a}</Btn>
           ))}
         </ActionBar>
       </Section>

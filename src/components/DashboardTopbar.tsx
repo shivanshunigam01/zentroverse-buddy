@@ -3,6 +3,8 @@ import { toast } from "sonner";
 import { Search, Bell, Menu } from "lucide-react";
 import type { AppModuleId } from "@/domain/app-nav";
 import { MODULE_TITLES } from "@/domain/app-nav";
+import { useDashboardActions } from "@/hooks/use-dashboard-actions";
+import { useOpportunityLeads } from "@/store/selectors";
 
 interface Props {
   activeModule: AppModuleId;
@@ -13,6 +15,43 @@ interface Props {
 const DashboardTopbar = ({ activeModule, onMenuClick, showMenu }: Props) => {
   const meta = MODULE_TITLES[activeModule];
   const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const { navigate, viewLead } = useDashboardActions();
+  const leads = useOpportunityLeads();
+
+  const handleSearch = (q: string) => {
+    const term = q.trim().toLowerCase();
+    if (!term) return;
+    const match = leads.find(
+      (l) =>
+        l.customerName.toLowerCase().includes(term) ||
+        l.leadId.toLowerCase().includes(term) ||
+        l.mobile.includes(term),
+    );
+    if (match) {
+      viewLead(match.leadId);
+    } else {
+      toast.info("No match", { description: `No opportunity found for "${q}"` });
+      navigate("lead-inbox");
+    }
+  };
+
+  const searchInput = (className: string, autoFocus?: boolean) => (
+    <div className="relative">
+      <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+      <input
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") handleSearch(query);
+        }}
+        placeholder="Search leads…"
+        className={className}
+        autoFocus={autoFocus}
+      />
+    </div>
+  );
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/80 bg-card/90 backdrop-blur-lg">
@@ -43,10 +82,7 @@ const DashboardTopbar = ({ activeModule, onMenuClick, showMenu }: Props) => {
             <Search size={20} className="text-muted-foreground" />
           </button>
 
-          <div className="relative hidden sm:block">
-            <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="search" placeholder="Search leads…" className="input-app w-44 py-2 pl-9 text-sm lg:w-56 xl:w-64" />
-          </div>
+          {searchInput("input-app w-44 py-2 pl-9 text-sm lg:w-56 xl:w-64")}
 
           <button
             type="button"
@@ -75,10 +111,7 @@ const DashboardTopbar = ({ activeModule, onMenuClick, showMenu }: Props) => {
 
       {searchOpen && (
         <div className="border-t border-border/60 px-4 pb-3 pt-2 sm:hidden">
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="search" placeholder="Search leads…" className="input-app w-full py-2.5 pl-9 text-sm" autoFocus />
-          </div>
+          {searchInput("input-app w-full py-2.5 pl-9 text-sm", true)}
         </div>
       )}
     </header>

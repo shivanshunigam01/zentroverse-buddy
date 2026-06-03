@@ -5,6 +5,7 @@ import { SCORING_RULES } from "@/domain/platform";
 import { getLeadsSnapshot, type Lead } from "@/domain/leads";
 import { useLeadById } from "@/store/selectors";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
+import { useOpportunityActions } from "@/hooks/use-opportunity-actions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Props = { leadId?: string };
@@ -36,6 +37,7 @@ const LeadDetail = ({ leadId }: Props) => {
   const lead = resolved ?? getLeadsSnapshot()[0];
   const [tab, setTab] = useState<string>("Overview");
   const { callLead, openWhatsApp } = useDashboardActions();
+  const { run } = useOpportunityActions(lead.opportunityId);
 
   return (
     <ModuleShell moduleId="lead-detail">
@@ -91,37 +93,37 @@ const LeadDetail = ({ leadId }: Props) => {
         </div>
 
         <TabsContent value="Overview" className="mt-4 space-y-4">
-          <OverviewTab lead={lead} />
+          <OverviewTab lead={lead} run={run} />
         </TabsContent>
         <TabsContent value="Activity Timeline" className="mt-4">
           <TimelineTab />
         </TabsContent>
         <TabsContent value="Contact Health" className="mt-4">
-          <ContactHealthTab />
+          <ContactHealthTab run={run} />
         </TabsContent>
         <TabsContent value="Engagement" className="mt-4">
-          <EngagementTab />
+          <EngagementTab run={run} />
         </TabsContent>
         <TabsContent value="Qualification" className="mt-4">
-          <QualificationTab />
+          <QualificationTab run={run} />
         </TabsContent>
         <TabsContent value="Quote" className="mt-4">
-          <QuoteTab />
+          <QuoteTab run={run} />
         </TabsContent>
         <TabsContent value="Finance" className="mt-4">
-          <FinanceTab />
+          <FinanceTab run={run} />
         </TabsContent>
         <TabsContent value="Booking" className="mt-4">
-          <BookingTab />
+          <BookingTab run={run} />
         </TabsContent>
         <TabsContent value="Delivery" className="mt-4">
-          <DeliveryTab />
+          <DeliveryTab run={run} />
         </TabsContent>
         <TabsContent value="Lifecycle" className="mt-4">
-          <LifecycleTab />
+          <LifecycleTab run={run} />
         </TabsContent>
         <TabsContent value="Documents" className="mt-4">
-          <Section title="Documents"><Btn>Upload Document</Btn></Section>
+          <Section title="Documents"><Btn onClick={() => run("Upload Document")}>Upload Document</Btn></Section>
         </TabsContent>
         <TabsContent value="Notes" className="mt-4">
           <Section title="Notes"><textarea className="input-app min-h-[120px] w-full" placeholder="Add note..." /></Section>
@@ -131,7 +133,7 @@ const LeadDetail = ({ leadId }: Props) => {
   );
 };
 
-const OverviewTab = ({ lead }: { lead: Lead }) => (
+const OverviewTab = ({ lead, run }: { lead: Lead; run: (label: string) => void }) => (
   <>
     <Section title="C0.8 · Lead scoring">
       <div className="grid gap-2 sm:grid-cols-2">
@@ -148,21 +150,21 @@ const OverviewTab = ({ lead }: { lead: Lead }) => (
       <p className="text-sm"><strong>Suggested:</strong> {lead.nextAction}</p>
       <p className="text-sm text-muted-foreground">Owner: {lead.currentOwner} · SLA: {lead.slaTime} · Escalation: {lead.escalationOwner}</p>
       <ActionBar>
-        <Btn>Accept Action</Btn>
-        <Btn variant="outline">Change Action</Btn>
-        <Btn variant="outline">Assign Owner</Btn>
+        <Btn onClick={() => run("Accept Action")}>Accept Action</Btn>
+        <Btn variant="outline" onClick={() => run("Change Action")}>Change Action</Btn>
+        <Btn variant="outline" onClick={() => run("Assign Owner")}>Assign Owner</Btn>
       </ActionBar>
     </Section>
     <Section title="C0.10 · Quote readiness checklist">
       <Checklist items={["Variant Known", "Budget Discussed", "Finance Need Known", "Decision Maker Known", "Timeline Known", "Competition Known"]} />
       <div className="mt-4">
-        <Btn>Move to C1</Btn>
+        <Btn onClick={() => run("Move to C1")}>Move to C1</Btn>
       </div>
     </Section>
   </>
 );
 
-const ContactHealthTab = () => (
+const ContactHealthTab = ({ run }: { run: (label: string) => void }) => (
   <div className="space-y-4">
     <Section title="C0.3 · Contact health">
       <StatusGrid items={[
@@ -170,98 +172,134 @@ const ContactHealthTab = () => (
         ["Email Valid", "—"], ["Territory Valid", "Yes"], ["Contactability Score", "82"],
       ]} />
       <ActionBar>
-        <Btn>Verify Number</Btn>
-        <Btn variant="outline">Check WhatsApp</Btn>
-        <Btn variant="outline">Send Test Message</Btn>
-        <Btn variant="secondary">Move to Bot</Btn>
-        <Btn variant="secondary">Move to Dialer</Btn>
-        <Btn variant="danger">Mark Invalid</Btn>
+        <Btn onClick={() => run("Verify Number")}>Verify Number</Btn>
+        <Btn variant="outline" onClick={() => run("Check WhatsApp")}>Check WhatsApp</Btn>
+        <Btn variant="outline" onClick={() => run("Send Test Message")}>Send Test Message</Btn>
+        <Btn variant="secondary" onClick={() => run("Move to Bot")}>Move to Bot</Btn>
+        <Btn variant="secondary" onClick={() => run("Move to Dialer")}>Move to Dialer</Btn>
+        <Btn variant="danger" onClick={() => run("Mark Invalid")}>Mark Invalid</Btn>
       </ActionBar>
     </Section>
     <Section title="C0.2 · Duplicate check">
       <StatusGrid items={[["Existing Customer?", "No"], ["Same Mobile?", "Yes"], ["Same Product?", "No"], ["Different Product?", "Cross-sell"], ["Old Lead?", "—"]]} />
       <ActionBar>
-        <Btn variant="secondary">Merge Lead</Btn>
-        <Btn variant="secondary">New Opportunity</Btn>
-        <Btn variant="secondary">Reopen Old Lead</Btn>
-        <Btn variant="outline">Alert Manager</Btn>
+        <Btn variant="secondary" onClick={() => run("Merge Lead")}>Merge Lead</Btn>
+        <Btn variant="secondary" onClick={() => run("New Opportunity")}>New Opportunity</Btn>
+        <Btn variant="secondary" onClick={() => run("Reopen Old Lead")}>Reopen Old Lead</Btn>
+        <Btn variant="outline" onClick={() => run("Alert Manager")}>Alert Manager</Btn>
       </ActionBar>
     </Section>
   </div>
 );
 
-const EngagementTab = () => (
+const EngagementTab = ({ run }: { run: (label: string) => void }) => (
   <Section title="C0.4 · Bot engagement">
     <StatusGrid items={[["Welcome Sent", "Yes"], ["Product Asked", "Yes"], ["Location Asked", "Pending"], ["Timeline Asked", "—"], ["Finance Asked", "—"], ["Callback Asked", "—"]]} />
     <div className="mt-4 flex flex-wrap gap-2">
-      <Btn>Send Bot Message</Btn><Btn variant="outline">Resend Message</Btn><Btn variant="outline">View Reply</Btn><Btn variant="secondary">Transfer to Executive</Btn>
+      <Btn onClick={() => run("Send Bot Message")}>Send Bot Message</Btn>
+      <Btn variant="outline" onClick={() => run("Resend Message")}>Resend Message</Btn>
+      <Btn variant="outline" onClick={() => run("View Reply")}>View Reply</Btn>
+      <Btn variant="secondary" onClick={() => run("Transfer to Executive")}>Transfer to Executive</Btn>
     </div>
   </Section>
 );
 
-const QualificationTab = () => (
+const QualificationTab = ({ run }: { run: (label: string) => void }) => (
   <>
     <Section title="C0.6 · Discovery">
       <FormGrid fields={["Usage", "Route", "Load", "Current Vehicle", "Pain Point", "Budget", "Timeline", "Buyer Type", "Finance Need"]} />
-      <Btn className="mt-3">Save Discovery</Btn>
+      <Btn className="mt-3" onClick={() => run("Save Discovery")}>Save Discovery</Btn>
     </Section>
     <Section title="C0.7 · Qualification">
       <FormGrid fields={["Vehicle Type", "Variant", "Budget", "Finance", "Exchange", "Decision Maker", "Competition", "Timeline"]} />
-      <Btn className="mt-3">Mark Qualified</Btn>
+      <Btn className="mt-3" onClick={() => run("Mark Qualified")}>Mark Qualified</Btn>
     </Section>
   </>
 );
 
-const QuoteTab = () => (
+const QuoteTab = ({ run }: { run: (label: string) => void }) => (
   <Section title="C1 · Sales pipeline actions">
     <p className="mb-3 text-xs text-muted-foreground">C1.1 Quote Shared through C1.10 Finance Ready</p>
     <div className="flex flex-wrap gap-2">
       {["Create Quote", "Send Quote", "Capture Objection", "Add Competitor Offer", "Schedule Demo", "Check Affordability", "Start Finance", "Escalate Manager", "Move to Nurture", "Move to C1A"].map((a) => (
-        <Btn key={a} variant={a.includes("Move") ? "primary" : "outline"}>{a}</Btn>
+        <Btn key={a} variant={a.includes("Move") ? "primary" : "outline"} onClick={() => run(a)}>{a}</Btn>
       ))}
     </div>
   </Section>
 );
 
-const FinanceTab = () => (
+const FinanceTab = ({ run }: { run: (label: string) => void }) => (
   <Section title="C1A · Finance desk">
-    <StageList stages={["Application Submitted", "Docs Collected", "FI Assigned", "Verification Done", "Decision", "Approval Received", "Margin Confirmed", "Variant Locked", "Add-ons Finalized", "Booking Intent Confirmed"]} />
+    <StageList stages={[
+      "Application Submitted",
+      "Documents Collected",
+      "FI Assigned",
+      "Verification Done",
+      "Decision Pending / Approved / Rejected",
+      "Approval Received",
+      "Margin Confirmed",
+      "Variant Locked",
+      "Add-ons Finalized",
+      "Payment / Booking Intent Confirmed",
+    ]} />
     <div className="mt-4 flex flex-wrap gap-2">
       {["Upload Docs", "Verify Docs", "Assign FI", "Update FI Result", "Mark Approved", "Mark Rejected", "Alternate Finance", "Confirm Margin", "Move to C2"].map((b) => (
-        <Btn key={b} variant="outline">{b}</Btn>
+        <Btn key={b} variant="outline" onClick={() => run(b)}>{b}</Btn>
       ))}
     </div>
   </Section>
 );
 
-const BookingTab = () => (
+const BookingTab = ({ run }: { run: (label: string) => void }) => (
   <Section title="C2 · Booking & billing">
-    <StageList stages={["Booking Done", "Vehicle Allocation", "Variant Lock", "Billing Docs", "Disbursement", "Down Payment", "Insurance", "Registration", "HSRP", "PDI"]} />
+    <StageList stages={[
+      "Booking Done",
+      "Vehicle Allocation",
+      "Variant Lock",
+      "Billing Documents",
+      "Disbursement",
+      "Down Payment",
+      "Insurance",
+      "Registration",
+      "HSRP",
+      "PDI",
+    ]} />
     <div className="mt-4 flex flex-wrap gap-2">
       {["Create Booking", "Allocate Vehicle", "Lock Variant", "Upload Billing Docs", "Update Disbursement", "Collect Down Payment", "Create Insurance", "Start Registration", "Update HSRP", "Complete PDI", "Move to C3"].map((b) => (
-        <Btn key={b} variant="outline">{b}</Btn>
+        <Btn key={b} variant="outline" onClick={() => run(b)}>{b}</Btn>
       ))}
     </div>
   </Section>
 );
 
-const DeliveryTab = () => (
+const DeliveryTab = ({ run }: { run: (label: string) => void }) => (
   <Section title="C3 · Delivery desk">
-    <Checklist items={["Final Payment", "Insurance Active", "Registration Complete", "PDI Complete", "Vehicle Ready", "Delivery Done", "Feedback Taken", "Testimonial Captured", "Referral Asked", "Lifecycle Activated"]} />
+    <Checklist items={[
+      "Final Payment",
+      "Insurance Active",
+      "Registration Complete",
+      "PDI Complete",
+      "Vehicle Ready",
+      "Delivery Done",
+      "Feedback Taken",
+      "Photo / Video Testimonial",
+      "Referral Asked",
+      "Lifecycle Activated",
+    ]} />
     <div className="mt-4 flex flex-wrap gap-2">
       {["Confirm Payment", "Verify Insurance", "Verify Registration", "Approve PDI", "Mark Vehicle Ready", "Complete Delivery", "Send Feedback Link", "Capture Testimonial", "Ask Referral", "Activate Lifecycle"].map((b) => (
-        <Btn key={b} variant="outline">{b}</Btn>
+        <Btn key={b} variant="outline" onClick={() => run(b)}>{b}</Btn>
       ))}
     </div>
   </Section>
 );
 
-const LifecycleTab = () => (
+const LifecycleTab = ({ run }: { run: (label: string) => void }) => (
   <Section title="Lifecycle timeline">
     {["Day 1 Thank You", "Day 3 Feedback", "Day 7 Usage Tips", "Day 30 Service Reminder", "1 Year Renewal", "3 Years Upgrade", "5 Years Exchange"].map((t) => (
       <div key={t} className="flex items-center justify-between border-b border-border/50 py-2 text-sm">
         <span>{t}</span>
-        <Btn variant="outline">Send Message</Btn>
+        <Btn variant="outline" onClick={() => run("Send Message")}>Send Message</Btn>
       </div>
     ))}
   </Section>

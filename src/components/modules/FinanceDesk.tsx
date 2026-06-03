@@ -1,10 +1,21 @@
 import { useState } from "react";
 import ModuleShell, { Btn, Section, StagePills, ActionBar } from "@/components/shared/ModuleShell";
 import { C1A_MICRO_STAGES } from "@/domain/platform";
+import { useDashboardActions } from "@/hooks/use-dashboard-actions";
+
+const FINANCE_ACTIONS = [
+  "Upload Docs", "Verify Docs", "Assign FI", "Update FI Result",
+  "Mark Approved", "Mark Rejected", "Move Alternate Finance", "Confirm Margin", "Move to C2",
+];
 
 const FinanceDesk = () => {
   const [active, setActive] = useState(0);
+  const { performAction, selectedLeadId } = useDashboardActions();
   const stage = C1A_MICRO_STAGES[active];
+
+  const run = (label: string) => {
+    void performAction(label, { macroId: "c1a", stageIndex: active, opportunityId: selectedLeadId });
+  };
 
   return (
     <ModuleShell moduleId="finance-desk">
@@ -15,8 +26,8 @@ const FinanceDesk = () => {
       </Section>
       <Section title="Finance desk actions">
         <ActionBar>
-          {["Upload Docs", "Verify Docs", "Assign FI", "Update FI Result", "Mark Approved", "Mark Rejected", "Move Alternate Finance", "Confirm Margin", "Move to C2"].map((b) => (
-            <Btn key={b} variant="outline">{b}</Btn>
+          {FINANCE_ACTIONS.map((b) => (
+            <Btn key={b} variant="outline" onClick={() => run(b)}>{b}</Btn>
           ))}
         </ActionBar>
       </Section>

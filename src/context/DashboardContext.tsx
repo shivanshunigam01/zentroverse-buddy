@@ -2,12 +2,23 @@ import { createContext, useCallback, useContext, useMemo, type ReactNode } from 
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import type { AppModuleId } from "@/domain/app-nav";
+import {
+  performOpportunityAction,
+  confirmManualStageMove,
+  type PerformActionOptions,
+} from "@/services/opportunity-action.service";
 
 export type DashboardActions = {
+  selectedLeadId?: string;
   navigate: (module: AppModuleId) => void;
   viewLead: (leadId: string) => void;
-  /** Simulated action — toast + optional navigation (backend will replace this) */
   runAction: (title: string, options?: { description?: string; navigateTo?: AppModuleId }) => void;
+  /** Full workflow action — updates opportunity, engines, stage */
+  performAction: (label: string, options?: PerformActionOptions) => Promise<void>;
+  confirmStageMove: (
+    opportunityId: string,
+    form: { newStage: string; newAction: string; owner: string; reason?: string },
+  ) => Promise<boolean>;
   callLead: (mobile: string, customerName?: string) => void;
   openWhatsApp: (leadId?: string) => void;
   moveToStage: (stage: "C0" | "C1" | "C1A" | "C2" | "C3" | "lifecycle") => void;
@@ -28,6 +39,7 @@ const STAGE_MODULE: Record<string, AppModuleId> = {
 type ProviderProps = {
   children: ReactNode;
   activeModule: AppModuleId;
+  selectedLeadId?: string;
   setActiveModule: (m: AppModuleId) => void;
   setSelectedLeadId: (id: string | undefined) => void;
   onMobileNavClose?: () => void;
@@ -35,6 +47,7 @@ type ProviderProps = {
 
 export function DashboardProvider({
   children,
+  selectedLeadId,
   setActiveModule,
   setSelectedLeadId,
   onMobileNavClose,
@@ -69,6 +82,22 @@ export function DashboardProvider({
     [navigate],
   );
 
+  const performAction = useCallback(
+    (label: string, options?: PerformActionOptions) =>
+      performOpportunityAction(
+        label,
+        { opportunityId: options?.opportunityId ?? selectedLeadId, ...options },
+        navigate,
+      ),
+    [navigate, selectedLeadId],
+  );
+
+  const confirmStageMove = useCallback(
+    (opportunityId: string, form: { newStage: string; newAction: string; owner: string; reason?: string }) =>
+      confirmManualStageMove(opportunityId, form, navigate),
+    [navigate],
+  );
+
   const callLead = useCallback((mobile: string, customerName?: string) => {
     const tel = mobile.replace(/\s/g, "");
     window.open(`tel:${tel}`, "_self");
@@ -77,21 +106,28 @@ export function DashboardProvider({
 
   const openWhatsApp = useCallback(
     (leadId?: string) => {
-      navigate("whatsapp-bot");
-      toast.success("WhatsApp Bot", {
-        description: leadId ? `Journey for ${leadId}` : "Bot engagement module",
-      });
+      void performOpportunityAction(
+        "Send Bot Message",
+        { opportunityId: leadId ?? selectedLeadId },
+        navigate,
+      );
     },
-    [navigate],
+    [navigate, selectedLeadId],
   );
 
   const moveToStage = useCallback(
     (stage: keyof typeof STAGE_MODULE) => {
-      const mod = STAGE_MODULE[stage];
-      if (mod) navigate(mod);
-      toast.success(`Moved to ${stage}`, { description: "Stage transition recorded (demo)" });
+      const labels: Record<string, string> = {
+        C0: "Move to C0",
+        C1: "Move to C1",
+        C1A: "Move to C1A",
+        C2: "Move to C2",
+        C3: "Move to C3",
+        lifecycle: "Activate Lifecycle",
+      };
+      void performOpportunityAction(labels[stage] ?? stage, { opportunityId: selectedLeadId }, navigate);
     },
-    [navigate],
+    [navigate, selectedLeadId],
   );
 
   const logout = useCallback(() => {
@@ -100,8 +136,19 @@ export function DashboardProvider({
   }, [routerNavigate]);
 
   const value = useMemo(
-    () => ({ navigate, viewLead, runAction, callLead, openWhatsApp, moveToStage, logout }),
-    [navigate, viewLead, runAction, callLead, openWhatsApp, moveToStage, logout],
+    () => ({
+      selectedLeadId,
+      navigate,
+      viewLead,
+      runAction,
+      performAction,
+      confirmStageMove,
+      callLead,
+      openWhatsApp,
+      moveToStage,
+      logout,
+    }),
+    [selectedLeadId, navigate, viewLead, runAction, performAction, confirmStageMove, callLead, openWhatsApp, moveToStage, logout],
   );
 
   return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>;

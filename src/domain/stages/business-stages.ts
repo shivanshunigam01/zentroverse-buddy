@@ -7,9 +7,9 @@ export const SALES_STAGES: ReadonlyArray<{
 }> = [
   { code: "C0", name: "Lead Maturity", purpose: "Contact through quote readiness" },
   { code: "C1", name: "Sales Discussion", purpose: "Quote, objection, negotiation, finance discussion" },
-  { code: "C1A", name: "Finance Approval", purpose: "Application through booking intent" },
-  { code: "C2", name: "Booking to Billing", purpose: "Booking through PDI" },
-  { code: "C3", name: "Retail / Delivery", purpose: "Payment through lifecycle activation" },
+  { code: "C1A", name: "Finance Approval & Intent", purpose: "Convert sales discussion into commercial readiness" },
+  { code: "C2", name: "Booking to Billing", purpose: "Complete booking and delivery preparation" },
+  { code: "C3", name: "Retail / Delivery", purpose: "Complete sale and activate lifecycle" },
 ] as const;
 
 export const LIFECYCLE_STAGES: ReadonlyArray<{
@@ -53,34 +53,42 @@ export const C1_MICRO_STAGES: BusinessMicroStage[] = [
 ];
 
 export const C1A_MICRO_STAGES: BusinessMicroStage[] = [
-  { code: "C1A.1", macro: "C1A", title: "Application", trigger: "Customer agrees finance", systemAction: "Create finance application", owner: "Finance Executive", sla: "Same day", exitCondition: "Application submitted" },
-  { code: "C1A.2", macro: "C1A", title: "Documents", trigger: "Application created", systemAction: "Collect and verify KYC/income docs", owner: "Finance Executive", sla: "24 hrs", exitCondition: "Docs complete" },
-  { code: "C1A.3", macro: "C1A", title: "FI", trigger: "Docs verified", systemAction: "Assign field investigation", owner: "Finance Executive", sla: "24 hrs", exitCondition: "FI assigned" },
-  { code: "C1A.4", macro: "C1A", title: "Verification", trigger: "FI completed", systemAction: "Update verification outcome", owner: "Finance Executive", sla: "24 hrs", exitCondition: "Verification done" },
-  { code: "C1A.5", macro: "C1A", title: "Approval", trigger: "Lender decision", systemAction: "Record approved / rejected / pending", owner: "Finance Executive", sla: "48 hrs", exitCondition: "Decision recorded" },
-  { code: "C1A.6", macro: "C1A", title: "Margin", trigger: "Loan approved", systemAction: "Confirm down payment / margin", owner: "Finance Executive", sla: "Same day", exitCondition: "Margin confirmed" },
-  { code: "C1A.7", macro: "C1A", title: "Variant Lock", trigger: "Margin confirmed", systemAction: "Lock product, variant, color", owner: "Sales Manager", sla: "Same day", exitCondition: "Variant locked" },
-  { code: "C1A.8", macro: "C1A", title: "Addons", trigger: "Variant locked", systemAction: "Finalize accessories, body, insurance", owner: "Sales Executive", sla: "Same day", exitCondition: "Deal value final" },
-  { code: "C1A.9", macro: "C1A", title: "Intent", trigger: "Deal final", systemAction: "Confirm booking intent", owner: "Sales Executive", sla: "Same day", exitCondition: "Move to C2" },
+  { code: "C1A.1", macro: "C1A", title: "Application Submitted", trigger: "Customer agrees finance", systemAction: "Create finance case and submit application", owner: "Finance Executive", sla: "Same day", exitCondition: "Application ID created" },
+  { code: "C1A.2", macro: "C1A", title: "Documents Collected", trigger: "Application submitted", systemAction: "Collect and verify PAN, Aadhaar, bank, income docs", owner: "Finance Executive", sla: "24 hrs", exitCondition: "Docs complete" },
+  { code: "C1A.3", macro: "C1A", title: "FI Assigned", trigger: "Docs verified", systemAction: "Assign field investigation", owner: "Finance Executive", sla: "24 hrs", exitCondition: "FI assigned" },
+  { code: "C1A.4", macro: "C1A", title: "Verification Done", trigger: "FI completed", systemAction: "Update verification result", owner: "Finance Executive", sla: "24 hrs", exitCondition: "Verification done" },
+  { code: "C1A.5", macro: "C1A", title: "Decision Pending / Approved / Rejected", trigger: "Lender decision", systemAction: "Record pending, approved, or rejected status", owner: "Finance Executive", sla: "48 hrs", exitCondition: "Decision recorded" },
+  { code: "C1A.6", macro: "C1A", title: "Approval Received", trigger: "Loan approved", systemAction: "Share sanction letter and loan terms", owner: "Finance Executive", sla: "Same day", exitCondition: "Approval confirmed" },
+  { code: "C1A.7", macro: "C1A", title: "Margin Confirmed", trigger: "Approval received", systemAction: "Confirm down payment and margin commitment", owner: "Finance Executive", sla: "Same day", exitCondition: "Margin confirmed" },
+  { code: "C1A.8", macro: "C1A", title: "Variant Locked", trigger: "Margin confirmed", systemAction: "Lock product, variant, and color", owner: "Sales Manager", sla: "Same day", exitCondition: "Variant locked" },
+  { code: "C1A.9", macro: "C1A", title: "Add-ons Finalized", trigger: "Variant locked", systemAction: "Finalize body, insurance, and accessories", owner: "Sales Executive", sla: "Same day", exitCondition: "Final deal value ready" },
+  { code: "C1A.10", macro: "C1A", title: "Payment / Booking Intent Confirmed", trigger: "Deal final", systemAction: "Confirm booking intent and trigger C2 workflow", owner: "Sales Executive", sla: "Same day", exitCondition: "Move to C2" },
 ];
 
 export const C2_MICRO_STAGES: BusinessMicroStage[] = [
-  { code: "C2.1", macro: "C2", title: "Booking", trigger: "Booking amount received", systemAction: "Generate booking receipt", owner: "Accounts Executive", sla: "Same day", exitCondition: "Booking confirmed" },
-  { code: "C2.2", macro: "C2", title: "Allocation", trigger: "Booking done", systemAction: "Allocate vehicle from stock", owner: "Stock Coordinator", sla: "Same day", exitCondition: "Vehicle allotted" },
-  { code: "C2.3", macro: "C2", title: "Billing", trigger: "Allocation confirmed", systemAction: "Collect billing documents", owner: "Billing Executive", sla: "24 hrs", exitCondition: "Billing docs complete" },
-  { code: "C2.4", macro: "C2", title: "Insurance", trigger: "Billing ready", systemAction: "Issue insurance policy", owner: "Insurance Coordinator", sla: "Same day", exitCondition: "Insurance active" },
-  { code: "C2.5", macro: "C2", title: "Registration", trigger: "Insurance done", systemAction: "Submit RTO registration", owner: "RTO Coordinator", sla: "Per RTO", exitCondition: "Registration submitted" },
-  { code: "C2.6", macro: "C2", title: "HSRP", trigger: "Registration done", systemAction: "Track HSRP plate status", owner: "Delivery Coordinator", sla: "Per RTO", exitCondition: "HSRP ready" },
-  { code: "C2.7", macro: "C2", title: "PDI", trigger: "Vehicle ready", systemAction: "Complete pre-delivery inspection", owner: "PDI Inspector", sla: "Before delivery", exitCondition: "Move to C3" },
+  { code: "C2.1", macro: "C2", title: "Booking Done", trigger: "Booking amount received", systemAction: "Generate booking receipt and confirm booking", owner: "Accounts Executive", sla: "Same day", exitCondition: "Booking confirmed" },
+  { code: "C2.2", macro: "C2", title: "Vehicle Allocation", trigger: "Booking done", systemAction: "Allocate vehicle from stock", owner: "Stock Coordinator", sla: "Same day", exitCondition: "Vehicle allotted" },
+  { code: "C2.3", macro: "C2", title: "Variant Lock", trigger: "Allocation confirmed", systemAction: "Freeze variant, color, and model", owner: "Sales Manager", sla: "Same day", exitCondition: "No change without approval" },
+  { code: "C2.4", macro: "C2", title: "Billing Documents", trigger: "Variant locked", systemAction: "Send billing doc checklist and collect documents", owner: "Billing Executive", sla: "24 hrs", exitCondition: "Billing docs complete" },
+  { code: "C2.5", macro: "C2", title: "Disbursement", trigger: "Finance approved", systemAction: "Track lender disbursement status", owner: "Finance Executive", sla: "24–48 hrs", exitCondition: "Disbursement received" },
+  { code: "C2.6", macro: "C2", title: "Down Payment", trigger: "Margin pending", systemAction: "Collect down payment and issue receipt", owner: "Accounts Executive", sla: "Same day", exitCondition: "Down payment received" },
+  { code: "C2.7", macro: "C2", title: "Insurance", trigger: "Billing ready", systemAction: "Generate insurance quote and activate policy", owner: "Insurance Coordinator", sla: "Same day", exitCondition: "Insurance active" },
+  { code: "C2.8", macro: "C2", title: "Registration", trigger: "Insurance done", systemAction: "Submit RTO registration", owner: "RTO Coordinator", sla: "Per RTO", exitCondition: "Registration submitted" },
+  { code: "C2.9", macro: "C2", title: "HSRP", trigger: "Registration done", systemAction: "Track HSRP plate status", owner: "Delivery Coordinator", sla: "Per RTO", exitCondition: "HSRP ready" },
+  { code: "C2.10", macro: "C2", title: "PDI", trigger: "Vehicle ready", systemAction: "Complete pre-delivery inspection checklist", owner: "PDI Inspector", sla: "Before delivery", exitCondition: "Move to C3" },
 ];
 
 export const C3_MICRO_STAGES: BusinessMicroStage[] = [
-  { code: "C3.1", macro: "C3", title: "Payment", trigger: "Delivery planned", systemAction: "Confirm final payment", owner: "Accounts Executive", sla: "Before delivery", exitCondition: "Payment complete" },
-  { code: "C3.2", macro: "C3", title: "Vehicle Ready", trigger: "PDI approved", systemAction: "Prepare vehicle for handover", owner: "Delivery Coordinator", sla: "Same day", exitCondition: "Vehicle ready" },
-  { code: "C3.3", macro: "C3", title: "Delivery", trigger: "Customer handover", systemAction: "Capture delivery proof", owner: "Delivery Coordinator", sla: "Delivery day", exitCondition: "Retail completed" },
-  { code: "C3.4", macro: "C3", title: "Feedback", trigger: "Delivery complete", systemAction: "Send CSI / feedback form", owner: "CRM Executive", sla: "Day 1–3", exitCondition: "Feedback recorded" },
-  { code: "C3.5", macro: "C3", title: "Referral", trigger: "Positive feedback", systemAction: "Request referral", owner: "CRM Executive", sla: "Day 7–45", exitCondition: "Referral captured" },
-  { code: "C3.6", macro: "C3", title: "Lifecycle Activation", trigger: "Retail done", systemAction: "Activate L1–L7 programs", owner: "System", sla: "Instant", exitCondition: "Enter L1 Service" },
+  { code: "C3.1", macro: "C3", title: "Final Payment", trigger: "Delivery planned", systemAction: "Confirm full payment before handover", owner: "Accounts Executive", sla: "Before delivery", exitCondition: "Payment complete" },
+  { code: "C3.2", macro: "C3", title: "Insurance Active", trigger: "Policy issued", systemAction: "Verify insurance policy is active", owner: "Insurance Coordinator", sla: "Before delivery", exitCondition: "Insurance valid" },
+  { code: "C3.3", macro: "C3", title: "Registration Complete", trigger: "RTO process done", systemAction: "Update RC and registration number", owner: "RTO Coordinator", sla: "Before delivery", exitCondition: "Registration complete" },
+  { code: "C3.4", macro: "C3", title: "PDI Complete", trigger: "PDI checklist submitted", systemAction: "Approve pre-delivery inspection", owner: "PDI Inspector", sla: "Before delivery", exitCondition: "PDI approved" },
+  { code: "C3.5", macro: "C3", title: "Vehicle Ready", trigger: "All checks complete", systemAction: "Clean vehicle, fuel, and accessories for handover", owner: "Delivery Coordinator", sla: "Same day", exitCondition: "Ready for delivery" },
+  { code: "C3.6", macro: "C3", title: "Delivery Done", trigger: "Customer receives vehicle", systemAction: "Capture delivery proof and handover documents", owner: "Delivery Coordinator", sla: "Delivery day", exitCondition: "Retail completed" },
+  { code: "C3.7", macro: "C3", title: "Feedback Taken", trigger: "Delivery complete", systemAction: "Send CSI / feedback form", owner: "CRM Executive", sla: "Day 1–3", exitCondition: "Feedback recorded" },
+  { code: "C3.8", macro: "C3", title: "Photo / Video Testimonial", trigger: "Happy customer", systemAction: "Capture photo or video testimonial", owner: "CRM Executive", sla: "Day 1–7", exitCondition: "Testimonial stored" },
+  { code: "C3.9", macro: "C3", title: "Referral Asked", trigger: "Positive feedback", systemAction: "Request referral from customer", owner: "CRM Executive", sla: "Day 7–45", exitCondition: "Referral captured" },
+  { code: "C3.10", macro: "C3", title: "Lifecycle Activated", trigger: "Retail done", systemAction: "Activate L1–L7 lifecycle programs", owner: "CRM Executive", sla: "Instant", exitCondition: "Enter L1 Service" },
 ];
 
 export const LIFECYCLE_MICRO_STAGES: BusinessMicroStage[] = LIFECYCLE_STAGES.map((s) => ({

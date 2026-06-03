@@ -71,6 +71,7 @@ const Dashboard = () => {
   return (
     <DashboardProvider
       activeModule={activeModule}
+      selectedLeadId={selectedLeadId}
       setActiveModule={setActiveModule}
       setSelectedLeadId={setSelectedLeadId}
       onMobileNavClose={closeMobileNav}

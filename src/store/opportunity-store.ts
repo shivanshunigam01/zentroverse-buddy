@@ -39,6 +39,7 @@ export interface ZentroFlowStore {
     newMicroStage: OpportunityMaster["current_micro_stage"],
     changedBy: string,
     reason?: string,
+    force?: boolean,
   ) => Promise<OpportunityMaster | null>;
 }
 
@@ -78,7 +79,7 @@ export const useZentroFlowStore = create<ZentroFlowStore>((set, get) => ({
 
   setOwnership: (rows) => set({ ownership: rows }),
 
-  moveStage: async (opportunityId, newMicroStage, changedBy, reason) => {
+  moveStage: async (opportunityId, newMicroStage, changedBy, reason, force) => {
     const opp = get().getOpportunity(opportunityId);
     if (!opp) return null;
     const result = await transitionStage({
@@ -86,6 +87,7 @@ export const useZentroFlowStore = create<ZentroFlowStore>((set, get) => ({
       new_micro_stage: newMicroStage,
       changed_by: changedBy,
       reason,
+      force,
     });
     get().upsertOpportunity(result.opportunity);
     get().appendStageHistory(result.history);

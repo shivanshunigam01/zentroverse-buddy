@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import ModuleShell, { Btn, Section, ActionBar } from "@/components/shared/ModuleShell";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
 import { useOpportunityLeads } from "@/store/selectors";
@@ -11,8 +12,15 @@ const CALL_RESULTS = [
 
 const Autodialer = () => {
   const leads = useOpportunityLeads();
-  const { runAction, viewLead, callLead } = useDashboardActions();
+  const { performAction, viewLead, callLead } = useDashboardActions();
   const queueLead = leads[1] ?? leads[0];
+
+  const logCallResult = (result: string) => {
+    if (queueLead) {
+      void performAction("Call Now", { opportunityId: queueLead.opportunityId });
+    }
+    toast.success("Call result logged", { description: result });
+  };
 
   return (
   <ModuleShell moduleId="autodialer">
@@ -42,7 +50,7 @@ const Autodialer = () => {
           <button
             key={r}
             type="button"
-            onClick={() => runAction("Call result logged", { description: r })}
+            onClick={() => logCallResult(r)}
             className="chip-filter text-left"
           >
             {r}
@@ -51,10 +59,10 @@ const Autodialer = () => {
       </div>
       <ActionBar>
         <Btn onClick={() => queueLead && callLead(queueLead.mobile, queueLead.customerName)}>Call Now</Btn>
-        <Btn variant="outline">Schedule Retry</Btn>
-        <Btn variant="secondary">Assign Executive</Btn>
-        <Btn variant="secondary">Move Dormant</Btn>
-        <Btn variant="danger">Mark Lost</Btn>
+        <Btn onClick={() => queueLead && performAction("Schedule Retry", { opportunityId: queueLead.opportunityId })}>Schedule Retry</Btn>
+        <Btn onClick={() => queueLead && performAction("Assign Executive", { opportunityId: queueLead.opportunityId })}>Assign Executive</Btn>
+        <Btn onClick={() => queueLead && performAction("Move Dormant", { opportunityId: queueLead.opportunityId })}>Move Dormant</Btn>
+        <Btn variant="danger" onClick={() => queueLead && performAction("Mark Lost", { opportunityId: queueLead.opportunityId })}>Mark Lost</Btn>
       </ActionBar>
     </Section>
   </ModuleShell>

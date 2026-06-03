@@ -16,13 +16,15 @@ export type C1MicroStage =
 
 export type C1AMicroStage =
   | "C1A.1" | "C1A.2" | "C1A.3" | "C1A.4" | "C1A.5"
-  | "C1A.6" | "C1A.7" | "C1A.8" | "C1A.9";
+  | "C1A.6" | "C1A.7" | "C1A.8" | "C1A.9" | "C1A.10";
 
 export type C2MicroStage =
-  | "C2.1" | "C2.2" | "C2.3" | "C2.4" | "C2.5" | "C2.6" | "C2.7";
+  | "C2.1" | "C2.2" | "C2.3" | "C2.4" | "C2.5"
+  | "C2.6" | "C2.7" | "C2.8" | "C2.9" | "C2.10";
 
 export type C3MicroStage =
-  | "C3.1" | "C3.2" | "C3.3" | "C3.4" | "C3.5" | "C3.6";
+  | "C3.1" | "C3.2" | "C3.3" | "C3.4" | "C3.5"
+  | "C3.6" | "C3.7" | "C3.8" | "C3.9" | "C3.10";
 
 export type MicroStageCode =
   | C0MicroStage

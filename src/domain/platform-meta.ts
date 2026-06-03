@@ -14,9 +14,9 @@ export const POSITIONING = {
 export const MACRO_STAGES = [
   { id: "c0", code: "C0", name: "Lead Maturity", purpose: "Contact through quote readiness", tabId: "c0" as const },
   { id: "c1", code: "C1", name: "Sales Discussion", purpose: "Quote, objection, negotiation", tabId: "c1" as const },
-  { id: "c1a", code: "C1A", name: "Finance Approval", purpose: "Application through booking intent", tabId: "c1a" as const },
-  { id: "c2", code: "C2", name: "Booking to Billing", purpose: "Booking through PDI", tabId: "c2" as const },
-  { id: "c3", code: "C3", name: "Retail / Delivery", purpose: "Payment through lifecycle activation", tabId: "c3" as const },
+  { id: "c1a", code: "C1A", name: "Finance Approval & Intent", purpose: "Convert sales discussion into commercial readiness", tabId: "c1a" as const },
+  { id: "c2", code: "C2", name: "Booking to Billing", purpose: "Complete booking and delivery preparation", tabId: "c2" as const },
+  { id: "c3", code: "C3", name: "Retail / Delivery", purpose: "Complete sale and activate lifecycle", tabId: "c3" as const },
   { id: "lifecycle", code: "L", name: "Lifecycle Revenue", purpose: "L1 Service through L7 Referral", tabId: "lifecycle" as const },
 ] as const;
 

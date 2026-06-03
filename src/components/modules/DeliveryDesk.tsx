@@ -1,9 +1,22 @@
 import { useState } from "react";
 import ModuleShell, { Btn, Section, ActionBar } from "@/components/shared/ModuleShell";
 import { C3_MICRO_STAGES } from "@/domain/platform";
+import { useDashboardActions } from "@/hooks/use-dashboard-actions";
+
+const DELIVERY_ACTIONS = [
+  "Confirm Payment", "Verify Insurance", "Verify Registration", "Approve PDI",
+  "Mark Vehicle Ready", "Complete Delivery", "Send Feedback Link", "Capture Testimonial",
+  "Ask Referral", "Activate Lifecycle",
+];
 
 const DeliveryDesk = () => {
   const [active, setActive] = useState(0);
+  const { performAction, selectedLeadId } = useDashboardActions();
+
+  const run = (label: string, index: number) => {
+    setActive(index);
+    void performAction(label, { macroId: "c3", stageIndex: index, opportunityId: selectedLeadId });
+  };
 
   return (
     <ModuleShell moduleId="delivery-desk">
@@ -13,7 +26,7 @@ const DeliveryDesk = () => {
             <li key={s.code}>
               <button
                 type="button"
-                onClick={() => setActive(i)}
+                onClick={() => run(DELIVERY_ACTIONS[i] ?? s.title, i)}
                 className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm transition-all ${
                   active === i ? "border-primary bg-primary/[0.06] ring-1 ring-primary/20" : "border-border/70 bg-card hover:border-primary/20"
                 }`}
@@ -28,8 +41,8 @@ const DeliveryDesk = () => {
       </Section>
       <Section title="Delivery desk actions">
         <ActionBar>
-          {["Confirm Payment", "Verify Insurance", "Verify Registration", "Approve PDI", "Mark Vehicle Ready", "Complete Delivery", "Send Feedback Link", "Capture Testimonial", "Ask Referral", "Activate Lifecycle"].map((b) => (
-            <Btn key={b} variant="outline">{b}</Btn>
+          {DELIVERY_ACTIONS.map((b, i) => (
+            <Btn key={b} variant="outline" onClick={() => run(b, i)}>{b}</Btn>
           ))}
         </ActionBar>
       </Section>

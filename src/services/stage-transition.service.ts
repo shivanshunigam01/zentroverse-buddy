@@ -13,6 +13,8 @@ export interface StageTransitionRequest {
   new_micro_stage: MicroStageCode;
   changed_by: string;
   reason?: string;
+  /** Skip regression validation for explicit action buttons */
+  force?: boolean;
 }
 
 export interface StageTransitionResult {
@@ -61,7 +63,9 @@ export function validateMicroStageTransition(
 }
 
 export async function transitionStage(req: StageTransitionRequest): Promise<StageTransitionResult> {
-  validateMicroStageTransition(req.opportunity.current_micro_stage, req.new_micro_stage);
+  if (!req.force) {
+    validateMicroStageTransition(req.opportunity.current_micro_stage, req.new_micro_stage);
+  }
   validateSingleOwner(req.opportunity.current_owner);
 
   const now = new Date().toISOString();

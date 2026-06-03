@@ -75,7 +75,7 @@ export const Btn = ({
   disabled?: boolean;
   type?: "button" | "submit" | "reset";
 }) => {
-  const { runAction, moveToStage } = useDashboardActions();
+  const { performAction, moveToStage } = useDashboardActions();
   const cls = {
     primary: "gradient-primary text-primary-foreground shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/25",
     secondary: "bg-secondary text-foreground hover:bg-secondary/80",
@@ -98,7 +98,7 @@ export const Btn = ({
       moveToStage(stage);
       return;
     }
-    runAction(label, { navigateTo: navigateTo ?? LABEL_NAV[label] });
+    void performAction(label, { navigateTo: navigateTo ?? LABEL_NAV[label] });
   };
 
   return (
