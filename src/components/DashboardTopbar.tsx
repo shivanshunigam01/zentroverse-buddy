@@ -1,53 +1,75 @@
-import { Search, Bell, MessageSquare } from "lucide-react";
-import type { FlowTabId } from "@/domain/flow-nav";
-import { MODULE_META } from "@/domain/flow-nav";
+import { useState } from "react";
+import { Search, Bell, Menu } from "lucide-react";
+import type { AppModuleId } from "@/domain/app-nav";
+import { MODULE_TITLES } from "@/domain/app-nav";
 
 interface Props {
-  activeTab: string;
+  activeModule: AppModuleId;
+  onMenuClick?: () => void;
+  showMenu?: boolean;
 }
 
-const DashboardTopbar = ({ activeTab }: Props) => {
-  const meta = MODULE_META[activeTab as FlowTabId] ?? MODULE_META.dashboard;
+const DashboardTopbar = ({ activeModule, onMenuClick, showMenu }: Props) => {
+  const meta = MODULE_TITLES[activeModule];
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 flex h-[4.25rem] max-w-[100vw] items-center justify-between overflow-x-hidden border-b border-border/80 bg-card/85 px-4 backdrop-blur-md sm:px-6 lg:px-8">
-      <div className="min-w-0 pr-4">
-        <h1 className="text-base lg:text-lg font-bold text-foreground font-display truncate">{meta.title}</h1>
-        <p className="text-xs text-muted-foreground truncate">{meta.subtitle}</p>
-      </div>
+    <header className="sticky top-0 z-40 border-b border-border/80 bg-card/90 backdrop-blur-lg">
+      <div className="flex min-h-[4rem] items-center gap-3 px-4 sm:min-h-[4.25rem] sm:px-6 lg:px-8">
+        {showMenu && (
+          <button
+            type="button"
+            onClick={onMenuClick}
+            className="flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-xl border border-border/80 bg-card hover:bg-secondary lg:hidden"
+            aria-label="Open menu"
+          >
+            <Menu size={20} />
+          </button>
+        )}
 
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        <div className="relative hidden sm:block">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          <input
-            type="search"
-            placeholder="Search leads, customers…"
-            className="input-app pl-9 pr-4 py-2 text-sm w-52 lg:w-64"
-          />
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate font-display text-base font-bold sm:text-lg">{meta.title}</h1>
+          <p className="hidden truncate text-xs text-muted-foreground sm:block">{meta.subtitle}</p>
         </div>
 
-        <button
-          type="button"
-          className="relative flex min-h-10 min-w-10 touch-manipulation items-center justify-center rounded-xl border border-transparent p-2 transition-all hover:border-border/80 hover:bg-secondary active:scale-95"
-          aria-label="Notifications"
-        >
-          <Bell size={20} className="text-muted-foreground" />
-          <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-destructive ring-2 ring-card" />
-        </button>
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <button
+            type="button"
+            onClick={() => setSearchOpen((v) => !v)}
+            className="flex h-10 w-10 touch-manipulation items-center justify-center rounded-xl hover:bg-secondary sm:hidden"
+            aria-label="Search"
+          >
+            <Search size={20} className="text-muted-foreground" />
+          </button>
 
-        <button
-          type="button"
-          className="relative hidden min-h-10 min-w-10 touch-manipulation items-center justify-center rounded-xl border border-transparent p-2 transition-all hover:border-border/80 hover:bg-secondary active:scale-95 sm:flex"
-          aria-label="Messages"
-        >
-          <MessageSquare size={20} className="text-muted-foreground" />
-          <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-success ring-2 ring-card" />
-        </button>
+          <div className="relative hidden sm:block">
+            <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input type="search" placeholder="Search leads…" className="input-app w-44 py-2 pl-9 text-sm lg:w-56 xl:w-64" />
+          </div>
 
-        <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shadow-md">
-          A
+          <button
+            type="button"
+            className="relative flex h-10 w-10 touch-manipulation items-center justify-center rounded-xl hover:bg-secondary"
+            aria-label="Notifications"
+          >
+            <Bell size={20} className="text-muted-foreground" />
+            <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-card" />
+          </button>
+
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary text-sm font-bold text-primary-foreground shadow-md">
+            A
+          </div>
         </div>
       </div>
+
+      {searchOpen && (
+        <div className="border-t border-border/60 px-4 pb-3 pt-2 sm:hidden">
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input type="search" placeholder="Search leads…" className="input-app w-full py-2.5 pl-9 text-sm" autoFocus />
+          </div>
+        </div>
+      )}
     </header>
   );
 };

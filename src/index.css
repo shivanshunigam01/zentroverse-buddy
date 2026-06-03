@@ -150,10 +150,54 @@
     background: hsl(var(--sidebar-foreground) / 0.25);
   }
 
-  /* Horizontal flow strip — touch scroll (no edge mask: masks can break hit-testing on some browsers) */
+  /* Horizontal flow strip — touch scroll */
   .journey-strip-scroll {
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x proximity;
     overscroll-behavior-x: contain;
+  }
+
+  .scroll-touch {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .table-scroll {
+    @apply scroll-touch overflow-x-auto rounded-2xl border border-border/80 bg-card;
+    scrollbar-width: thin;
+  }
+
+  .table-scroll::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .table-scroll::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-border;
+  }
+
+  .chip-filter {
+    @apply inline-flex min-h-9 shrink-0 items-center rounded-full border border-border/80 bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-sm transition-all;
+    @apply hover:border-primary/30 hover:bg-primary/[0.04] active:scale-[0.98];
+  }
+
+  .chip-filter-active {
+    @apply border-primary/40 bg-primary/10 text-primary;
+  }
+
+  .btn-touch {
+    @apply inline-flex min-h-10 min-w-[2.5rem] touch-manipulation items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition-all active:scale-[0.98];
+  }
+
+  .tabs-scroll {
+    @apply scroll-touch flex w-full gap-1 overflow-x-auto pb-1;
+    scroll-snap-type: x mandatory;
+  }
+
+  .tabs-scroll > * {
+    scroll-snap-align: start;
+  }
+
+  .page-content {
+    @apply mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8;
   }
 }

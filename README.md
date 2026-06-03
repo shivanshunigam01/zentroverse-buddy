@@ -1,48 +1,38 @@
-# ZentroFlow
+# ZentroFlow Web App
 
 **AI Powered Automotive Revenue Lifecycle Platform**
 
-Frontend prototype for the ZentroFlow sales funnel and parallel engines. Backend to be wired later.
+## Main sidebar menu
 
-## Macro sales funnel (main stages only)
+1. **Dashboard** — KPI cards, source/stage charts, executive performance, ROI
+2. **Lead Upload** — Excel import, validation, duplicate handling (C0.1)
+3. **Lead Inbox** — All leads table with filters and row actions
+4. **Lead Detail View** — Full customer journey with 12 tabs (most important screen)
+5. **Action Engine** — Rule builder, SLA, escalation
+6. **Autodialer** — C0.5 priority queue P1–P5
+7. **WhatsApp Bot** — C0.4 bot journey
+8. **Sales Pipeline** — C1 micro stages
+9. **Finance Desk** — C1A stages
+10. **Booking & Billing** — C2 stages
+11. **Delivery Desk** — C3 checklist
+12. **Lifecycle CRM** — Post-delivery timeline
+13. **Re-engagement** — Dormant buckets and nurture
+14. **Reports** — Funnel, executive, campaign analytics
+15. **Masters / Settings** — Branches, products, rules, DB table reference
 
-| Stage | Purpose |
-|-------|---------|
-| **C0** | Lead maturity — capture, contact health, engage, qualify, score |
-| **C1** | Sales discussion, quote, objection, affordability |
-| **C1A** | Finance application, approval, margin, booking intent |
-| **C2** | Booking, allocation, billing, insurance, registration, PDI |
-| **C3** | Retail / delivery |
-| **After C3** | Lifecycle — service, referral, exchange, upgrade, repeat sale |
+## UI principle
 
-**Scoring runs parallel** — it is not a funnel stage.
+Every lead card shows: **stage · micro stage · current action · owner · next action · SLA · priority · score · escalation**.
 
-## Parallel engines
+Move Stage requires: stage, action, owner, next action, SLA.
 
-- Lead scoring (Cold / Warm / Hot / Critical)
-- Contact health & identity resolution
-- Action engine (one lead = one owner + one current action + SLA)
-- Automation, SLA escalation, re-engagement
-
-## Developer model
-
-Each micro stage: **Trigger → Action → Owner → SLA → Exit → Next stage**
-
-Every lead record must always expose: macro stage, micro stage, current owner, current action, next action, priority, score, SLA, escalation.
-
-Domain definitions: `src/domain/platform.ts`, `src/domain/flow-nav.ts`
-
-Planned DB tables (reference): `customer_master`, `lead_master`, `lead_stage_history`, `lead_score`, etc. — see `platform.ts`.
-
-## Run locally
+## Run
 
 ```bash
 npm install
 npm run dev
 ```
 
-Dev server: http://localhost:8080
-
-## Stack
-
-Vite, React 18, TypeScript, Tailwind, shadcn/ui
+Domain model (C0–C3 micro stages, scoring, events): `src/domain/platform.ts`  
+Lead mock data: `src/domain/leads.ts`  
+Navigation: `src/domain/app-nav.ts`
