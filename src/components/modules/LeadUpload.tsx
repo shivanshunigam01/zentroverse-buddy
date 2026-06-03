@@ -4,11 +4,11 @@ import ModuleShell, { Btn, Section, ActionBar } from "@/components/shared/Module
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useZentroFlowStore } from "@/store/opportunity-store";
 import {
-  buildSampleCsv,
   importLeadRows,
   parseExcelFile,
   type ExcelLeadRow,
 } from "@/services/excel-import.service";
+import { downloadSampleLeadTemplate } from "@/services/excel-export.service";
 
 const EXCEL_COLUMNS = [
   "Customer Name", "Mobile", "Alternate Mobile", "Email", "District",
@@ -83,14 +83,8 @@ const LeadUpload = () => {
   };
 
   const downloadSample = () => {
-    const blob = new Blob([buildSampleCsv()], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "zentroflow-lead-sample.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Sample downloaded");
+    downloadSampleLeadTemplate();
+    toast.success("Sample downloaded", { description: "zentroflow-lead-import-template.xlsx" });
   };
 
   return (
@@ -102,7 +96,15 @@ const LeadUpload = () => {
             Upload Excel
           </Btn>
           <Btn variant="outline" fullWidth onClick={downloadSample}>
-            Download Sample
+            Download Sample Format
+          </Btn>
+          <Btn
+            variant="outline"
+            fullWidth
+            disabled={!lastImport}
+            onClick={() => void performAction("Export Import Report")}
+          >
+            Export Import Report
           </Btn>
         </ActionBar>
       }
@@ -211,6 +213,13 @@ const LeadUpload = () => {
             onClick={() => void performAction("Run Duplicate Check")}
           >
             Run Duplicate Check
+          </Btn>
+          <Btn
+            variant="outline"
+            disabled={!lastImport}
+            onClick={() => void performAction("Export Import Report")}
+          >
+            Export Import Report
           </Btn>
           <Btn
             disabled={!lastImport?.imported}

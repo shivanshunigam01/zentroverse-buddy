@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import ModuleShell, { Section, FilterChips, DataTable } from "@/components/shared/ModuleShell";
+import ModuleShell, { Section, FilterChips, DataTable, Btn, ActionBar } from "@/components/shared/ModuleShell";
 import EmptyState from "@/components/shared/EmptyState";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
 import MoveStageDialog from "@/components/shared/MoveStageDialog";
@@ -25,7 +25,7 @@ function filterLeads(leads: Lead[], filter: string): Lead[] {
 }
 
 const LeadInbox = () => {
-  const { viewLead, callLead, openWhatsApp } = useDashboardActions();
+  const { viewLead, callLead, openWhatsApp, performAction } = useDashboardActions();
   const allLeads = useOpportunityLeads();
   const [moveLead, setMoveLead] = useState<Lead | null>(null);
   const [filter, setFilter] = useState("All");
@@ -40,7 +40,20 @@ const LeadInbox = () => {
   };
 
   return (
-    <ModuleShell moduleId="lead-inbox">
+    <ModuleShell
+      moduleId="lead-inbox"
+      actions={
+        <ActionBar>
+          <Btn
+            variant="outline"
+            disabled={allLeads.length === 0}
+            onClick={() => void performAction("Export Excel")}
+          >
+            Export Excel
+          </Btn>
+        </ActionBar>
+      }
+    >
       {allLeads.length === 0 ? (
         <EmptyState
           title="Inbox is empty"

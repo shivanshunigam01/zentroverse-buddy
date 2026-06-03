@@ -26,7 +26,7 @@ const STAT_LINKS: Partial<Record<string, AppModuleId>> = {
 };
 
 const MainDashboard = () => {
-  const { navigate } = useDashboardActions();
+  const { navigate, performAction } = useDashboardActions();
   const leads = useOpportunityLeads();
 
   const stats = useMemo(() => {
@@ -39,7 +39,6 @@ const MainDashboard = () => {
     for (const l of leads) {
       const stage = l.currentStage as keyof typeof byStage;
       if (stage in byStage) byStage[stage]++;
-      if (l.lifecycleStage) byStage.lifecycle++;
       bySource[l.source ?? "Unknown"] = (bySource[l.source ?? "Unknown"] ?? 0) + 1;
       if (l.scoreLabel === "Hot") hot++;
       if (l.slaCountdown === "Overdue") slaMissed++;
@@ -143,6 +142,9 @@ const MainDashboard = () => {
           <p className="mb-3 text-sm text-muted-foreground">
             Complete C0 micro stages in order (C0.1 → C0.10) before Sales Pipeline unlocks.
           </p>
+          <Btn variant="outline" onClick={() => void performAction("Export Excel")}>
+            Export Excel
+          </Btn>
           <Btn onClick={() => navigate("lead-inbox")}>Open Lead Inbox</Btn>
         </Section>
       </div>

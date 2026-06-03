@@ -97,7 +97,11 @@ export const ACTION_REGISTRY: Record<string, ActionEffect> = {
   "Mark Lost": { status: "Lost" },
 
   "Upload Excel": { navigateTo: "lead-upload" },
-  "Download Sample": { description: "Sample template downloaded" },
+  "Download Sample": { description: "Sample import template downloaded (.xlsx)" },
+  "Download Sample Format": { description: "Sample import template downloaded (.xlsx)" },
+  "Export Excel": { description: "Leads exported to Excel" },
+  "Export Import Report": { description: "Import summary exported to Excel" },
+  "Export Pipeline Report": { description: "Pipeline report exported to Excel" },
   "Validate Data": { description: "Validation complete · 0 errors" },
   "Import Leads": { navigateTo: "lead-inbox", eventType: "lead.created" },
   "Reject Invalid Rows": { description: "Invalid rows rejected" },

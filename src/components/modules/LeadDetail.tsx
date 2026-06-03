@@ -3,7 +3,7 @@ import ModuleShell, { Btn, Section, FormGrid, ActionBar } from "@/components/sha
 import EmptyState from "@/components/shared/EmptyState";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
 import { SCORING_RULES } from "@/domain/platform";
-import { useLeadById, useOpportunityLeads } from "@/store/selectors";
+import { useLeadById, useOpportunityLeads, useActivitiesForOpportunity } from "@/store/selectors";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useOpportunityActions } from "@/hooks/use-opportunity-actions";
 import { getNextMicroStage } from "@/domain/stages/stage-gates";
@@ -344,9 +344,7 @@ const LifecycleTab = ({ run }: { run: (label: string) => void }) => (
 );
 
 const TimelineTab = ({ leadId }: { leadId?: string }) => {
-  const activities = useZentroFlowStore((s) =>
-    leadId ? s.activities.filter((a) => a.opportunity_id === leadId) : s.activities,
-  );
+  const activities = useActivitiesForOpportunity(leadId);
   return (
   <Section title="Activity timeline">
     {activities.length === 0 ? (

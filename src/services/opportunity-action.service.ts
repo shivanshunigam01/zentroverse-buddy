@@ -6,6 +6,13 @@ import { getMicroStagesForMacro } from "@/domain/stages/business-stages";
 import type { OpportunityMaster } from "@/domain/entities/opportunity";
 import { ACTION_REGISTRY, parseMicroStageFromInput, type ActionEffect } from "@/domain/actions/action-registry";
 import { getZentroFlowStore } from "@/store/opportunity-store";
+import { getLeadsSnapshot } from "@/domain/leads";
+import {
+  downloadSampleLeadTemplate,
+  exportImportReportToExcel,
+  exportLeadsToExcel,
+  exportPipelineReportToExcel,
+} from "@/services/excel-export.service";
 import { scoringService } from "@/services/scoring.service";
 import { contactHealthService } from "@/services/contact-health.service";
 import { validateSingleOwner } from "@/services/ownership.service";
@@ -45,6 +52,51 @@ export async function performOpportunityAction(
 ): Promise<void> {
   const effect: ActionEffect = ACTION_REGISTRY[label] ?? { description: label };
   const store = getZentroFlowStore();
+
+  if (label === "Download Sample" || label === "Download Sample Format") {
+    downloadSampleLeadTemplate();
+    toast.success("Sample downloaded", { description: "zentroflow-lead-import-template.xlsx" });
+    return;
+  }
+
+  if (label === "Export Excel") {
+    const leads = getLeadsSnapshot();
+    if (leads.length === 0) {
+      toast.error("Nothing to export", { description: "Import leads first" });
+      return;
+    }
+    exportLeadsToExcel(leads);
+    toast.success("Export complete", { description: `${leads.length} leads exported to Excel` });
+    if (options.navigateTo ?? effect.navigateTo) {
+      setTimeout(() => navigate(options.navigateTo ?? effect.navigateTo!), 350);
+    }
+    return;
+  }
+
+  if (label === "Export Import Report") {
+    const lastImport = store.lastImport;
+    if (!lastImport) {
+      toast.error("No import report", { description: "Import leads from Excel first" });
+      return;
+    }
+    exportImportReportToExcel(lastImport);
+    toast.success("Import report exported", {
+      description: `${lastImport.imported} imported · ${lastImport.rejected} rejected`,
+    });
+    return;
+  }
+
+  if (label === "Export Pipeline Report") {
+    const leads = getLeadsSnapshot();
+    if (leads.length === 0) {
+      toast.error("Nothing to export", { description: "Import leads first" });
+      return;
+    }
+    exportPipelineReportToExcel(leads);
+    toast.success("Pipeline report exported", { description: `${leads.length} leads in report` });
+    return;
+  }
+
   const opp = resolveOpportunity(options.opportunityId, options.macroId);
 
   const microStage =

@@ -2,11 +2,12 @@ import { useMemo } from "react";
 import type { AppModuleId } from "@/domain/app-nav";
 import { ACTION_REGISTRY } from "@/domain/actions/action-registry";
 import { canAccessModule, canPerformAction } from "@/domain/stages/stage-gates";
+import { useOpportunityList } from "@/store/selectors";
 import { useZentroFlowStore } from "@/store/opportunity-store";
 import type { OpportunityMaster } from "@/domain/entities/opportunity";
 
 export function useStageGates(selectedOpportunityId?: string) {
-  const opportunities = useZentroFlowStore((s) => s.listOpportunities());
+  const opportunities = useOpportunityList();
   const selected = useZentroFlowStore((s) =>
     selectedOpportunityId ? s.opportunities[selectedOpportunityId] : undefined,
   );

@@ -3,6 +3,7 @@ import type { AppModuleId } from "@/domain/app-nav";
 import { MODULE_TITLES } from "@/domain/app-nav";
 import { ACTION_REGISTRY } from "@/domain/actions/action-registry";
 import { canPerformAction } from "@/domain/stages/stage-gates";
+import { useOpportunityList } from "@/store/selectors";
 import { useZentroFlowStore } from "@/store/opportunity-store";
 import { useDashboardActions, type DashboardActions } from "@/context/DashboardContext";
 
@@ -81,7 +82,7 @@ export const Btn = ({
   type?: "button" | "submit" | "reset";
 }) => {
   const { performAction, moveToStage, selectedLeadId } = useDashboardActions();
-  const opportunities = useZentroFlowStore((s) => s.listOpportunities());
+  const opportunities = useOpportunityList();
   const selectedOpp = useZentroFlowStore((s) =>
     selectedLeadId ? s.opportunities[selectedLeadId] : undefined,
   );
