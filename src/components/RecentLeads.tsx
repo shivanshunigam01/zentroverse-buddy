@@ -1,56 +1,46 @@
-import { MessageSquare, Phone, MoreVertical } from "lucide-react";
-
 const leads = [
-  { name: "Rajesh Kumar", source: "Meta Ads", status: "Hot", interest: "Thar", time: "2 min ago", statusColor: "bg-destructive text-destructive-foreground" },
-  { name: "Priya Sharma", source: "Walk-in", status: "Warm", interest: "XUV700", time: "15 min ago", statusColor: "bg-warning text-warning-foreground" },
-  { name: "Amit Patel", source: "Website", status: "New", interest: "Scorpio N", time: "32 min ago", statusColor: "bg-info text-info-foreground" },
-  { name: "Sneha Reddy", source: "Referral", status: "Engaged", interest: "XUV300", time: "1 hr ago", statusColor: "bg-success text-success-foreground" },
-  { name: "Vikram Singh", source: "Google Ads", status: "Unresponsive", interest: "Bolero", time: "2 hrs ago", statusColor: "bg-muted text-muted-foreground" },
+  { id: "LD-2026-000154", name: "Rajesh Kumar", macro: "C1", micro: "C1.5", score: "72 Warm", action: "Collect CIBIL", owner: "Finance Exec" },
+  { id: "LD-2026-000201", name: "Priya Sharma", macro: "C0", micro: "C0.5", score: "45 Cold", action: "P2 dialer", owner: "Dialer" },
+  { id: "LD-2026-000089", name: "Amit Patel", macro: "C0", micro: "C0.9", score: "58 Warm", action: "Send brochure", owner: "System" },
+  { id: "LD-2026-000312", name: "Kavita Joshi", macro: "C2", micro: "C2.4", score: "—", action: "Billing docs", owner: "Billing" },
+  { id: "LD-2026-000401", name: "Vikram Singh", macro: "C3", micro: "C3.6", score: "—", action: "Delivery proof", owner: "Delivery" },
 ];
 
-const RecentLeads = () => {
-  return (
-    <div className="surface-card p-4 sm:p-6 lg:p-7">
-      <div className="mb-5 flex items-center justify-between sm:mb-6">
-        <h3 className="font-display text-sm font-bold tracking-tight text-foreground sm:text-base">Recent leads</h3>
-        <button type="button" className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
-          View all
-        </button>
-      </div>
-      <div className="space-y-2">
-        {leads.map((lead, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-4 p-3 rounded-xl border border-transparent hover:bg-secondary/50 hover:border-border/60 transition-all group"
-          >
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-primary-foreground font-bold text-sm shadow-sm shrink-0">
-              {lead.name.split(" ").map((n) => n[0]).join("")}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm font-semibold text-foreground truncate">{lead.name}</p>
-                <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold ${lead.statusColor}`}>{lead.status}</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {lead.interest} • {lead.source} • {lead.time}
-              </p>
-            </div>
-            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-              <button type="button" className="p-2 rounded-lg hover:bg-secondary" aria-label="Message">
-                <MessageSquare size={14} className="text-muted-foreground" />
-              </button>
-              <button type="button" className="p-2 rounded-lg hover:bg-secondary" aria-label="Call">
-                <Phone size={14} className="text-muted-foreground" />
-              </button>
-              <button type="button" className="p-2 rounded-lg hover:bg-secondary" aria-label="More">
-                <MoreVertical size={14} className="text-muted-foreground" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+const RecentLeads = () => (
+  <div className="surface-card p-4 sm:p-6">
+    <h3 className="font-display text-sm font-bold sm:text-base">Recent leads (backbone view)</h3>
+    <p className="text-xs text-muted-foreground mb-4">Macro · micro · score · current action · owner</p>
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[520px] text-sm">
+        <thead>
+          <tr className="border-b text-left text-[10px] font-bold uppercase text-muted-foreground">
+            <th className="pb-2 pr-3">Lead</th>
+            <th className="pb-2 pr-3">Stage</th>
+            <th className="pb-2 pr-3">Score</th>
+            <th className="pb-2 pr-3">Action</th>
+            <th className="pb-2">Owner</th>
+          </tr>
+        </thead>
+        <tbody>
+          {leads.map((l) => (
+            <tr key={l.id} className="border-b border-border/50 hover:bg-secondary/20">
+              <td className="py-3 pr-3">
+                <p className="font-mono text-[10px] text-muted-foreground">{l.id}</p>
+                <p className="font-semibold text-foreground">{l.name}</p>
+              </td>
+              <td className="py-3 pr-3">
+                <span className="font-mono text-xs font-bold text-primary">{l.macro}</span>
+                <p className="text-[11px] text-muted-foreground">{l.micro}</p>
+              </td>
+              <td className="py-3 pr-3 text-xs font-semibold">{l.score}</td>
+              <td className="py-3 pr-3 text-xs text-foreground">{l.action}</td>
+              <td className="py-3 text-xs text-muted-foreground">{l.owner}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
-  );
-};
+  </div>
+);
 
 export default RecentLeads;

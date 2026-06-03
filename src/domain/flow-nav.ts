@@ -1,225 +1,204 @@
-/** Tab ids aligned with sidebar */
+/** ZentroFlow navigation — macro funnel C0→C3 + lifecycle + parallel engines */
+
+import { MACRO_STAGES, POSITIONING, type MacroStageId } from "./platform";
 
 export type FlowTabId =
   | "dashboard"
-  | "leads"
-  | "engagement"
-  | "classification"
-  | "action"
+  | "c0"
+  | "c1"
+  | "c1a"
+  | "c2"
+  | "c3"
   | "lifecycle"
-  | "vehicle"
+  | "scoring"
+  | "contact-health"
+  | "action"
   | "workflow"
-  | "monetization"
   | "analytics"
   | "notifications";
 
-/** Full master journey — 8 steps, two land on Lead intake */
-export type JourneyStep = {
+export type MacroFunnelStep = {
   order: number;
-  /** Compact label for tight UI */
+  code: string;
   short: string;
-  /** Full step name */
   title: string;
-  /** One-line context (product language, not spec notes) */
   hint: string;
   tabId: FlowTabId;
 };
 
-export const JOURNEY_STEPS: JourneyStep[] = [
-  {
-    order: 1,
-    short: "Source",
-    title: "Lead Source",
-    hint: "Walk-in, website, ads, field, referral",
-    tabId: "leads",
-  },
-  {
-    order: 2,
-    short: "CRM",
-    title: "Lead Capture (CRM)",
-    hint: "Single record, tags, dedupe on mobile",
-    tabId: "leads",
-  },
-  {
-    order: 3,
-    short: "WhatsApp",
-    title: "AI Engagement (WhatsApp Bot)",
-    hint: "Starts when the lead is created",
-    tabId: "engagement",
-  },
-  {
-    order: 4,
-    short: "Classify",
-    title: "AI Classification",
-    hint: "From replies, clicks, calls, and timing",
-    tabId: "classification",
-  },
-  {
-    order: 5,
-    short: "Action",
-    title: "Action Engine",
-    hint: "Sales desk or auto dialer — then loop",
-    tabId: "action",
-  },
-  {
-    order: 6,
-    short: "Outcome",
-    title: "Conversion OR Recycling",
-    hint: "Won, lost, or nurture cycle",
-    tabId: "analytics",
-  },
-  {
-    order: 7,
-    short: "Lifecycle",
-    title: "Lifecycle Automation (Post-Sale)",
-    hint: "Kicks in after delivery",
-    tabId: "lifecycle",
-  },
-  {
-    order: 8,
-    short: "Ongoing",
-    title: "Continuous Engagement",
-    hint: "Care, alerts, renewals, loyalty",
-    tabId: "vehicle",
-  },
+/** Main sales funnel — C0 through C3 only (lifecycle is after C3) */
+export const MACRO_FUNNEL_STEPS: MacroFunnelStep[] = [
+  { order: 1, code: "C0", short: "C0", title: "Lead Maturity", hint: "Capture, contact health, engage, qualify, score", tabId: "c0" },
+  { order: 2, code: "C1", short: "C1", title: "Sales & Objection", hint: "Quote, objection, affordability, finance discussion", tabId: "c1" },
+  { order: 3, code: "C1A", short: "C1A", title: "Finance & Intent", hint: "Application, approval, margin, booking intent", tabId: "c1a" },
+  { order: 4, code: "C2", short: "C2", title: "Booking → Billing", hint: "Booking, allocation, insurance, registration, PDI", tabId: "c2" },
+  { order: 5, code: "C3", short: "C3", title: "Retail / Delivery", hint: "Payment, delivery, feedback, lifecycle activation", tabId: "c3" },
 ];
 
-/** Legacy shape for any code still expecting { label, full, tabId } */
-export type PipelineStep = { label: string; full: string; tabId: FlowTabId };
+export const LIFECYCLE_STEP: MacroFunnelStep = {
+  order: 6,
+  code: "L",
+  short: "Lifecycle",
+  title: "Lifecycle Revenue",
+  hint: "Service, renewal, upgrade, exchange, referral, repeat sale",
+  tabId: "lifecycle",
+};
 
-export const PIPELINE_STEPS: PipelineStep[] = JOURNEY_STEPS.map((s) => ({
-  label: s.short,
-  full: s.hint,
-  tabId: s.tabId,
-}));
+export const FULL_JOURNEY_STEPS: MacroFunnelStep[] = [...MACRO_FUNNEL_STEPS, LIFECYCLE_STEP];
 
-export function journeyMaxOrderForTab(tab: FlowTabId): number | null {
-  const steps = JOURNEY_STEPS.filter((s) => s.tabId === tab);
-  if (!steps.length) return null;
-  return Math.max(...steps.map((s) => s.order));
-}
-
-export function journeyMinOrderForTab(tab: FlowTabId): number | null {
-  const steps = JOURNEY_STEPS.filter((s) => s.tabId === tab);
-  if (!steps.length) return null;
-  return Math.min(...steps.map((s) => s.order));
-}
-
-/** Next step in the numbered journey (by order), or null at end / off-journey */
-export function getNextJourneyStep(activeTab: FlowTabId): JourneyStep | null {
-  const max = journeyMaxOrderForTab(activeTab);
-  if (max === null) return null;
-  return JOURNEY_STEPS.find((s) => s.order === max + 1) ?? null;
-}
-
-export const MODULE_META: Record<
-  FlowTabId,
-  { title: string; subtitle: string; pipelineStep?: number; badge?: string }
-> = {
+export const MODULE_META: Record<FlowTabId, { title: string; subtitle: string; macroCode?: string; badge?: string }> = {
   dashboard: {
     title: "Command center",
-    subtitle: "Engines, journey, and health at a glance",
+    subtitle: `${POSITIONING.tagline} — funnel, engines, and lead health`,
     badge: "Overview",
   },
-  leads: {
-    title: "Lead intake & CRM",
-    subtitle: "Stages 1–2: every source into one profile, tagged and deduped",
-    pipelineStep: 1,
-    badge: "Stages 1–2",
+  c0: {
+    title: "C0 — Lead Maturity",
+    subtitle: "Capture, duplicate check, contact health, bot, dialer, discovery, qualification, scoring, NBA, quote readiness",
+    macroCode: "C0",
+    badge: "Lead Maturity",
   },
-  engagement: {
-    title: "AI engagement",
-    subtitle: "Stage 3: WhatsApp bot immediately after lead creation",
-    pipelineStep: 3,
-    badge: "Stage 3",
+  c1: {
+    title: "C1 — Sales Discussion & Objection",
+    subtitle: "Quote shared → acknowledged → objections → affordability → finance discussion → eligibility",
+    macroCode: "C1",
+    badge: "Sales",
   },
-  classification: {
-    title: "AI classification",
-    subtitle: "Stage 4: categories from bot, clicks, calls, and delays",
-    pipelineStep: 4,
-    badge: "Stage 4",
+  c1a: {
+    title: "C1A — Finance Approval & Intent",
+    subtitle: "Application through approval, margin, variant lock, add-ons, booking intent",
+    macroCode: "C1A",
+    badge: "Finance",
   },
-  action: {
-    title: "Action engine",
-    subtitle: "Stage 5: responsive → sales; quiet → dialer; then back to classify",
-    pipelineStep: 5,
-    badge: "Stage 5",
+  c2: {
+    title: "C2 — Booking to Billing",
+    subtitle: "Booking, allocation, billing docs, disbursement, DP, insurance, registration, HSRP, PDI",
+    macroCode: "C2",
+    badge: "Booking",
+  },
+  c3: {
+    title: "C3 — Retail / Delivery",
+    subtitle: "Final payment through delivery, feedback, testimonial, referral, lifecycle activation",
+    macroCode: "C3",
+    badge: "Delivery",
   },
   lifecycle: {
-    title: "Lifecycle automation",
-    subtitle: "Stage 7: PDI, delivery, service, renewals, upsell",
-    pipelineStep: 7,
-    badge: "Stage 7",
+    title: "After C3 — Lifecycle Revenue Engine",
+    subtitle: "10-year revenue: service, insurance, AMC, upgrade, exchange, repeat purchase, referral",
+    macroCode: "L",
+    badge: "Post-sale",
   },
-  vehicle: {
-    title: "Vehicle care & engagement",
-    subtitle: "Stage 8: education, alerts, ongoing programs",
-    pipelineStep: 8,
-    badge: "Stage 8",
+  scoring: {
+    title: "Lead Scoring Engine",
+    subtitle: "Parallel engine — not a funnel stage. Real-time Cold / Warm / Hot / Critical",
+    badge: "Parallel",
+  },
+  "contact-health": {
+    title: "Contact Health Engine",
+    subtitle: "Mobile, WhatsApp, call, email, territory, duplicate, contactability score",
+    badge: "Parallel",
+  },
+  action: {
+    title: "Action Engine",
+    subtitle: "One lead = one stage + one owner + one current action + next action + SLA",
+    badge: "Backbone",
   },
   workflow: {
-    title: "Workflow automation",
-    subtitle: "Cross-engine triggers and schedules",
+    title: "Automation & SLA",
+    subtitle: "Event-driven rules, SLA escalation, re-engagement, nurture queues",
     badge: "Automation",
   },
-  monetization: {
-    title: "Smart monetization",
-    subtitle: "Alternate paths for not-ready leads",
-    badge: "Revenue",
-  },
   analytics: {
-    title: "Conversion or recycling",
-    subtitle: "Stage 6: won, lost, nurture — funnel truth",
-    pipelineStep: 6,
-    badge: "Stage 6",
+    title: "Analytics & KPIs",
+    subtitle: "Funnel leakage, source ROI, executive performance, SLA missed %",
+    badge: "Insights",
   },
   notifications: {
-    title: "Notifications",
-    subtitle: "Alerts across the stack",
+    title: "Notifications & Alerts",
+    subtitle: "Escalations, SLA breaches, manager alerts across all stages",
     badge: "Alerts",
   },
 };
 
-/** Sidebar row; `navId` disambiguates React keys when two rows open the same tab (e.g. both lead stages → leads). */
 export type SidebarNavItem = {
   id: FlowTabId;
   label: string;
-  badge?: number;
+  badge?: number | string;
   navId?: string;
 };
 
 export type SidebarGroup = { heading: string; items: SidebarNavItem[] };
 
-/**
- * Nav order matches the master journey (top → bottom). Stages 1–2 both use the leads module.
- */
 export const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     heading: "Overview",
     items: [{ id: "dashboard", label: "Dashboard" }],
   },
   {
-    heading: "Master flow",
+    heading: "Sales funnel (C0 → C3)",
+    items: MACRO_STAGES.filter((m) => m.id !== "lifecycle").map((m) => ({
+      id: m.tabId,
+      label: `${m.code} — ${m.name}`,
+      navId: `macro-${m.id}`,
+    })),
+  },
+  {
+    heading: "After C3",
+    items: [{ id: "lifecycle", label: "Lifecycle revenue engine" }],
+  },
+  {
+    heading: "Parallel engines",
     items: [
-      { id: "leads", navId: "flow-lead-source", label: "Lead source", badge: 142 },
-      { id: "leads", navId: "flow-lead-crm", label: "Lead capture (CRM)" },
-      { id: "engagement", label: "AI engagement (WhatsApp Bot)" },
-      { id: "classification", label: "AI classification" },
+      { id: "scoring", label: "Lead scoring", badge: "Live" },
+      { id: "contact-health", label: "Contact health" },
       { id: "action", label: "Action engine", badge: 23 },
-      { id: "analytics", label: "Conversion or recycling" },
-      { id: "lifecycle", label: "Lifecycle automation (post-sale)" },
-      { id: "vehicle", label: "Continuous engagement" },
     ],
   },
   {
-    heading: "Automation & revenue",
+    heading: "Operations",
     items: [
-      { id: "workflow", label: "Workflow" },
-      { id: "monetization", label: "Smart monetization" },
+      { id: "workflow", label: "Automation & SLA" },
+      { id: "analytics", label: "Analytics & KPIs" },
+      { id: "notifications", label: "Notifications", badge: 8 },
     ],
-  },
-  {
-    heading: "Alerts",
-    items: [{ id: "notifications", label: "Notifications", badge: 8 }],
   },
 ];
+
+export function macroIdFromTab(tab: FlowTabId): MacroStageId | null {
+  if (tab === "c0" || tab === "c1" || tab === "c1a" || tab === "c2" || tab === "c3" || tab === "lifecycle") {
+    return tab;
+  }
+  return null;
+}
+
+export function getNextMacroStep(activeTab: FlowTabId): MacroFunnelStep | null {
+  const idx = FULL_JOURNEY_STEPS.findIndex((s) => s.tabId === activeTab);
+  if (idx < 0 || idx >= FULL_JOURNEY_STEPS.length - 1) return null;
+  return FULL_JOURNEY_STEPS[idx + 1];
+}
+
+export function funnelIndexForTab(tab: FlowTabId): number | null {
+  const step = FULL_JOURNEY_STEPS.find((s) => s.tabId === tab);
+  return step?.order ?? null;
+}
+
+/** @deprecated Use MACRO_FUNNEL_STEPS — kept for gradual migration */
+export const JOURNEY_STEPS = FULL_JOURNEY_STEPS.map((s) => ({
+  order: s.order,
+  short: s.short,
+  title: s.title,
+  hint: s.hint,
+  tabId: s.tabId,
+}));
+
+export function journeyMaxOrderForTab(tab: FlowTabId): number | null {
+  return funnelIndexForTab(tab);
+}
+
+export function journeyMinOrderForTab(tab: FlowTabId): number | null {
+  return funnelIndexForTab(tab);
+}
+
+export function getNextJourneyStep(activeTab: FlowTabId): MacroFunnelStep | null {
+  return getNextMacroStep(activeTab);
+}

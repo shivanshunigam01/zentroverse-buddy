@@ -1,82 +1,73 @@
-import { GitBranch, Zap, Clock, Webhook } from "lucide-react";
+import { PLATFORM_EVENTS } from "@/domain/platform";
 
-const triggers = [
-  { name: "Lead created", effect: "Fire WhatsApp welcome + template", channel: "WhatsApp API" },
-  { name: "No bot reply 24h", effect: "Enqueue auto dialer + tag Unresponsive", channel: "Dialer + CRM" },
-  { name: "Call outcome = Interested", effect: "Re-run classification → route Sales", channel: "Action Engine" },
-  { name: "Delivery marked complete", effect: "Promote to Customer + start PDI workflow", channel: "Lifecycle" },
-  { name: "Service due (km / date)", effect: "Reminder + booking deep link", channel: "Notifications" },
-  { name: "Insurance expiry -30d", effect: "Renewal campaign + compliance task", channel: "Lifecycle" },
+const slaRules = [
+  { condition: "P1 hot lead not called", threshold: "5 min", action: "Manager alert", escalation: "Sales Manager" },
+  { condition: "C1 quote follow-up missed", threshold: "24 hrs", action: "Team leader alert", escalation: "Team Leader" },
+  { condition: "Finance docs pending", threshold: "48 hrs", action: "Finance escalation", escalation: "Finance Manager" },
+  { condition: "Booking stuck", threshold: "72 hrs", action: "Branch head alert", escalation: "Branch Head" },
 ];
 
-const WorkflowAutomation = () => {
-  return (
-    <div className="space-y-5">
-      <p className="text-sm text-muted-foreground">Event-driven automations across intake, bot, dialer, and lifecycle</p>
+const automationRules = [
+  { if: "New lead received", then: "Send WhatsApp instantly", event: "lead.created" },
+  { if: "WhatsApp not active", then: "Push to autodialer P3/P4", event: "lead.verified" },
+  { if: "WA read, no reply 2 hrs", then: "Trigger AI call P2", event: "lead.engaged" },
+  { if: "Customer clicks Finance", then: "Start finance workflow → C1A", event: "finance.started" },
+  { if: "No response after 5 attempts", then: "Move to nurture", event: "lead.qualified" },
+  { if: "Delivery done", then: "Activate lifecycle L1–L7", event: "delivery.done" },
+];
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[
-          { label: "Active workflows", value: "28", icon: GitBranch, hint: "Versioned rules" },
-          { label: "Runs today", value: "1,842", icon: Zap, hint: "Triggers executed" },
-          { label: "Scheduled", value: "316", icon: Clock, hint: "Delayed / recurring" },
-        ].map((c) => (
-          <div key={c.label} className="surface-card p-5 flex items-center gap-4">
-            <div className="w-11 h-11 rounded-xl gradient-primary flex items-center justify-center">
-              <c.icon size={20} className="text-primary-foreground" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{c.value}</p>
-              <p className="text-xs font-semibold text-foreground">{c.label}</p>
-              <p className="text-[10px] text-muted-foreground">{c.hint}</p>
-            </div>
+const WorkflowAutomation = () => (
+  <div className="space-y-6">
+    <div className="surface-card p-4 sm:p-6">
+      <h3 className="font-display text-base font-bold">SLA & escalation engine</h3>
+      <div className="mt-4 space-y-2">
+        {slaRules.map((r) => (
+          <div key={r.condition} className="rounded-xl border border-border/70 px-4 py-3">
+            <p className="text-sm font-semibold text-foreground">{r.condition}</p>
+            <p className="text-xs text-muted-foreground">
+              Threshold: {r.threshold} → {r.action} → {r.escalation}
+            </p>
           </div>
         ))}
       </div>
+    </div>
 
-      <div className="surface-card p-6 lg:p-7">
-        <div className="flex items-center gap-2 mb-4">
-          <Webhook size={18} className="text-primary" />
-          <h3 className="text-base font-bold text-foreground font-display">Key automations</h3>
-        </div>
-        <div className="space-y-3">
-          {triggers.map((t) => (
-            <div
-              key={t.name}
-              className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 bg-secondary/40 rounded-lg border border-border/50"
-            >
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">{t.name}</p>
-                <p className="text-xs text-muted-foreground">{t.effect}</p>
-              </div>
-              <span className="text-[10px] px-2 py-1 rounded-full bg-primary/10 text-primary font-bold whitespace-nowrap self-start sm:self-center">
-                {t.channel}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="surface-card p-6 lg:p-7">
-        <h3 className="mb-3 text-base font-bold text-foreground font-display">What automation connects</h3>
-        <p className="mb-4 text-sm text-muted-foreground">
-          Rules tie intake, WhatsApp, classification, dialer, lifecycle, and notifications into one operating rhythm — no
-          manual handoffs required for standard paths.
-        </p>
-        <ul className="space-y-2 text-sm text-muted-foreground">
-          {[
-            "Lead and customer records stay the single source of truth",
-            "Bot, call, and agent touches all write back to the same timeline",
-            "Lifecycle steps fire from delivery, service dates, and compliance windows",
-          ].map((line) => (
-            <li key={line} className="flex gap-2">
-              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/70" />
-              <span>{line}</span>
-            </li>
-          ))}
-        </ul>
+    <div className="surface-card p-4 sm:p-6">
+      <h3 className="font-display text-base font-bold">Action engine rules (sample)</h3>
+      <div className="mt-4 space-y-2">
+        {automationRules.map((r) => (
+          <div key={r.if} className="flex flex-wrap gap-2 rounded-xl bg-secondary/25 px-4 py-3 text-sm">
+            <span className="font-semibold text-foreground">IF</span>
+            <span className="text-muted-foreground">{r.if}</span>
+            <span className="font-semibold text-primary">THEN</span>
+            <span className="text-foreground">{r.then}</span>
+            <span className="ml-auto font-mono text-[10px] text-muted-foreground">{r.event}</span>
+          </div>
+        ))}
       </div>
     </div>
-  );
-};
+
+    <div className="surface-card p-4 sm:p-5">
+      <h4 className="text-sm font-bold">Re-engagement triggers</h4>
+      <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+        <li>Finance rejected → alternate finance queue</li>
+        <li>Competitor purchased → recycle after 6 months</li>
+        <li>Plan hold → reminder 30 / 60 / 90 days</li>
+        <li>Tender postponed → tender follow-up date</li>
+      </ul>
+    </div>
+
+    <div className="surface-card p-4 sm:p-5">
+      <h4 className="text-sm font-bold">All platform events</h4>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {PLATFORM_EVENTS.map((ev) => (
+          <span key={ev} className="rounded-md bg-primary/10 font-mono text-[10px] px-2 py-1 text-primary">
+            {ev}
+          </span>
+        ))}
+      </div>
+    </div>
+  </div>
+);
 
 export default WorkflowAutomation;

@@ -32,7 +32,7 @@ const Index = () => {
             <div className="mx-auto flex max-w-[260px] justify-center">
               <img
                 src={zentroverseLogo}
-                alt="ZENTROVERSE"
+                alt="ZentroFlow"
                 className="h-auto w-full max-w-[220px] max-h-[104px] select-none object-contain object-center"
                 width={220}
                 height={104}
@@ -42,7 +42,7 @@ const Index = () => {
               <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-display sm:text-[1.65rem]">
                 Welcome back
               </h1>
-              <p className="text-[0.9375rem] leading-snug text-slate-500">Sign in to your ZENTROVERSE workspace</p>
+              <p className="text-[0.9375rem] leading-snug text-slate-500">Sign in to your ZentroFlow workspace</p>
             </div>
           </div>
 
@@ -120,7 +120,7 @@ const Index = () => {
 
             <p className="pt-1 text-center text-xs text-slate-400">
               Protected access ·{" "}
-              <span className="text-slate-500">ZENTROVERSE operations console</span>
+              <span className="text-slate-500">Automotive revenue lifecycle platform</span>
             </p>
           </form>
         </div>
