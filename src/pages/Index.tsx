@@ -1,24 +1,30 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import zentroverseLogo from "@/assets/zentroverse-logo.png";
 import { useAuth } from "@/context/AuthContext";
 import { ApiClientError } from "@/lib/api";
 
 const Index = () => {
-  const { login } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { login, register } = useAuth();
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [email, setEmail] = useState("buddy@zentroverse.com");
+  const [password, setPassword] = useState("Zentroflow@2026");
+  const [name, setName] = useState("Buddy");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await login(email, password);
+      if (mode === "register") {
+        await register(email, password, name);
+      } else {
+        await login(email, password);
+      }
     } catch (err) {
-      toast.error("Sign in failed", {
+      toast.error(mode === "register" ? "Sign up failed" : "Sign in failed", {
         description: err instanceof ApiClientError ? err.message : "Check email and password",
       });
     } finally {
@@ -44,12 +50,50 @@ const Index = () => {
               height={104}
             />
             <div className="mt-7 space-y-1.5">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-display">Welcome back</h1>
-              <p className="text-[0.9375rem] text-slate-500">Sign in to your ZentroFlow workspace</p>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-display">
+                {mode === "login" ? "Welcome back" : "Create account"}
+              </h1>
+              <p className="text-[0.9375rem] text-slate-500">
+                {mode === "login" ? "Sign in to your ZentroFlow workspace" : "Register to use ZentroFlow"}
+              </p>
             </div>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-5 px-8 py-8 sm:px-10">
+          <div className="flex border-b border-slate-100">
+            <button
+              type="button"
+              className={`flex-1 py-3 text-sm font-semibold ${mode === "login" ? "border-b-2 border-primary text-primary" : "text-slate-500"}`}
+              onClick={() => setMode("login")}
+            >
+              Sign in
+            </button>
+            <button
+              type="button"
+              className={`flex-1 py-3 text-sm font-semibold ${mode === "register" ? "border-b-2 border-primary text-primary" : "text-slate-500"}`}
+              onClick={() => setMode("register")}
+            >
+              Register
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5 px-8 py-8 sm:px-10">
+            {mode === "register" && (
+              <div className="space-y-2">
+                <label htmlFor="login-name" className="text-sm font-semibold text-slate-800">Name</label>
+                <div className="relative">
+                  <User className="pointer-events-none absolute left-4 top-1/2 h-[1.125rem] w-[1.125rem] -translate-y-1/2 text-slate-400" />
+                  <input
+                    id="login-name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                    className="input-login pl-12 pr-4"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <label htmlFor="login-email" className="text-sm font-semibold text-slate-800">Email</label>
               <div className="relative">
@@ -61,7 +105,7 @@ const Index = () => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@example.com"
+                  placeholder="you@company.com"
                   className="input-login pl-12 pr-4"
                 />
               </div>
@@ -74,11 +118,12 @@ const Index = () => {
                 <input
                   id="login-password"
                   type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
+                  autoComplete={mode === "register" ? "new-password" : "current-password"}
                   required
+                  minLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="Min. 6 characters"
                   className="input-login pl-12 pr-12"
                 />
                 <button
@@ -96,12 +141,17 @@ const Index = () => {
               disabled={submitting}
               className="mt-2 w-full rounded-xl py-3.5 text-sm font-semibold text-white gradient-primary disabled:opacity-60"
             >
-              {submitting ? "Signing in…" : "Sign in"}
+              {submitting ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
             </button>
 
-            <p className="text-center text-xs text-slate-400">
-              Uses API credentials from server <span className="text-slate-500">ADMIN_EMAIL</span>
-            </p>
+            {mode === "login" && (
+              <p className="text-center text-xs text-slate-500">
+                Default account (after API deploy):<br />
+                <span className="font-mono text-slate-700">buddy@zentroverse.com</span>
+                {" / "}
+                <span className="font-mono text-slate-700">Zentroflow@2026</span>
+              </p>
+            )}
           </form>
         </div>
       </div>

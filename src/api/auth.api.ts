@@ -1,8 +1,22 @@
 import { api, setAuthToken } from "@/lib/api";
 
-export type AuthUser = { email: string; name: string; role: string };
+export type AuthUser = { id?: string; email: string; name: string; role: string };
 
 const USER_KEY = "zentroflow_user";
+
+export async function register(
+  email: string,
+  password: string,
+  name?: string,
+): Promise<AuthUser> {
+  const data = await api<{ token: string; user: AuthUser }>("/auth/register", {
+    method: "POST",
+    json: { email, password, name },
+  });
+  setAuthToken(data.token);
+  localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+  return data.user;
+}
 
 export async function login(email: string, password: string): Promise<AuthUser> {
   const data = await api<{ token: string; user: AuthUser }>("/auth/login", {
