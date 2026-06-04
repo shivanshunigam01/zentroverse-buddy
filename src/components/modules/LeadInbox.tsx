@@ -78,17 +78,31 @@ const LeadInbox = () => {
               <IconBtn icon={Eye} label="View" onClick={() => viewLead(l.opportunityId)} />
               <IconBtn icon={ArrowRightLeft} label="Move" onClick={() => setMoveLead(l)} />
               <IconBtn icon={Phone} label="Call" onClick={() => callLead(l.mobile, l.customerName)} />
-              <IconBtn icon={MessageCircle} label="WA" onClick={() => openWhatsApp(l.leadId)} />
+              <IconBtn icon={MessageCircle} label="WA" onClick={() => openWhatsApp(l.opportunityId)} />
             </div>
           </div>
         ))}
         {leads.length === 0 && <EmptyInbox />}
       </div>
 
-      <DataTable minWidth={1100}>
+      <DataTable minWidth={1400}>
         <thead>
           <tr className="border-b bg-secondary/40 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-            {["Lead ID", "Customer", "Mobile", "Product", "Stage", "Score", "Owner", "Action", "SLA", "Status", "Actions"].map((h) => (
+            {[
+              "Lead ID",
+              "Customer ID",
+              "Opportunity ID",
+              "Customer",
+              "Mobile",
+              "Product",
+              "Stage",
+              "Score",
+              "Owner",
+              "Action",
+              "SLA",
+              "Status",
+              "Actions",
+            ].map((h) => (
               <th key={h} className="whitespace-nowrap px-3 py-3">{h}</th>
             ))}
           </tr>
@@ -96,7 +110,18 @@ const LeadInbox = () => {
         <tbody>
           {leads.map((l) => (
             <tr key={l.leadId} className="border-b border-border/50 transition-colors hover:bg-secondary/25">
-              <td className="whitespace-nowrap px-3 py-3 font-mono text-xs">{l.leadId}</td>
+              <td className="whitespace-nowrap px-3 py-3">
+                <p className="text-[9px] font-bold uppercase text-muted-foreground md:sr-only">Lead ID</p>
+                <span className="font-mono text-xs">{l.leadId}</span>
+              </td>
+              <td className="whitespace-nowrap px-3 py-3">
+                <p className="text-[9px] font-bold uppercase text-muted-foreground md:sr-only">Customer ID</p>
+                <span className="font-mono text-xs text-muted-foreground">{l.customerId}</span>
+              </td>
+              <td className="whitespace-nowrap px-3 py-3">
+                <p className="text-[9px] font-bold uppercase text-muted-foreground md:sr-only">Opportunity ID</p>
+                <span className="font-mono text-xs text-muted-foreground">{l.opportunityId}</span>
+              </td>
               <td className="px-3 py-3 font-semibold">{l.customerName}</td>
               <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">{l.mobile}</td>
               <td className="px-3 py-3 text-xs">{l.product}</td>
@@ -116,7 +141,7 @@ const LeadInbox = () => {
                   <MiniBtn onClick={() => viewLead(l.opportunityId)}>View</MiniBtn>
                   <MiniBtn onClick={() => setMoveLead(l)}>Move</MiniBtn>
                   <MiniBtn onClick={() => callLead(l.mobile, l.customerName)}>Call</MiniBtn>
-                  <MiniBtn onClick={() => openWhatsApp(l.leadId)}>WA</MiniBtn>
+                  <MiniBtn onClick={() => openWhatsApp(l.opportunityId)}>WA</MiniBtn>
                 </div>
               </td>
             </tr>

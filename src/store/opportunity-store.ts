@@ -9,7 +9,9 @@ import type { ContactHealthAttributes } from "@/domain/engines/contact-health";
 import type { ScoreLedgerEntry } from "@/domain/engines/scoring";
 import type { OpportunityOwnership } from "@/domain/entities/ownership";
 import type { ImportBatchResult } from "@/services/excel-import.service";
-import { transitionStage } from "@/services/stage-transition.service";
+import * as opportunitiesApi from "@/api/opportunities.api";
+import { ACTION_REGISTRY } from "@/domain/actions/action-registry";
+import type { BootstrapPayload } from "@/api/bootstrap.api";
 
 export interface ZentroFlowStore {
   customers: Record<string, CustomerMaster>;
@@ -30,6 +32,10 @@ export interface ZentroFlowStore {
   listCustomers: () => CustomerMaster[];
   getContactHealth: (opportunityId: string) => ContactHealthAttributes | undefined;
 
+  hydrate: (payload: BootstrapPayload) => void;
+  setLastImport: (result: ImportBatchResult | null) => void;
+  setActivitiesForOpportunity: (opportunityId: string, rows: LeadActivity[]) => void;
+
   upsertCustomer: (customer: CustomerMaster) => void;
   upsertOpportunity: (opportunity: OpportunityMaster) => void;
   appendActivity: (activity: LeadActivity) => void;
@@ -46,6 +52,7 @@ export interface ZentroFlowStore {
     changedBy: string,
     reason?: string,
     force?: boolean,
+    actionLabel?: string,
   ) => Promise<OpportunityMaster | null>;
 }
 
@@ -74,6 +81,24 @@ export const useZentroFlowStore = create<ZentroFlowStore>()(
       listOpportunities: () => Object.values(get().opportunities),
       listCustomers: () => Object.values(get().customers),
       getContactHealth: (opportunityId) => get().contactHealth[opportunityId],
+
+      hydrate: (payload) =>
+        set({
+          customers: payload.customers,
+          opportunities: payload.opportunities,
+          activities: payload.activities,
+          lastImport: payload.lastImport,
+        }),
+
+      setLastImport: (result) => set({ lastImport: result }),
+
+      setActivitiesForOpportunity: (opportunityId, rows) =>
+        set((s) => ({
+          activities: [
+            ...s.activities.filter((a) => a.opportunity_id !== opportunityId),
+            ...rows,
+          ],
+        })),
 
       upsertCustomer: (customer) =>
         set((s) => ({ customers: { ...s.customers, [customer.customer_id]: customer } })),
@@ -106,20 +131,41 @@ export const useZentroFlowStore = create<ZentroFlowStore>()(
 
       clearAll: () => set({ ...EMPTY }),
 
-      moveStage: async (opportunityId, newMicroStage, changedBy, reason, force) => {
+      moveStage: async (opportunityId, newMicroStage, changedBy, reason, force, actionLabel) => {
         const opp = get().getOpportunity(opportunityId);
         if (!opp) return null;
-        const result = await transitionStage({
-          opportunity: opp,
-          new_micro_stage: newMicroStage,
-          changed_by: changedBy,
-          reason,
-          force,
-        });
-        get().upsertOpportunity(result.opportunity);
-        get().appendStageHistory(result.history);
-        get().appendActivity(result.activity);
-        return result.opportunity;
+
+        try {
+          let updated: OpportunityMaster;
+          const registryStage = actionLabel ? ACTION_REGISTRY[actionLabel]?.microStage : undefined;
+          const useActionEndpoint =
+            Boolean(actionLabel) &&
+            registryStage === newMicroStage &&
+            !force;
+
+          if (useActionEndpoint && actionLabel) {
+            updated = await opportunitiesApi.runAction(opportunityId, {
+              action_label: actionLabel,
+              changed_by: changedBy,
+              force,
+              reason,
+            });
+          } else {
+            updated = await opportunitiesApi.stageTransition(opportunityId, {
+              new_micro_stage: newMicroStage,
+              changed_by: changedBy,
+              force,
+              reason,
+            });
+          }
+
+          get().upsertOpportunity(updated);
+          const activities = await opportunitiesApi.getActivities(opportunityId);
+          get().setActivitiesForOpportunity(opportunityId, activities);
+          return updated;
+        } catch {
+          throw new Error("Stage transition failed on server");
+        }
       },
     }),
     {

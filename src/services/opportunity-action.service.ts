@@ -5,6 +5,8 @@ import type { MacroStageId, MicroStageCode } from "@/domain/stages/types";
 import { getMicroStagesForMacro } from "@/domain/stages/business-stages";
 import type { OpportunityMaster } from "@/domain/entities/opportunity";
 import { ACTION_REGISTRY, parseMicroStageFromInput, type ActionEffect } from "@/domain/actions/action-registry";
+import { getCurrentUserName } from "@/api/auth.api";
+import * as opportunitiesApi from "@/api/opportunities.api";
 import { getZentroFlowStore } from "@/store/opportunity-store";
 import { getLeadsSnapshot } from "@/domain/leads";
 import {
@@ -141,9 +143,10 @@ export async function performOpportunityAction(
       await store.moveStage(
         opp.opportunity_id,
         microStage,
-        "Current User",
+        getCurrentUserName(),
         options.reason ?? label,
         isManualOverride,
+        label,
       );
       const updated = store.getOpportunity(opp.opportunity_id);
       if (updated) {
@@ -162,8 +165,16 @@ export async function performOpportunityAction(
       });
       return;
     }
-  } else if (opp && effect.status) {
-    store.upsertOpportunity({ ...opp, status: effect.status });
+  } else if (opp && effect.status && ACTION_REGISTRY[label]) {
+    try {
+      const updated = await opportunitiesApi.runAction(opp.opportunity_id, {
+        action_label: label,
+        changed_by: getCurrentUserName(),
+      });
+      store.upsertOpportunity(updated);
+    } catch {
+      store.upsertOpportunity({ ...opp, status: effect.status });
+    }
   }
 
   if (opp && effect.scoreEvent) {
@@ -222,17 +233,30 @@ export async function confirmManualStageMove(
     toast.error("Invalid stage", { description: "Use format C1A.5 or C1 · C1.3 Objection" });
     return false;
   }
-  await performOpportunityAction(
-    "Stage moved",
-    {
+  const store = getZentroFlowStore();
+  try {
+    await store.moveStage(
       opportunityId,
-      manualMicroStage: micro,
-      owner: form.owner,
-      currentAction: form.newAction,
-      nextAction: form.newAction,
-      reason: form.reason,
-    },
-    navigate,
-  );
+      micro,
+      getCurrentUserName(),
+      form.reason ?? "Manual stage override",
+      true,
+    );
+    const updated = store.getOpportunity(opportunityId);
+    if (updated && form.owner) {
+      store.upsertOpportunity({
+        ...updated,
+        current_owner: form.owner,
+        current_action: form.newAction,
+        next_action: form.newAction,
+      });
+    }
+    toast.success("Stage updated", { description: `${opportunityId} → ${micro}` });
+  } catch (err) {
+    toast.error("Cannot move stage", {
+      description: err instanceof Error ? err.message : "Stage transition failed",
+    });
+    return false;
+  }
   return true;
 }

@@ -34,5 +34,10 @@ npm run dev
 ```
 
 Domain model (C0–C3 micro stages, scoring, events): `src/domain/platform.ts`  
-Lead mock data: `src/domain/leads.ts`  
 Navigation: `src/domain/app-nav.ts`
+
+## Backend (Node.js + Express + MongoDB)
+
+Full API spec, folder structure, Mongoose models, routes, controllers, middleware, and frontend wiring:
+
+**[docs/BACKEND.md](docs/BACKEND.md)**

@@ -19,8 +19,10 @@ import LifecycleCrm from "@/components/modules/LifecycleCrm";
 import Reengagement from "@/components/modules/Reengagement";
 import Reports from "@/components/modules/Reports";
 import MastersSettings from "@/components/modules/MastersSettings";
+import { useApiBootstrap } from "@/hooks/use-api-bootstrap";
 
 const Dashboard = () => {
+  const { syncing } = useApiBootstrap();
   const [activeModule, setActiveModule] = useState<AppModuleId>("lead-upload");
   const [selectedLeadId, setSelectedLeadId] = useState<string | undefined>();
   const [collapsed, setCollapsed] = useState(false);
@@ -95,7 +97,15 @@ const Dashboard = () => {
             onMenuClick={() => setMobileNavOpen(true)}
             showMenu={isMobile}
           />
-          <div className="page-content">{renderModule()}</div>
+          <div className="page-content">
+            {syncing ? (
+              <div className="flex min-h-[40vh] items-center justify-center text-muted-foreground">
+                Syncing with API…
+              </div>
+            ) : (
+              renderModule()
+            )}
+          </div>
         </main>
       </div>
     </DashboardProvider>

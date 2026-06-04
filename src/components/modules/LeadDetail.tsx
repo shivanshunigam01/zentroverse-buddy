@@ -2,6 +2,7 @@ import { useState } from "react";
 import ModuleShell, { Btn, Section, FormGrid, ActionBar } from "@/components/shared/ModuleShell";
 import EmptyState from "@/components/shared/EmptyState";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
+import LeadIdentityTable from "@/components/shared/LeadIdentityTable";
 import { SCORING_RULES } from "@/domain/platform";
 import { useLeadById, useOpportunityLeads, useActivitiesForOpportunity } from "@/store/selectors";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
@@ -70,12 +71,8 @@ const LeadDetail = ({ leadId }: Props) => {
             <a href={`tel:${lead.mobile}`} className="mt-1 inline-block text-sm font-medium text-primary hover:underline">
               {lead.mobile}
             </a>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {[lead.leadId, lead.customerId, lead.opportunityId].map((id) => (
-                <span key={id} className="rounded-md bg-secondary px-2 py-0.5 font-mono text-[10px] text-muted-foreground sm:text-xs">
-                  {id}
-                </span>
-              ))}
+            <div className="mt-3 max-w-md">
+              <LeadIdentityTable lead={lead} compact />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 rounded-2xl bg-secondary/40 p-3 text-xs sm:gap-3 sm:p-4 sm:text-sm lg:min-w-[240px]">
@@ -156,6 +153,9 @@ const LeadDetail = ({ leadId }: Props) => {
 
 const OverviewTab = ({ lead, run }: { lead: import("@/adapters/lead-view.adapter").Lead; run: (label: string) => void }) => (
   <>
+    <Section title="Lead identity">
+      <LeadIdentityTable lead={lead} />
+    </Section>
     <Section title={`${lead.microStage} · Current stage`}>
       <p className="text-sm text-muted-foreground">{lead.currentAction}</p>
       <ActionBar>

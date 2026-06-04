@@ -27,7 +27,17 @@ const LeadCardStrip = ({ lead, onClick }: { lead: Lead; onClick?: () => void }) 
               {lead.leadScore} · {lead.scoreLabel}
             </span>
           </div>
-          <p className="mt-0.5 font-mono text-[10px] text-muted-foreground sm:text-xs">{lead.leadId}</p>
+          <p className="mt-2 space-y-0.5 font-mono text-[10px] sm:text-xs">
+            <span className="block text-muted-foreground">
+              <span className="font-sans font-bold uppercase tracking-wide">Lead ID:</span> {lead.leadId}
+            </span>
+            <span className="block text-muted-foreground/90">
+              <span className="font-sans font-bold uppercase tracking-wide">Customer ID:</span> {lead.customerId}
+            </span>
+            <span className="block text-muted-foreground/90">
+              <span className="font-sans font-bold uppercase tracking-wide">Opportunity ID:</span> {lead.opportunityId}
+            </span>
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-destructive/12 px-2 py-0.5 text-[10px] font-bold text-destructive">{lead.priority}</span>

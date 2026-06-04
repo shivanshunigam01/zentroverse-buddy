@@ -5,6 +5,7 @@ import type { AppModuleId } from "@/domain/app-nav";
 import { MODULE_TITLES } from "@/domain/app-nav";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useOpportunityLeads } from "@/store/selectors";
+import { useAuth } from "@/context/AuthContext";
 
 interface Props {
   activeModule: AppModuleId;
@@ -17,6 +18,7 @@ const DashboardTopbar = ({ activeModule, onMenuClick, showMenu }: Props) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const { navigate, viewLead } = useDashboardActions();
+  const { user, logout } = useAuth();
   const leads = useOpportunityLeads();
 
   const handleSearch = (q: string) => {
@@ -100,11 +102,12 @@ const DashboardTopbar = ({ activeModule, onMenuClick, showMenu }: Props) => {
 
           <button
             type="button"
-            onClick={() => toast.success("Profile", { description: "Admin · ZentroFlow workspace" })}
+            onClick={() => logout()}
             className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary text-sm font-bold text-primary-foreground shadow-md"
-            aria-label="Account"
+            aria-label="Sign out"
+            title={user?.email ?? "Sign out"}
           >
-            A
+            {(user?.name ?? "A").charAt(0)}
           </button>
         </div>
       </div>
