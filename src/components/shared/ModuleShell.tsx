@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import type { AppModuleId } from "@/domain/app-nav";
-import { MODULE_TITLES } from "@/domain/app-nav";
 import { ACTION_REGISTRY } from "@/domain/actions/action-registry";
 import { canPerformAction } from "@/domain/stages/stage-gates";
 import { useOpportunityList } from "@/store/selectors";
@@ -39,19 +38,23 @@ const LABEL_NAV: Partial<Record<string, AppModuleId>> = {
   "Save Lead": "lead-inbox",
 };
 
-const ModuleShell = ({ moduleId, children, actions }: { moduleId: AppModuleId; children: ReactNode; actions?: ReactNode }) => {
-  const meta = MODULE_TITLES[moduleId];
+/** Page body wrapper — title lives in DashboardTopbar only (no duplicate header). */
+const ModuleShell = ({
+  children,
+  actions,
+}: {
+  /** Kept for API compatibility; title is shown in DashboardTopbar only */
+  moduleId: AppModuleId;
+  children: ReactNode;
+  actions?: ReactNode;
+}) => {
   return (
-    <div className="space-y-5 sm:space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="font-display text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-[1.65rem]">
-            {meta.title}
-          </h1>
-          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">{meta.subtitle}</p>
+    <div className="space-y-4 sm:space-y-5">
+      {actions ? (
+        <div className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-card/60 p-3 shadow-sm backdrop-blur-sm xs:flex-row xs:flex-wrap xs:items-center xs:justify-end sm:p-4">
+          {actions}
         </div>
-        {actions && <div className="flex w-full flex-col gap-2 xs:flex-row xs:flex-wrap sm:w-auto sm:justify-end">{actions}</div>}
-      </div>
+      ) : null}
       {children}
     </div>
   );

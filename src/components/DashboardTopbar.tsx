@@ -4,7 +4,7 @@ import { Search, Bell, Menu, RefreshCw } from "lucide-react";
 import { refreshFromApi } from "@/services/sync.service";
 import { ApiClientError } from "@/lib/api";
 import type { AppModuleId } from "@/domain/app-nav";
-import { MODULE_TITLES } from "@/domain/app-nav";
+import { MODULE_TITLES, MODULE_ICONS } from "@/domain/app-nav";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useOpportunityLeads } from "@/store/selectors";
 import { useAuth } from "@/context/AuthContext";
@@ -17,6 +17,7 @@ interface Props {
 
 const DashboardTopbar = ({ activeModule, onMenuClick, showMenu }: Props) => {
   const meta = MODULE_TITLES[activeModule];
+  const ModuleIcon = MODULE_ICONS[activeModule];
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [syncing, setSyncing] = useState(false);
@@ -59,35 +60,45 @@ const DashboardTopbar = ({ activeModule, onMenuClick, showMenu }: Props) => {
   );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/80 bg-card/90 backdrop-blur-lg">
-      <div className="flex min-h-[4rem] items-center gap-3 px-4 sm:min-h-[4.25rem] sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 border-b border-border/80 bg-card/95 shadow-sm backdrop-blur-md">
+      <div className="flex min-h-[3.75rem] items-center gap-3 px-4 sm:min-h-[4.5rem] sm:gap-4 sm:px-6 lg:px-8">
         {showMenu && (
           <button
             type="button"
             onClick={onMenuClick}
-            className="flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-xl border border-border/80 bg-card hover:bg-secondary lg:hidden"
+            className="flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-xl border border-border/80 bg-background hover:bg-secondary lg:hidden"
             aria-label="Open menu"
           >
             <Menu size={20} />
           </button>
         )}
 
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate font-display text-base font-bold sm:text-lg">{meta.title}</h1>
-          <p className="hidden truncate text-xs text-muted-foreground sm:block">{meta.subtitle}</p>
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div
+            className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:flex"
+            aria-hidden
+          >
+            <ModuleIcon className="h-5 w-5" strokeWidth={2.25} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate font-display text-lg font-bold tracking-tight text-foreground sm:text-xl">
+              {meta.title}
+            </h1>
+            <p className="truncate text-xs text-muted-foreground sm:text-sm">{meta.subtitle}</p>
+          </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-1.5">
           <button
             type="button"
             onClick={() => setSearchOpen((v) => !v)}
-            className="flex h-10 w-10 touch-manipulation items-center justify-center rounded-xl hover:bg-secondary sm:hidden"
+            className="flex h-10 w-10 touch-manipulation items-center justify-center rounded-xl border border-transparent hover:border-border/80 hover:bg-secondary sm:hidden"
             aria-label="Search"
           >
             <Search size={20} className="text-muted-foreground" />
           </button>
 
-          {searchInput("input-app w-44 py-2 pl-9 text-sm lg:w-56 xl:w-64")}
+          <div className="hidden sm:block">{searchInput("input-app w-40 py-2 pl-9 text-sm lg:w-52 xl:w-60")}</div>
 
           <button
             type="button"
@@ -105,7 +116,7 @@ const DashboardTopbar = ({ activeModule, onMenuClick, showMenu }: Props) => {
                 setSyncing(false);
               }
             }}
-            className="flex h-10 w-10 touch-manipulation items-center justify-center rounded-xl hover:bg-secondary"
+            className="flex h-10 w-10 touch-manipulation items-center justify-center rounded-xl border border-transparent hover:border-border/80 hover:bg-secondary"
             aria-label="Sync with API"
             title="Sync with API"
           >
@@ -119,17 +130,17 @@ const DashboardTopbar = ({ activeModule, onMenuClick, showMenu }: Props) => {
                 description: "3 SLA alerts · 2 finance pending · 1 delivery ready",
               })
             }
-            className="relative flex h-10 w-10 touch-manipulation items-center justify-center rounded-xl hover:bg-secondary"
+            className="relative flex h-10 w-10 touch-manipulation items-center justify-center rounded-xl border border-transparent hover:border-border/80 hover:bg-secondary"
             aria-label="Notifications"
           >
             <Bell size={20} className="text-muted-foreground" />
-            <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-card" />
+            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive ring-2 ring-card" />
           </button>
 
           <button
             type="button"
             onClick={() => logout()}
-            className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary text-sm font-bold text-primary-foreground shadow-md"
+            className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary text-sm font-bold text-primary-foreground shadow-md ring-2 ring-primary/20"
             aria-label="Sign out"
             title={user?.email ?? "Sign out"}
           >
@@ -139,7 +150,7 @@ const DashboardTopbar = ({ activeModule, onMenuClick, showMenu }: Props) => {
       </div>
 
       {searchOpen && (
-        <div className="border-t border-border/60 px-4 pb-3 pt-2 sm:hidden">
+        <div className="border-t border-border/60 bg-card/80 px-4 pb-3 pt-2 sm:hidden">
           {searchInput("input-app w-full py-2.5 pl-9 text-sm", true)}
         </div>
       )}

@@ -1,49 +1,10 @@
-import {
-  LayoutDashboard,
-  Upload,
-  Inbox,
-  FileSearch,
-  Zap,
-  Phone,
-  MessageCircle,
-  TrendingUp,
-  Landmark,
-  ClipboardCheck,
-  Truck,
-  RefreshCw,
-  RotateCcw,
-  BarChart3,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  LogOut,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, X } from "lucide-react";
 import zentroverseLogo from "@/assets/zentroverse-logo.png";
-import { MAIN_SIDEBAR, type AppModuleId } from "@/domain/app-nav";
+import { MAIN_SIDEBAR, MODULE_ICONS, type AppModuleId } from "@/domain/app-nav";
 import { POSITIONING } from "@/domain/platform";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useStageGates } from "@/hooks/use-stage-gates";
 import { toast } from "sonner";
-
-const MODULE_ICONS: Record<AppModuleId, LucideIcon> = {
-  dashboard: LayoutDashboard,
-  "lead-upload": Upload,
-  "lead-inbox": Inbox,
-  "lead-detail": FileSearch,
-  "action-engine": Zap,
-  autodialer: Phone,
-  "whatsapp-bot": MessageCircle,
-  "sales-pipeline": TrendingUp,
-  "finance-desk": Landmark,
-  "booking-billing": ClipboardCheck,
-  "delivery-desk": Truck,
-  "lifecycle-crm": RefreshCw,
-  "re-engagement": RotateCcw,
-  reports: BarChart3,
-  masters: Settings,
-};
 
 const navIdle = "text-[hsl(220,14%,92%)] hover:bg-[hsl(220,20%,18%)] hover:text-white active:bg-[hsl(220,20%,22%)]";
 const navActive = "bg-[hsl(217,91%,52%)] text-white shadow-lg ring-1 ring-white/15";

@@ -1,5 +1,24 @@
 /** ZentroFlow main sidebar menu */
 
+import type { LucideIcon } from "lucide-react";
+import {
+  LayoutDashboard,
+  Upload,
+  Inbox,
+  FileSearch,
+  Zap,
+  Phone,
+  MessageCircle,
+  TrendingUp,
+  Landmark,
+  ClipboardCheck,
+  Truck,
+  RefreshCw,
+  RotateCcw,
+  BarChart3,
+  Settings,
+} from "lucide-react";
+
 export type AppModuleId =
   | "dashboard"
   | "lead-upload"
@@ -40,6 +59,24 @@ export const MAIN_SIDEBAR: NavItem[] = [
   { id: "reports", label: "Reports" },
   { id: "masters", label: "Masters / Settings" },
 ];
+
+export const MODULE_ICONS: Record<AppModuleId, LucideIcon> = {
+  dashboard: LayoutDashboard,
+  "lead-upload": Upload,
+  "lead-inbox": Inbox,
+  "lead-detail": FileSearch,
+  "action-engine": Zap,
+  autodialer: Phone,
+  "whatsapp-bot": MessageCircle,
+  "sales-pipeline": TrendingUp,
+  "finance-desk": Landmark,
+  "booking-billing": ClipboardCheck,
+  "delivery-desk": Truck,
+  "lifecycle-crm": RefreshCw,
+  "re-engagement": RotateCcw,
+  reports: BarChart3,
+  masters: Settings,
+};
 
 export const MODULE_TITLES: Record<AppModuleId, { title: string; subtitle: string }> = {
   dashboard: { title: "Main Dashboard", subtitle: "Leads, funnel, performance, and SLA at a glance" },
