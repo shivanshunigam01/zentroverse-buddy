@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import ModuleShell, { Btn, Section, ActionBar } from "@/components/shared/ModuleShell";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useZentroFlowStore } from "@/store/opportunity-store";
-import { parseExcelFileDetailed, type ExcelLeadRow } from "@/services/excel-import.service";
+import { parseExcelFileDetailed, dedupeRowsByMobile, type ExcelLeadRow } from "@/services/excel-import.service";
 import { downloadSampleFromApi } from "@/services/export.service";
 import { downloadSampleLeadTemplate } from "@/services/excel-export.service";
 import * as leadsApi from "@/api/leads.api";
@@ -11,9 +11,8 @@ import { refreshFromApi, mapLatestImport } from "@/services/sync.service";
 import { getCurrentUserName } from "@/api/auth.api";
 import { ApiClientError } from "@/lib/api";
 
-const EXCEL_COLUMNS = [
-  "Customer Name", "Mobile", "Alternate Mobile", "Email", "District",
-  "Source", "Campaign", "Product Interest", "Lead Type", "Branch", "Executive", "Remarks",
+const TEMPLATE_COLUMNS = [
+  "customerName", "mobile", "product", "requirement", "district", "source", "branch", "executive",
 ];
 
 const EMPTY_STATS = {
@@ -28,6 +27,7 @@ const EMPTY_STATS = {
 
 const LeadUpload = () => {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [parsedRows, setParsedRows] = useState<ExcelLeadRow[]>([]);
   const [fileName, setFileName] = useState<string | null>(null);
   const [validateStats, setValidateStats] = useState<typeof EMPTY_STATS | null>(null);
@@ -45,72 +45,44 @@ const LeadUpload = () => {
   const handleFile = async (file: File) => {
     setFileName(file.name);
     setValidateStats(null);
+    setUploadedFile(file);
     try {
       const buffer = await file.arrayBuffer();
       const { rows, usedImportReportSheet } = parseExcelFileDetailed(buffer);
-      if (rows.length === 0) {
-        toast.error("Wrong Excel format", {
-          description:
-            "Use “Download Sample Format” on this page — not “Export Import Report”. Need columns: Customer Name, Mobile, Product Interest.",
+      const unique = dedupeRowsByMobile(rows);
+      if (unique.length === 0) {
+        toast.error("No valid mobile numbers", {
+          description: "Sheet needs a mobile column with 10-digit Indian numbers (6–9).",
         });
+        setUploadedFile(null);
         return;
       }
-      setParsedRows(rows);
+      setParsedRows(unique);
       if (usedImportReportSheet) {
         toast.warning("Import report detected", {
-          description: `Using “Row Details” (${rows.length} rows). For new leads, use Download Sample Format instead.`,
+          description: `Using Row Details (${unique.length} rows). Use your leads template for new imports.`,
         });
       } else {
-        toast.success("File loaded", { description: `${rows.length} records ready to validate` });
+        toast.success("File loaded", {
+          description: `${unique.length} unique mobiles · click Validate then Import`,
+        });
       }
     } catch {
-      toast.error("Could not read file", { description: "Use .xlsx or .csv with the sample columns" });
-    }
-  };
-
-  const runGenerateIds = async () => {
-    if (parsedRows.length === 0) {
-      toast.error("No file loaded", { description: "Upload an Excel file first" });
-      return;
-    }
-    setBusy(true);
-    try {
-      const apiRows = await leadsApi.generateImportIds(parsedRows);
-      const mapped: ExcelLeadRow[] = parsedRows.map((row, i) => ({
-        ...row,
-        leadId: apiRows[i]?.leadId,
-        customerId: apiRows[i]?.customerId,
-        opportunityId: apiRows[i]?.opportunityId,
-      }));
-      setParsedRows(mapped);
-      const sample = mapped[0];
-      toast.success("IDs generated", {
-        description: sample
-          ? `${mapped.length} rows · Lead ${sample.leadId} · CU ${sample.customerId} · OP ${sample.opportunityId}`
-          : `${mapped.length} rows updated`,
-      });
-    } catch (err) {
-      toast.error("Generate IDs failed", { description: err instanceof ApiClientError ? err.message : "API error" });
-    } finally {
-      setBusy(false);
+      toast.error("Could not read file", { description: "Use .xlsx with customerName + mobile columns" });
+      setUploadedFile(null);
     }
   };
 
   const runValidate = async () => {
-    if (parsedRows.length === 0) {
-      toast.error("No file loaded", { description: "Upload an Excel file first" });
-      return;
-    }
-    const payload = leadsApi.toApiRows(parsedRows);
-    if (payload.length === 0) {
-      toast.error("No valid mobile numbers", {
-        description: "Each row needs a 10-digit Indian mobile (6–9). Name and product can be empty.",
-      });
+    if (!uploadedFile && parsedRows.length === 0) {
+      toast.error("No file loaded", { description: "Upload your Excel file first" });
       return;
     }
     setBusy(true);
     try {
-      const result = await leadsApi.validateImport(parsedRows);
+      const result = uploadedFile
+        ? await leadsApi.validateImportFile(uploadedFile)
+        : await leadsApi.validateImport(parsedRows);
       setValidateStats({
         total: result.total,
         valid: result.valid,
@@ -121,7 +93,7 @@ const LeadUpload = () => {
         rejected: 0,
       });
       toast.success("Validation complete", {
-        description: `${result.valid} valid · ${result.duplicate} duplicate · ${result.invalid} invalid`,
+        description: `${result.valid} new mobiles · ${result.duplicate} already in system · ${result.invalid} invalid`,
       });
     } catch (err) {
       toast.error("Validation failed", { description: err instanceof ApiClientError ? err.message : "API error" });
@@ -131,19 +103,22 @@ const LeadUpload = () => {
   };
 
   const runImport = async () => {
-    if (parsedRows.length === 0) {
-      toast.error("No file loaded", { description: "Upload an Excel file first" });
+    if (!uploadedFile && parsedRows.length === 0) {
+      toast.error("No file loaded", { description: "Upload your Excel file first" });
       return;
     }
     setBusy(true);
     try {
-      const result = await leadsApi.commitImport(parsedRows, getCurrentUserName());
+      const result = uploadedFile
+        ? await leadsApi.commitImportFile(uploadedFile, getCurrentUserName())
+        : await leadsApi.commitImport(parsedRows, getCurrentUserName());
       setLastImport(mapLatestImport(result as Record<string, unknown>));
       await refreshFromApi();
       toast.success("Import complete", {
-        description: `${result.imported} imported · ${result.rejected} rejected`,
+        description: `${result.imported} imported · ${result.rejected} skipped (duplicate/invalid)`,
       });
       setParsedRows([]);
+      setUploadedFile(null);
       setValidateStats(null);
       setTimeout(() => navigate("lead-inbox"), 500);
     } catch (err) {
@@ -195,16 +170,18 @@ const LeadUpload = () => {
 
       <Section title="Excel import pipeline">
         <p className="text-sm text-muted-foreground">
-          {fileName ? `Loaded: ${fileName} · ${parsedRows.length} rows` : "Upload → Validate → Generate IDs → Import (API-backed)"}
+          {fileName
+            ? `Loaded: ${fileName} · ${parsedRows.length} rows with unique mobile`
+            : "Upload your template → Validate → Import (unique mobile only)"}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          New mobiles are imported with whatever name/product is in the sheet; update other fields later in Lead Inbox.
         </p>
         <ActionBar>
-          <Btn onClick={runValidate} disabled={busy || parsedRows.length === 0}>
-            Validate Data
+          <Btn onClick={runValidate} disabled={busy || (!uploadedFile && parsedRows.length === 0)}>
+            Validate
           </Btn>
-          <Btn variant="outline" onClick={runGenerateIds} disabled={busy || parsedRows.length === 0}>
-            Generate IDs
-          </Btn>
-          <Btn variant="secondary" onClick={runImport} disabled={busy || parsedRows.length === 0}>
+          <Btn variant="secondary" onClick={runImport} disabled={busy || (!uploadedFile && parsedRows.length === 0)}>
             Import Leads
           </Btn>
         </ActionBar>
@@ -214,11 +191,11 @@ const LeadUpload = () => {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             ["Total rows", previewStats.total],
-            ["Valid", previewStats.valid],
-            ["Duplicate", previewStats.duplicate],
-            ["Invalid", previewStats.invalid],
+            ["New (valid)", previewStats.valid],
+            ["Already in system", previewStats.duplicate],
+            ["Invalid mobile", previewStats.invalid],
             ["Imported", previewStats.imported],
-            ["Rejected", previewStats.rejected],
+            ["Skipped", previewStats.rejected],
           ].map(([label, value]) => (
             <div key={label} className="rounded-xl border border-border/60 bg-card px-4 py-3">
               <p className="text-[10px] uppercase text-muted-foreground">{label}</p>
@@ -228,9 +205,12 @@ const LeadUpload = () => {
         </div>
       </Section>
 
-      <Section title="Expected columns">
-        <p className="text-xs font-medium text-foreground">Required: Mobile (10-digit Indian number)</p>
-        <p className="text-xs text-muted-foreground">Optional: {EXCEL_COLUMNS.filter((c) => c !== "Mobile").join(" · ")}</p>
+      <Section title="Your template columns">
+        <p className="text-xs font-medium text-foreground">Required: mobile (unique, 10-digit Indian)</p>
+        <p className="text-xs text-muted-foreground">Optional: {TEMPLATE_COLUMNS.filter((c) => c !== "mobile").join(" · ")}</p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Works with <code className="text-foreground">zentroflow-leads-template (1).xlsx</code> — sheet Leads, headers customerName / mobile / product.
+        </p>
       </Section>
     </ModuleShell>
   );

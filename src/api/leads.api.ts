@@ -30,7 +30,7 @@ export function toApiRows(rows: ExcelLeadRow[]): ApiImportRow[] {
       customerName: r.customerName.trim() || `Lead ${digits}`,
       mobile,
       product: r.product.trim() || "General",
-      requirement: r.remarks?.trim() || r.leadType?.trim() || "Standard",
+      requirement: r.remarks?.trim() || r.leadType?.trim() || "",
       district: r.district?.trim(),
       source: r.source?.trim() || "Excel Upload",
       branch: r.branch?.trim(),
@@ -51,6 +51,21 @@ export type ValidateImportResult = {
   rows: Array<ApiImportRow & { valid: boolean; duplicate?: boolean; errors?: string[] }>;
 };
 
+function importFileFormData(file: File, importedBy?: string): FormData {
+  const fd = new FormData();
+  fd.append("file", file);
+  if (importedBy) fd.append("imported_by", importedBy);
+  return fd;
+}
+
+/** Upload .xlsx directly — best for large files (e.g. 900+ rows). */
+export async function validateImportFile(file: File): Promise<ValidateImportResult> {
+  return api<ValidateImportResult>("/leads/import/validate", {
+    method: "POST",
+    body: importFileFormData(file),
+  });
+}
+
 export async function validateImport(rows: ExcelLeadRow[]): Promise<ValidateImportResult> {
   return api<ValidateImportResult>("/leads/import/validate", {
     method: "POST",
@@ -62,6 +77,21 @@ export async function generateImportIds(rows: ExcelLeadRow[]): Promise<ApiImport
   return api<ApiImportRow[]>("/leads/import/generate-ids", {
     method: "POST",
     json: { rows: toApiRows(rows) },
+  });
+}
+
+export async function commitImportFile(file: File, importedBy: string) {
+  return api<{
+    total: number;
+    valid: number;
+    duplicate: number;
+    invalid: number;
+    imported: number;
+    rejected: number;
+    rows: unknown[];
+  }>("/leads/import", {
+    method: "POST",
+    body: importFileFormData(file, importedBy),
   });
 }
 

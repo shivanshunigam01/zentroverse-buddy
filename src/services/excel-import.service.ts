@@ -42,7 +42,7 @@ export type ImportBatchResult = {
 };
 
 const COLUMN_ALIASES: Record<keyof ExcelLeadRow, string[]> = {
-  customerName: ["customer name", "name", "customer"],
+  customerName: ["customer name", "customername", "name", "customer"],
   mobile: ["mobile", "phone", "mobile number"],
   alternateMobile: ["alternate mobile", "alt mobile"],
   email: ["email", "e-mail"],
@@ -53,7 +53,7 @@ const COLUMN_ALIASES: Record<keyof ExcelLeadRow, string[]> = {
   leadType: ["lead type", "type"],
   branch: ["branch"],
   executive: ["executive", "owner", "assigned to"],
-  remarks: ["remarks", "notes"],
+  remarks: ["remarks", "notes", "requirement"],
 };
 
 function normalizeHeader(h: string): string {
@@ -64,9 +64,14 @@ function pick(row: Record<string, unknown>, field: keyof ExcelLeadRow): string {
   const keys = Object.keys(row);
   for (const alias of COLUMN_ALIASES[field]) {
     const match = keys.find((k) => normalizeHeader(k) === alias);
-    if (match && row[match] != null) return String(row[match]).trim();
+    if (match != null && row[match] !== "") return String(row[match]).trim();
   }
   return "";
+}
+
+function coerceMobileValue(value: unknown): string {
+  if (value == null || value === "") return "";
+  return String(value).trim();
 }
 
 function sheetHasLeadColumns(sheet: XLSX.WorkSheet): boolean {
@@ -91,15 +96,16 @@ function selectImportSheet(wb: XLSX.WorkBook): XLSX.WorkSheet {
 }
 
 function rowToExcelLead(row: Record<string, unknown>): ExcelLeadRow {
+  const mobile = coerceMobileValue(pick(row, "mobile") || row.mobile);
   return {
-    customerName: pick(row, "customerName"),
-    mobile: pick(row, "mobile"),
+    customerName: pick(row, "customerName") || String(row.customerName ?? "").trim(),
+    mobile,
     alternateMobile: pick(row, "alternateMobile") || undefined,
     email: pick(row, "email") || undefined,
     district: pick(row, "district"),
     source: pick(row, "source") || "Excel Upload",
     campaign: pick(row, "campaign") || undefined,
-    product: pick(row, "product"),
+    product: pick(row, "product") || String(row.product ?? "").trim(),
     leadType: pick(row, "leadType") || "New",
     branch: pick(row, "branch") || "Main Branch",
     executive: pick(row, "executive") || "Sales Executive",
@@ -116,8 +122,22 @@ function normalizeMobile(mobile: string): string {
 }
 
 function isValidMobile(mobile: string): boolean {
-  const n = normalizeMobile(mobile);
+  const n = normalizeMobile(coerceMobileValue(mobile));
   return n.length === 10 && /^[6-9]/.test(n);
+}
+
+/** First occurrence per mobile in file wins; rest are duplicates. */
+export function dedupeRowsByMobile(rows: ExcelLeadRow[]): ExcelLeadRow[] {
+  const seen = new Set<string>();
+  const out: ExcelLeadRow[] = [];
+  for (const row of rows) {
+    if (!isValidMobile(row.mobile)) continue;
+    const key = normalizeMobile(row.mobile);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(row);
+  }
+  return out;
 }
 
 function id(prefix: string): string {
