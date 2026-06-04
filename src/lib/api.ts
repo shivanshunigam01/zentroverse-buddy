@@ -69,6 +69,7 @@ function messageFromStatus(status: number, backendMessage?: string): string {
   const defaults: Record<number, string> = {
     400: "Invalid request. Please check your input.",
     401: "Session expired or invalid. Please sign in again.",
+    504: "Server timed out (504). Deploy latest API and set nginx proxy_read_timeout to 600s.",
     403: "You do not have permission to perform this action.",
     404: "The requested resource was not found.",
     409: "This action conflicts with existing data.",
@@ -96,15 +97,21 @@ export type ApiRequestOptions = RequestInit & {
   json?: unknown;
   /** Set true only if backend uses cookie sessions */
   withCredentials?: boolean;
+  /** Max wait (large import/validate). Default 10 minutes. */
+  timeoutMs?: number;
 };
+
+const DEFAULT_TIMEOUT_MS = 600000;
 
 export async function apiRequest<T>(
   path: string,
   options: ApiRequestOptions = {},
 ): Promise<T> {
-  const { json, withCredentials, headers: extraHeaders, ...init } = options;
+  const { json, withCredentials, headers: extraHeaders, timeoutMs = DEFAULT_TIMEOUT_MS, ...init } = options;
   const method = (init.method ?? (json !== undefined ? "POST" : "GET")).toUpperCase();
   const url = buildApiUrl(path);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   const headers: Record<string, string> = {
     Accept: "application/json",
@@ -129,15 +136,20 @@ export async function apiRequest<T>(
       method,
       headers,
       body,
+      signal: init.signal ?? controller.signal,
       credentials: withCredentials ? "include" : "omit",
     });
   } catch (cause) {
     debugLog("network-error", { method, url, cause });
-    const hint =
-      cause instanceof TypeError && /fetch/i.test(cause.message)
+    const aborted = cause instanceof DOMException && cause.name === "AbortError";
+    const hint = aborted
+      ? "Request timed out. Large imports can take several minutes — ask admin to increase nginx proxy_read_timeout."
+      : cause instanceof TypeError && /fetch/i.test((cause as Error).message)
         ? "Cannot reach the API. Check your internet connection and that the server is running."
         : "Network request failed.";
-    throw new ApiClientError(0, "NETWORK_ERROR", hint);
+    throw new ApiClientError(0, aborted ? "TIMEOUT" : "NETWORK_ERROR", hint);
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   const parsed = await parseJsonSafe(res);

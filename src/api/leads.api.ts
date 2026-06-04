@@ -58,6 +58,7 @@ export async function validateImportFile(file: File): Promise<ValidateImportResu
   return api<ValidateImportResult>("/leads/import/validate", {
     method: "POST",
     body: importFileFormData(file),
+    timeoutMs: 600000,
   });
 }
 
@@ -87,6 +88,7 @@ export async function commitImportFile(file: File, importedBy: string) {
   }>("/leads/import", {
     method: "POST",
     body: importFileFormData(file, importedBy),
+    timeoutMs: 600000,
   });
 }
 
