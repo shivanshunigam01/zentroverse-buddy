@@ -15,20 +15,31 @@ export type ApiImportRow = {
   opportunityId?: string;
 };
 
+function isValidIndianMobile(mobile: string): boolean {
+  const n = mobile.replace(/\D/g, "").slice(-10);
+  return n.length === 10 && /^[6-9]/.test(n);
+}
+
 export function toApiRows(rows: ExcelLeadRow[]): ApiImportRow[] {
-  return rows.map((r) => ({
-    customerName: r.customerName,
-    mobile: r.mobile,
-    product: r.product,
-    requirement: r.leadType || r.remarks || "Standard",
-    district: r.district,
-    source: r.source,
-    branch: r.branch,
-    executive: r.executive,
-    leadId: r.leadId,
-    customerId: r.customerId,
-    opportunityId: r.opportunityId,
-  }));
+  return rows
+    .filter((r) => isValidIndianMobile(r.mobile.trim()))
+    .map((r) => {
+      const mobile = r.mobile.trim();
+      const digits = mobile.replace(/\D/g, "").slice(-10);
+      return {
+      customerName: r.customerName.trim() || `Lead ${digits}`,
+      mobile,
+      product: r.product.trim() || "General",
+      requirement: r.remarks?.trim() || r.leadType?.trim() || "Standard",
+      district: r.district?.trim(),
+      source: r.source?.trim() || "Excel Upload",
+      branch: r.branch?.trim(),
+      executive: r.executive?.trim(),
+      leadId: r.leadId,
+      customerId: r.customerId,
+      opportunityId: r.opportunityId,
+    };
+    });
 }
 
 export type ValidateImportResult = {

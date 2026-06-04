@@ -69,6 +69,48 @@ function pick(row: Record<string, unknown>, field: keyof ExcelLeadRow): string {
   return "";
 }
 
+function sheetHasLeadColumns(sheet: XLSX.WorkSheet): boolean {
+  const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+  if (json.length === 0) return false;
+  const keys = Object.keys(json[0]).map(normalizeHeader);
+  return COLUMN_ALIASES.mobile.some((a) => keys.includes(a));
+}
+
+/** Prefer Leads / Row Details over Import Report "Summary" sheet. */
+function selectImportSheet(wb: XLSX.WorkBook): XLSX.WorkSheet {
+  const preferred = wb.SheetNames.find((n) => /^(row details|leads)$/i.test(n.trim()));
+  if (preferred) {
+    const sheet = wb.Sheets[preferred];
+    if (sheetHasLeadColumns(sheet)) return sheet;
+  }
+  for (const name of wb.SheetNames) {
+    const sheet = wb.Sheets[name];
+    if (sheetHasLeadColumns(sheet)) return sheet;
+  }
+  return wb.Sheets[wb.SheetNames[0]];
+}
+
+function rowToExcelLead(row: Record<string, unknown>): ExcelLeadRow {
+  return {
+    customerName: pick(row, "customerName"),
+    mobile: pick(row, "mobile"),
+    alternateMobile: pick(row, "alternateMobile") || undefined,
+    email: pick(row, "email") || undefined,
+    district: pick(row, "district"),
+    source: pick(row, "source") || "Excel Upload",
+    campaign: pick(row, "campaign") || undefined,
+    product: pick(row, "product"),
+    leadType: pick(row, "leadType") || "New",
+    branch: pick(row, "branch") || "Main Branch",
+    executive: pick(row, "executive") || "Sales Executive",
+    remarks: pick(row, "remarks") || undefined,
+  };
+}
+
+export function isImportReportWorkbook(wb: XLSX.WorkBook): boolean {
+  return wb.SheetNames.includes("Summary") && wb.SheetNames.includes("Row Details");
+}
+
 function normalizeMobile(mobile: string): string {
   return mobile.replace(/\D/g, "").slice(-10);
 }
@@ -98,24 +140,26 @@ function idsForRow(row: ExcelLeadRow): { leadId: string; customerId: string; opp
   };
 }
 
+export type ParseExcelResult = {
+  rows: ExcelLeadRow[];
+  /** User uploaded an export report (Summary + Row Details) instead of the lead template */
+  usedImportReportSheet: boolean;
+};
+
 export function parseExcelFile(buffer: ArrayBuffer): ExcelLeadRow[] {
+  return parseExcelFileDetailed(buffer).rows;
+}
+
+export function parseExcelFileDetailed(buffer: ArrayBuffer): ParseExcelResult {
   const wb = XLSX.read(buffer, { type: "array" });
-  const sheet = wb.Sheets[wb.SheetNames[0]];
+  const report = isImportReportWorkbook(wb);
+  const sheet = selectImportSheet(wb);
   const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
-  return json.map((row) => ({
-    customerName: pick(row, "customerName"),
-    mobile: pick(row, "mobile"),
-    alternateMobile: pick(row, "alternateMobile") || undefined,
-    email: pick(row, "email") || undefined,
-    district: pick(row, "district"),
-    source: pick(row, "source") || "Excel Upload",
-    campaign: pick(row, "campaign") || undefined,
-    product: pick(row, "product"),
-    leadType: pick(row, "leadType") || "New",
-    branch: pick(row, "branch") || "Main Branch",
-    executive: pick(row, "executive") || "Sales Executive",
-    remarks: pick(row, "remarks") || undefined,
-  }));
+  const rows = json.map(rowToExcelLead).filter((r) => isValidMobile(r.mobile));
+  return {
+    rows,
+    usedImportReportSheet: report && sheet === wb.Sheets["Row Details"],
+  };
 }
 
 export function buildSampleCsv(): string {
@@ -162,13 +206,6 @@ export async function importLeadRows(
   const allOpps = [...existingOpportunities];
 
   for (const row of rows) {
-    if (!row.customerName || !row.mobile || !row.product) {
-      result.invalid++;
-      result.rejected++;
-      result.rows.push({ status: "invalid", reason: "Missing name, mobile, or product" });
-      continue;
-    }
-
     if (!isValidMobile(row.mobile)) {
       result.invalid++;
       result.rejected++;
@@ -179,14 +216,16 @@ export async function importLeadRows(
     result.valid++;
 
     const mobileNorm = normalizeMobile(row.mobile);
+    const customerName = row.customerName.trim() || `Lead ${mobileNorm}`;
+    const product = row.product.trim() || "General";
     let customer = customersByMobile.get(mobileNorm);
     const now = new Date().toISOString();
-    const ids = idsForRow(row);
+    const ids = idsForRow({ ...row, customerName });
 
     if (!customer) {
       customer = {
         customer_id: ids.customerId,
-        name: row.customerName,
+        name: customerName,
         mobile: row.mobile,
         mobile_normalized: mobileNorm,
         email: row.email ?? null,
@@ -201,7 +240,7 @@ export async function importLeadRows(
     const siblingOpps = allOpps.filter((o) => o.customer_id === customer!.customer_id);
     const dupClass = classifyDuplicate({
       customer_id: customer.customer_id,
-      product: row.product,
+      product,
       requirement: row.remarks ?? null,
       existing_opportunities: siblingOpps.map((o) => ({
         opportunity_id: o.opportunity_id,
@@ -224,7 +263,7 @@ export async function importLeadRows(
       opportunity_id: ids.opportunityId,
       lead_id: ids.leadId,
       customer_id: customer.customer_id,
-      product: row.product,
+      product,
       variant: null,
       requirement: row.remarks ?? null,
       opportunity_type: dupClass === "New Opportunity" ? "New" : "Cross Sell",

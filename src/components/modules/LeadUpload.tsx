@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import ModuleShell, { Btn, Section, ActionBar } from "@/components/shared/ModuleShell";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useZentroFlowStore } from "@/store/opportunity-store";
-import { parseExcelFile, type ExcelLeadRow } from "@/services/excel-import.service";
+import { parseExcelFileDetailed, type ExcelLeadRow } from "@/services/excel-import.service";
 import { downloadSampleFromApi } from "@/services/export.service";
 import { downloadSampleLeadTemplate } from "@/services/excel-export.service";
 import * as leadsApi from "@/api/leads.api";
@@ -47,13 +47,22 @@ const LeadUpload = () => {
     setValidateStats(null);
     try {
       const buffer = await file.arrayBuffer();
-      const rows = parseExcelFile(buffer);
+      const { rows, usedImportReportSheet } = parseExcelFileDetailed(buffer);
       if (rows.length === 0) {
-        toast.error("Empty file", { description: "No data rows found in the sheet" });
+        toast.error("Wrong Excel format", {
+          description:
+            "Use “Download Sample Format” on this page — not “Export Import Report”. Need columns: Customer Name, Mobile, Product Interest.",
+        });
         return;
       }
       setParsedRows(rows);
-      toast.success("File loaded", { description: `${rows.length} records ready to validate` });
+      if (usedImportReportSheet) {
+        toast.warning("Import report detected", {
+          description: `Using “Row Details” (${rows.length} rows). For new leads, use Download Sample Format instead.`,
+        });
+      } else {
+        toast.success("File loaded", { description: `${rows.length} records ready to validate` });
+      }
     } catch {
       toast.error("Could not read file", { description: "Use .xlsx or .csv with the sample columns" });
     }
@@ -90,6 +99,13 @@ const LeadUpload = () => {
   const runValidate = async () => {
     if (parsedRows.length === 0) {
       toast.error("No file loaded", { description: "Upload an Excel file first" });
+      return;
+    }
+    const payload = leadsApi.toApiRows(parsedRows);
+    if (payload.length === 0) {
+      toast.error("No valid mobile numbers", {
+        description: "Each row needs a 10-digit Indian mobile (6–9). Name and product can be empty.",
+      });
       return;
     }
     setBusy(true);
@@ -213,7 +229,8 @@ const LeadUpload = () => {
       </Section>
 
       <Section title="Expected columns">
-        <p className="text-xs text-muted-foreground">{EXCEL_COLUMNS.join(" · ")}</p>
+        <p className="text-xs font-medium text-foreground">Required: Mobile (10-digit Indian number)</p>
+        <p className="text-xs text-muted-foreground">Optional: {EXCEL_COLUMNS.filter((c) => c !== "Mobile").join(" · ")}</p>
       </Section>
     </ModuleShell>
   );
