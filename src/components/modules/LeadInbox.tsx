@@ -9,7 +9,7 @@ import type { Lead } from "@/adapters/lead-view.adapter";
 import { useOpportunityLeads } from "@/store/selectors";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { usePagination, DEFAULT_PAGE_SIZE } from "@/hooks/use-pagination";
-import { Phone, MessageCircle, Eye, ArrowRightLeft } from "lucide-react";
+import { LeadRowActions } from "@/components/shared/LeadRowActions";
 
 const FILTERS = ["All", "Stage", "Owner", "Priority", "Hot/Warm/Cold", "Source", "SLA Missed", "Today Follow-up"];
 
@@ -98,11 +98,14 @@ const LeadInbox = () => {
             {pageItems.map((l) => (
               <div key={l.leadId} className="space-y-2">
                 <LeadCardStrip lead={l} onClick={() => viewLead(l.opportunityId)} />
-                <div className="flex flex-wrap gap-2 px-1">
-                  <IconBtn icon={Eye} label="View" onClick={() => viewLead(l.opportunityId)} />
-                  <IconBtn icon={ArrowRightLeft} label="Move" onClick={() => setMoveLead(l)} />
-                  <IconBtn icon={Phone} label="Call" onClick={() => callLead(l.mobile, l.customerName)} />
-                  <IconBtn icon={MessageCircle} label="WA" onClick={() => openWhatsApp(l.opportunityId)} />
+                <div className="px-1">
+                  <LeadRowActions
+                    variant="labeled"
+                    onView={() => viewLead(l.opportunityId)}
+                    onMove={() => setMoveLead(l)}
+                    onCall={() => callLead(l.mobile, l.customerName)}
+                    onWhatsApp={() => openWhatsApp(l.opportunityId)}
+                  />
                 </div>
               </div>
             ))}
@@ -163,13 +166,13 @@ const LeadInbox = () => {
                     {l.slaTime}
                   </td>
                   <td className="px-3 py-3 text-xs">{l.status}</td>
-                  <td className="px-3 py-3">
-                    <div className="flex flex-wrap gap-1">
-                      <MiniBtn onClick={() => viewLead(l.opportunityId)}>View</MiniBtn>
-                      <MiniBtn onClick={() => setMoveLead(l)}>Move</MiniBtn>
-                      <MiniBtn onClick={() => callLead(l.mobile, l.customerName)}>Call</MiniBtn>
-                      <MiniBtn onClick={() => openWhatsApp(l.opportunityId)}>WA</MiniBtn>
-                    </div>
+                  <td className="whitespace-nowrap px-3 py-2.5">
+                    <LeadRowActions
+                      onView={() => viewLead(l.opportunityId)}
+                      onMove={() => setMoveLead(l)}
+                      onCall={() => callLead(l.mobile, l.customerName)}
+                      onWhatsApp={() => openWhatsApp(l.opportunityId)}
+                    />
                   </td>
                 </tr>
               ))}
@@ -213,27 +216,6 @@ const EmptyInbox = () => (
   <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
     No leads match this filter.
   </p>
-);
-
-const MiniBtn = ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="rounded-lg bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary hover:bg-primary/20"
-  >
-    {children}
-  </button>
-);
-
-const IconBtn = ({ icon: Icon, label, onClick }: { icon: typeof Eye; label: string; onClick?: () => void }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-xl border border-border/80 bg-card text-xs font-semibold sm:flex-none sm:px-4"
-  >
-    <Icon size={14} />
-    {label}
-  </button>
 );
 
 export default LeadInbox;
