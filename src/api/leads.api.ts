@@ -1,4 +1,5 @@
 import { api, apiBlob } from "@/lib/api";
+import { isValidMobile, normalizeMobile } from "@/lib/mobile";
 import type { ExcelLeadRow } from "@/services/excel-import.service";
 
 export type ApiImportRow = {
@@ -15,21 +16,15 @@ export type ApiImportRow = {
   opportunityId?: string;
 };
 
-function isValidIndianMobile(mobile: string): boolean {
-  const n = mobile.replace(/\D/g, "").slice(-10);
-  return n.length === 10 && /^[6-9]/.test(n);
-}
-
 export function toApiRows(rows: ExcelLeadRow[]): ApiImportRow[] {
   return rows
-    .filter((r) => isValidIndianMobile(r.mobile.trim()))
+    .filter((r) => isValidMobile(r.mobile))
     .map((r) => {
-      const mobile = r.mobile.trim();
-      const digits = mobile.replace(/\D/g, "").slice(-10);
+      const mobile = normalizeMobile(r.mobile);
       return {
-      customerName: r.customerName.trim() || `Lead ${digits}`,
+      customerName: String(r.customerName ?? "").trim() || `Lead ${digits}`,
       mobile,
-      product: r.product.trim() || "General",
+      product: String(r.product ?? "").trim() || "General",
       requirement: r.remarks?.trim() || r.leadType?.trim() || "",
       district: r.district?.trim(),
       source: r.source?.trim() || "Excel Upload",

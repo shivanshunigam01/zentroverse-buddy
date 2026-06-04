@@ -4,6 +4,7 @@ import type { OpportunityMaster } from "@/domain/entities/opportunity";
 import { classifyDuplicate } from "@/domain/duplicate/rules";
 import { eventBus, createCorrelationId } from "@/domain/events/event-bus";
 import { generateLeadIds } from "@/services/id-generation.service";
+import { isValidMobile, normalizeMobile } from "@/lib/mobile";
 
 export type ExcelLeadRow = {
   customerName: string;
@@ -117,13 +118,34 @@ export function isImportReportWorkbook(wb: XLSX.WorkBook): boolean {
   return wb.SheetNames.includes("Summary") && wb.SheetNames.includes("Row Details");
 }
 
-function normalizeMobile(mobile: string): string {
-  return mobile.replace(/\D/g, "").slice(-10);
-}
-
-function isValidMobile(mobile: string): boolean {
-  const n = normalizeMobile(coerceMobileValue(mobile));
-  return n.length === 10 && /^[6-9]/.test(n);
+/** Local import stats (same rules as API) for instant UI before/without network. */
+export function computeLocalImportStats(rows: ExcelLeadRow[]) {
+  const seen = new Set<string>();
+  let valid = 0;
+  let duplicate = 0;
+  let invalid = 0;
+  for (const row of rows) {
+    if (!isValidMobile(row.mobile)) {
+      invalid += 1;
+      continue;
+    }
+    const key = normalizeMobile(row.mobile);
+    if (seen.has(key)) {
+      duplicate += 1;
+      continue;
+    }
+    seen.add(key);
+    valid += 1;
+  }
+  return {
+    total: rows.length,
+    valid,
+    duplicate,
+    invalid,
+    outOfTerritory: 0,
+    imported: 0,
+    rejected: 0,
+  };
 }
 
 /** First occurrence per mobile in file wins; rest are duplicates. */
@@ -175,7 +197,7 @@ export function parseExcelFileDetailed(buffer: ArrayBuffer): ParseExcelResult {
   const report = isImportReportWorkbook(wb);
   const sheet = selectImportSheet(wb);
   const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
-  const rows = json.map(rowToExcelLead).filter((r) => isValidMobile(r.mobile));
+  const rows = json.map(rowToExcelLead);
   return {
     rows,
     usedImportReportSheet: report && sheet === wb.Sheets["Row Details"],
