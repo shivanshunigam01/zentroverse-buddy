@@ -1,4 +1,4 @@
-import { api, setAuthToken } from "@/api/client";
+import { api, setAuthToken } from "@/lib/api";
 
 export type AuthUser = { email: string; name: string; role: string };
 

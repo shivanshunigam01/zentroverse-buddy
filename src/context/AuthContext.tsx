@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import * as authApi from "@/api/auth.api";
 import type { AuthUser } from "@/api/auth.api";
-import { getAuthToken } from "@/api/client";
+import { getAuthToken } from "@/lib/api";
 
 type AuthContextValue = {
   user: AuthUser | null;

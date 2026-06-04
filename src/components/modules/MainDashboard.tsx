@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import ModuleShell, { StatCard, Section, Btn } from "@/components/shared/ModuleShell";
 import EmptyState from "@/components/shared/EmptyState";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
+import { useLiveStats } from "@/hooks/use-live-stats";
 import { useOpportunityLeads } from "@/store/selectors";
 import type { AppModuleId } from "@/domain/app-nav";
 
@@ -14,9 +15,7 @@ const ChartWrap = ({ children }: { children: React.ReactNode }) => (
 
 const STAT_LINKS: Partial<Record<string, AppModuleId>> = {
   "Total Leads": "lead-inbox",
-  "New Leads": "lead-upload",
   "Hot Leads": "lead-inbox",
-  "Pending Follow-ups": "action-engine",
   "SLA Missed": "lead-inbox",
   "Open (C0)": "lead-inbox",
   "In Sales (C1)": "sales-pipeline",
@@ -28,6 +27,7 @@ const STAT_LINKS: Partial<Record<string, AppModuleId>> = {
 const MainDashboard = () => {
   const { navigate, performAction } = useDashboardActions();
   const leads = useOpportunityLeads();
+  const { dashboard, pipeline } = useLiveStats(leads.length > 0);
 
   const stats = useMemo(() => {
     const byStage = { C0: 0, C1: 0, C1A: 0, C2: 0, C3: 0, lifecycle: 0 };
@@ -40,20 +40,38 @@ const MainDashboard = () => {
       const stage = l.currentStage as keyof typeof byStage;
       if (stage in byStage) byStage[stage]++;
       bySource[l.source ?? "Unknown"] = (bySource[l.source ?? "Unknown"] ?? 0) + 1;
-      if (l.scoreLabel === "Hot") hot++;
+      if (l.scoreLabel === "Hot" || l.scoreLabel === "Critical") hot++;
       if (l.slaCountdown === "Overdue") slaMissed++;
       if (l.status === "Delivered") delivered++;
     }
 
+    if (dashboard) {
+      hot = dashboard.hot ?? hot;
+      slaMissed = dashboard.slaMissed ?? slaMissed;
+    }
+
+    if (pipeline?.funnel?.length) {
+      for (const row of pipeline.funnel) {
+        const id = row._id as keyof typeof byStage | null;
+        if (id && id in byStage) byStage[id] = row.count;
+      }
+    }
+
+    if (pipeline?.sources?.length) {
+      for (const row of pipeline.sources) {
+        if (row._id) bySource[String(row._id)] = row.count;
+      }
+    }
+
     return {
-      total: leads.length,
+      total: dashboard?.totalLeads ?? leads.length,
       hot,
       slaMissed,
       delivered,
       byStage,
       bySource,
     };
-  }, [leads]);
+  }, [leads, dashboard, pipeline]);
 
   const sourceData = useMemo(
     () => Object.entries(stats.bySource).map(([name, value]) => ({ name, value })),
@@ -92,13 +110,11 @@ const MainDashboard = () => {
           { label: "Finance (C1A)", value: stats.byStage.C1A },
           { label: "Booking (C2)", value: stats.byStage.C2 },
           { label: "Delivered", value: stats.delivered, accent: "success" as const },
-          { label: "New Leads", value: stats.byStage.C0, sub: "At C0 funnel", accent: "success" as const },
         ].map((s) => (
           <StatCard
             key={s.label}
             label={s.label}
             value={s.value}
-            sub={s.sub}
             accent={s.accent}
             onClick={STAT_LINKS[s.label] ? () => navigate(STAT_LINKS[s.label]!) : undefined}
           />
@@ -106,7 +122,7 @@ const MainDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
-        <Section title="Lead source wise">
+        <Section title="Lead source wise (API)">
           {sourceData.length > 0 ? (
             <ChartWrap>
               <ResponsiveContainer width="100%" height="100%">
@@ -121,11 +137,11 @@ const MainDashboard = () => {
               </ResponsiveContainer>
             </ChartWrap>
           ) : (
-            <p className="text-sm text-muted-foreground">Import leads to see source breakdown.</p>
+            <p className="text-sm text-muted-foreground">No source data.</p>
           )}
         </Section>
 
-        <Section title="Stage wise funnel">
+        <Section title="Stage wise funnel (API)">
           <ChartWrap>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stageData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
@@ -140,10 +156,10 @@ const MainDashboard = () => {
 
         <Section title="Quick start">
           <p className="mb-3 text-sm text-muted-foreground">
-            Complete C0 micro stages in order (C0.1 → C0.10) before Sales Pipeline unlocks.
+            Stats from GET /dashboard/stats and GET /reports/pipeline.
           </p>
           <Btn variant="outline" onClick={() => void performAction("Export Excel")}>
-            Export Excel
+            Export Excel (API)
           </Btn>
           <Btn onClick={() => navigate("lead-inbox")}>Open Lead Inbox</Btn>
         </Section>

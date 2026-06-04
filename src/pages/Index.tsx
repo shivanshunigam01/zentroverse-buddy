@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import zentroverseLogo from "@/assets/zentroverse-logo.png";
 import { useAuth } from "@/context/AuthContext";
-import { ApiClientError } from "@/api/client";
+import { ApiClientError } from "@/lib/api";
 
 const Index = () => {
   const { login } = useAuth();

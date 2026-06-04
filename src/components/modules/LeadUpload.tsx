@@ -4,11 +4,12 @@ import ModuleShell, { Btn, Section, ActionBar } from "@/components/shared/Module
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useZentroFlowStore } from "@/store/opportunity-store";
 import { parseExcelFile, type ExcelLeadRow } from "@/services/excel-import.service";
+import { downloadSampleFromApi } from "@/services/export.service";
 import { downloadSampleLeadTemplate } from "@/services/excel-export.service";
 import * as leadsApi from "@/api/leads.api";
 import { refreshFromApi, mapLatestImport } from "@/services/sync.service";
 import { getCurrentUserName } from "@/api/auth.api";
-import { ApiClientError } from "@/api/client";
+import { ApiClientError } from "@/lib/api";
 
 const EXCEL_COLUMNS = [
   "Customer Name", "Mobile", "Alternate Mobile", "Email", "District",
@@ -137,19 +138,9 @@ const LeadUpload = () => {
   };
 
   const downloadSample = async () => {
-    try {
-      const blob = await leadsApi.downloadImportTemplate();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "zentroflow-leads-template.xlsx";
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("Sample downloaded", { description: "zentroflow-leads-template.xlsx" });
-    } catch {
-      downloadSampleLeadTemplate();
-      toast.success("Sample downloaded", { description: "Local template (offline fallback)" });
-    }
+    const ok = await downloadSampleFromApi();
+    if (!ok) downloadSampleLeadTemplate();
+    toast.success("Sample downloaded", { description: "zentroflow-leads-template.xlsx" });
   };
 
   return (

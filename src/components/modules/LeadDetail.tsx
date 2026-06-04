@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { refreshOpportunity } from "@/services/sync.service";
 import ModuleShell, { Btn, Section, FormGrid, ActionBar } from "@/components/shared/ModuleShell";
 import EmptyState from "@/components/shared/EmptyState";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
@@ -44,6 +45,11 @@ const LeadDetail = ({ leadId }: Props) => {
   const [tab, setTab] = useState<string>("Overview");
   const { callLead, openWhatsApp } = useDashboardActions();
   const { run } = useOpportunityActions(lead?.opportunityId);
+
+  useEffect(() => {
+    if (!lead?.opportunityId) return;
+    void refreshOpportunity(lead.opportunityId);
+  }, [lead?.opportunityId]);
 
   if (!lead) {
     return (

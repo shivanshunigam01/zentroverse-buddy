@@ -5,7 +5,7 @@ import { useOpportunityActions } from "@/hooks/use-opportunity-actions";
 import { useOpportunityList } from "@/store/selectors";
 import * as botApi from "@/api/bot.api";
 import { mindAssist } from "@/api/bot.api";
-import { ApiClientError } from "@/api/client";
+import { ApiClientError } from "@/lib/api";
 
 const WhatsAppBot = () => {
   const opportunities = useOpportunityList();

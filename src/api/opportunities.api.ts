@@ -1,4 +1,4 @@
-import { api } from "@/api/client";
+import { api } from "@/lib/api";
 import { mapActivity, mapOpportunity } from "@/api/mappers";
 import type { OpportunityDto } from "@/api/contracts/opportunities";
 import type { OpportunityMaster } from "@/domain/entities/opportunity";
@@ -40,4 +40,23 @@ export async function stageTransition(
 export async function getActivities(opportunityId: string): Promise<LeadActivity[]> {
   const rows = await api<Record<string, unknown>[]>(`/opportunities/${opportunityId}/activities`);
   return rows.map((r) => mapActivity(r));
+}
+
+export async function patchOpportunity(
+  opportunityId: string,
+  body: Partial<{
+    current_owner: string;
+    current_action: string;
+    next_action: string;
+    priority: string;
+    status: string;
+    branch: string;
+    requirement: string;
+  }>,
+): Promise<OpportunityMaster> {
+  const dto = await api<OpportunityDto>(`/opportunities/${opportunityId}`, {
+    method: "PATCH",
+    json: body,
+  });
+  return mapOpportunity(dto);
 }

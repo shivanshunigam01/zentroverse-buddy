@@ -1,4 +1,4 @@
-import { api, apiBlob } from "@/api/client";
+import { api, apiBlob } from "@/lib/api";
 import type { ExcelLeadRow } from "@/services/excel-import.service";
 
 export type ApiImportRow = {

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Search, Bell, Menu } from "lucide-react";
+import { Search, Bell, Menu, RefreshCw } from "lucide-react";
+import { refreshFromApi } from "@/services/sync.service";
+import { ApiClientError } from "@/lib/api";
 import type { AppModuleId } from "@/domain/app-nav";
 import { MODULE_TITLES } from "@/domain/app-nav";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
@@ -17,6 +19,7 @@ const DashboardTopbar = ({ activeModule, onMenuClick, showMenu }: Props) => {
   const meta = MODULE_TITLES[activeModule];
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [syncing, setSyncing] = useState(false);
   const { navigate, viewLead } = useDashboardActions();
   const { user, logout } = useAuth();
   const leads = useOpportunityLeads();
@@ -85,6 +88,29 @@ const DashboardTopbar = ({ activeModule, onMenuClick, showMenu }: Props) => {
           </button>
 
           {searchInput("input-app w-44 py-2 pl-9 text-sm lg:w-56 xl:w-64")}
+
+          <button
+            type="button"
+            disabled={syncing}
+            onClick={async () => {
+              setSyncing(true);
+              try {
+                await refreshFromApi();
+                toast.success("Synced", { description: "Data refreshed from API" });
+              } catch (err) {
+                toast.error("Sync failed", {
+                  description: err instanceof ApiClientError ? err.message : "API error",
+                });
+              } finally {
+                setSyncing(false);
+              }
+            }}
+            className="flex h-10 w-10 touch-manipulation items-center justify-center rounded-xl hover:bg-secondary"
+            aria-label="Sync with API"
+            title="Sync with API"
+          >
+            <RefreshCw size={18} className={syncing ? "animate-spin text-primary" : "text-muted-foreground"} />
+          </button>
 
           <button
             type="button"

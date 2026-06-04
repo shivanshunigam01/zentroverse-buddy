@@ -1,4 +1,4 @@
-import { api } from "@/api/client";
+import { api } from "@/lib/api";
 import { mapActivity, mapCustomer, mapOpportunity } from "@/api/mappers";
 import type { CustomerMaster } from "@/domain/entities/customer";
 import type { OpportunityMaster } from "@/domain/entities/opportunity";

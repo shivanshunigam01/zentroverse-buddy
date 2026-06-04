@@ -1,5 +1,6 @@
 import { eventBus } from "@/domain/events/event-bus";
 import { actionEngineService } from "./action-engine.service";
+import * as enginesApi from "@/api/engines.api";
 import { scoringService } from "./scoring.service";
 import { slaService } from "./sla.service";
 import type { ZentroFlowStore } from "@/store/opportunity-store";
@@ -57,8 +58,16 @@ export function registerEngineEventHandlers(getStore: () => ZentroFlowStore): vo
     const store = getStore();
     const opp = store.getOpportunity(event.opportunity_id);
     if (!opp) return;
-    const { opportunity } = scoringService.applyScoreEvent(opp, "bot.replied");
-    store.upsertOpportunity(opportunity);
+    try {
+      const updated = await enginesApi.applyScore({
+        opportunity_id: opp.opportunity_id,
+        event: "bot.replied",
+      });
+      store.upsertOpportunity(updated);
+    } catch {
+      const { opportunity } = scoringService.applyScoreEvent(opp, "bot.replied");
+      store.upsertOpportunity(opportunity);
+    }
   });
 }
 

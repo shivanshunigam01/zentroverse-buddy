@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { fetchDashboardStats } from "@/api/dashboard.api";
 import { refreshFromApi } from "@/services/sync.service";
-import { ApiClientError } from "@/api/client";
+import { ApiClientError } from "@/lib/api";
 
 export function useApiBootstrap() {
   const [ready, setReady] = useState(false);
@@ -12,6 +13,7 @@ export function useApiBootstrap() {
     (async () => {
       try {
         await refreshFromApi();
+        await fetchDashboardStats().catch(() => undefined);
         if (!cancelled) setReady(true);
       } catch (err) {
         if (!cancelled) {

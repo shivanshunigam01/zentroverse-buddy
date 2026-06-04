@@ -1,5 +1,5 @@
 import { fetchBootstrap } from "@/api/bootstrap.api";
-import { getActivities } from "@/api/opportunities.api";
+import { getActivities, getOpportunity } from "@/api/opportunities.api";
 import { getZentroFlowStore } from "@/store/opportunity-store";
 import type { OpportunityMaster } from "@/domain/entities/opportunity";
 import type { ImportBatchResult } from "@/services/excel-import.service";
@@ -12,9 +12,11 @@ export async function refreshFromApi(): Promise<void> {
 export async function refreshOpportunity(opportunityId: string): Promise<OpportunityMaster | null> {
   const store = getZentroFlowStore();
   try {
-    const activities = await getActivities(opportunityId);
-    const opp = store.getOpportunity(opportunityId);
-    if (!opp) return null;
+    const [opp, activities] = await Promise.all([
+      getOpportunity(opportunityId),
+      getActivities(opportunityId),
+    ]);
+    store.upsertOpportunity(opp);
     store.setActivitiesForOpportunity(opportunityId, activities);
     return opp;
   } catch {

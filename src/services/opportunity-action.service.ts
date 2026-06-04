@@ -6,16 +6,18 @@ import { getMicroStagesForMacro } from "@/domain/stages/business-stages";
 import type { OpportunityMaster } from "@/domain/entities/opportunity";
 import { ACTION_REGISTRY, parseMicroStageFromInput, type ActionEffect } from "@/domain/actions/action-registry";
 import { getCurrentUserName } from "@/api/auth.api";
+import * as enginesApi from "@/api/engines.api";
 import * as opportunitiesApi from "@/api/opportunities.api";
 import { getZentroFlowStore } from "@/store/opportunity-store";
-import { getLeadsSnapshot } from "@/domain/leads";
+import * as leadsApi from "@/api/leads.api";
+import { refreshFromApi, refreshOpportunity } from "@/services/sync.service";
 import {
-  downloadSampleLeadTemplate,
-  exportImportReportToExcel,
-  exportLeadsToExcel,
-  exportPipelineReportToExcel,
-} from "@/services/excel-export.service";
-import { generateLeadIds } from "@/services/id-generation.service";
+  downloadSampleFromApi,
+  exportImportReportFromApi,
+  exportLeadsFromApi,
+  exportPipelineFromApi,
+} from "@/services/export.service";
+import { downloadSampleLeadTemplate } from "@/services/excel-export.service";
 import { scoringService } from "@/services/scoring.service";
 import { contactHealthService } from "@/services/contact-health.service";
 import { validateSingleOwner } from "@/services/ownership.service";
@@ -57,19 +59,19 @@ export async function performOpportunityAction(
   const store = getZentroFlowStore();
 
   if (label === "Download Sample" || label === "Download Sample Format") {
-    downloadSampleLeadTemplate();
+    const ok = await downloadSampleFromApi();
+    if (!ok) downloadSampleLeadTemplate();
     toast.success("Sample downloaded", { description: "zentroflow-lead-import-template.xlsx" });
     return;
   }
 
   if (label === "Export Excel") {
-    const leads = getLeadsSnapshot();
-    if (leads.length === 0) {
+    const ok = await exportLeadsFromApi();
+    if (!ok) {
       toast.error("Nothing to export", { description: "Import leads first" });
       return;
     }
-    exportLeadsToExcel(leads);
-    toast.success("Export complete", { description: `${leads.length} leads exported to Excel` });
+    toast.success("Export complete", { description: "Downloaded from API" });
     if (options.navigateTo ?? effect.navigateTo) {
       setTimeout(() => navigate(options.navigateTo ?? effect.navigateTo!), 350);
     }
@@ -77,43 +79,65 @@ export async function performOpportunityAction(
   }
 
   if (label === "Export Import Report") {
-    const lastImport = store.lastImport;
-    if (!lastImport) {
+    const ok = await exportImportReportFromApi(store.lastImport);
+    if (!ok) {
       toast.error("No import report", { description: "Import leads from Excel first" });
       return;
     }
-    exportImportReportToExcel(lastImport);
-    toast.success("Import report exported", {
-      description: `${lastImport.imported} imported · ${lastImport.rejected} rejected`,
-    });
+    toast.success("Import report exported");
     return;
   }
 
   if (label === "Export Pipeline Report") {
-    const leads = getLeadsSnapshot();
-    if (leads.length === 0) {
+    const ok = await exportPipelineFromApi();
+    if (!ok) {
       toast.error("Nothing to export", { description: "Import leads first" });
       return;
     }
-    exportPipelineReportToExcel(leads);
-    toast.success("Pipeline report exported", { description: `${leads.length} leads in report` });
+    toast.success("Pipeline report exported", { description: "Downloaded from API" });
+    return;
+  }
+
+  if (label === "Import Leads" || label === "Start Automation" || label === "Save Lead") {
+    await refreshFromApi().catch(() => undefined);
+    toast.success(label, { description: "Synced with server" });
+    if (options.navigateTo ?? effect.navigateTo) {
+      setTimeout(() => navigate(options.navigateTo ?? effect.navigateTo!), 350);
+    }
     return;
   }
 
   if (label === "Generate IDs") {
     const opp = resolveOpportunity(options.opportunityId);
-    if (opp) {
-      const customer = store.getCustomer(opp.customer_id);
-      const name = customer?.name ?? "Customer";
-      const ids = generateLeadIds(name);
-      store.upsertOpportunity({
-        ...opp,
-        lead_id: ids.leadId,
-        updated_at: new Date().toISOString(),
-      });
-      toast.success("IDs generated", {
-        description: `Lead ${ids.leadId} · Customer ${opp.customer_id} · Opportunity ${opp.opportunity_id}`,
-      });
+    const customer = opp ? store.getCustomer(opp.customer_id) : undefined;
+    if (opp && customer) {
+      try {
+        const rows = await leadsApi.generateImportIds([
+          {
+            customerName: customer.name,
+            mobile: customer.mobile,
+            product: opp.product,
+            district: customer.address ?? opp.branch,
+            source: opp.source,
+            branch: opp.branch,
+            executive: opp.current_owner,
+            leadType: "New",
+          },
+        ]);
+        const ids = rows[0];
+        if (ids?.leadId) {
+          store.upsertOpportunity({ ...opp, lead_id: ids.leadId });
+        }
+        toast.success("IDs generated", {
+          description: ids
+            ? `Lead ${ids.leadId} · CU ${ids.customerId} · OP ${ids.opportunityId}`
+            : "IDs assigned via API",
+        });
+      } catch (err) {
+        toast.error("Generate IDs failed", {
+          description: err instanceof Error ? err.message : "API error",
+        });
+      }
       return;
     }
     toast.info("Generate IDs", {
@@ -148,16 +172,30 @@ export async function performOpportunityAction(
         isManualOverride,
         label,
       );
-      const updated = store.getOpportunity(opp.opportunity_id);
-      if (updated) {
-        store.upsertOpportunity({
-          ...updated,
-          ...(options.owner ? { current_owner: options.owner } : {}),
-          ...(options.currentAction
-            ? { current_action: options.currentAction, next_action: options.nextAction ?? options.currentAction }
-            : {}),
-          ...(effect.status ? { status: effect.status } : {}),
-        });
+      if (options.owner || options.currentAction) {
+        try {
+          const patched = await opportunitiesApi.patchOpportunity(opp.opportunity_id, {
+            ...(options.owner ? { current_owner: options.owner } : {}),
+            ...(options.currentAction
+              ? {
+                  current_action: options.currentAction,
+                  next_action: options.nextAction ?? options.currentAction,
+                }
+              : {}),
+          });
+          store.upsertOpportunity(patched);
+        } catch {
+          const updated = store.getOpportunity(opp.opportunity_id);
+          if (updated) {
+            store.upsertOpportunity({
+              ...updated,
+              ...(options.owner ? { current_owner: options.owner } : {}),
+              ...(options.currentAction
+                ? { current_action: options.currentAction, next_action: options.nextAction ?? options.currentAction }
+                : {}),
+            });
+          }
+        }
       }
     } catch (err) {
       toast.error("Cannot move stage", {
@@ -179,17 +217,34 @@ export async function performOpportunityAction(
 
   if (opp && effect.scoreEvent) {
     try {
-      const current = store.getOpportunity(opp.opportunity_id)!;
-      const { opportunity } = scoringService.applyScoreEvent(current, effect.scoreEvent);
-      store.upsertOpportunity(opportunity);
+      const updated = await enginesApi.applyScore({
+        opportunity_id: opp.opportunity_id,
+        event: effect.scoreEvent,
+      });
+      store.upsertOpportunity(updated);
     } catch {
-      /* unknown score event — skip */
+      try {
+        const current = store.getOpportunity(opp.opportunity_id)!;
+        const { opportunity } = scoringService.applyScoreEvent(current, effect.scoreEvent);
+        store.upsertOpportunity(opportunity);
+      } catch {
+        /* skip */
+      }
     }
   }
 
   if (opp && label === "Verify Number") {
     const customer = store.getCustomer(opp.customer_id);
     if (customer) {
+      try {
+        await enginesApi.verifyContact({
+          opportunity_id: opp.opportunity_id,
+          mobile: customer.mobile,
+          district: customer.address ?? opp.branch,
+        });
+      } catch {
+        /* API unavailable — fall back to local engine */
+      }
       const health = contactHealthService.runContactHealthEngine({
         opportunity: store.getOpportunity(opp.opportunity_id)!,
         mobile: customer.mobile,
@@ -199,6 +254,10 @@ export async function performOpportunityAction(
       });
       store.setContactHealth(health);
     }
+  }
+
+  if (opp && (microStage || effect.status)) {
+    await refreshOpportunity(opp.opportunity_id).catch(() => undefined);
   }
 
   if (opp && effect.eventType) {
@@ -242,15 +301,27 @@ export async function confirmManualStageMove(
       form.reason ?? "Manual stage override",
       true,
     );
-    const updated = store.getOpportunity(opportunityId);
-    if (updated && form.owner) {
-      store.upsertOpportunity({
-        ...updated,
-        current_owner: form.owner,
-        current_action: form.newAction,
-        next_action: form.newAction,
-      });
+    if (form.owner || form.newAction) {
+      try {
+        const patched = await opportunitiesApi.patchOpportunity(opportunityId, {
+          current_owner: form.owner,
+          current_action: form.newAction,
+          next_action: form.newAction,
+        });
+        store.upsertOpportunity(patched);
+      } catch {
+        const updated = store.getOpportunity(opportunityId);
+        if (updated) {
+          store.upsertOpportunity({
+            ...updated,
+            current_owner: form.owner,
+            current_action: form.newAction,
+            next_action: form.newAction,
+          });
+        }
+      }
     }
+    await refreshOpportunity(opportunityId).catch(() => undefined);
     toast.success("Stage updated", { description: `${opportunityId} → ${micro}` });
   } catch (err) {
     toast.error("Cannot move stage", {

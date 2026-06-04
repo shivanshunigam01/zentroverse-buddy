@@ -3,54 +3,54 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recha
 import ModuleShell, { Section, StatCard, Btn, ActionBar } from "@/components/shared/ModuleShell";
 import EmptyState from "@/components/shared/EmptyState";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
+import { useLiveStats } from "@/hooks/use-live-stats";
 import { useOpportunityLeads } from "@/store/selectors";
 
 const Reports = () => {
   const { performAction } = useDashboardActions();
   const leads = useOpportunityLeads();
+  const { dashboard, pipeline } = useLiveStats(leads.length > 0);
 
   const execData = useMemo(() => {
-    const byOwner: Record<string, { leads: number; hot: number }> = {};
+    if (pipeline?.executives?.length) {
+      return pipeline.executives
+        .filter((e) => e._id)
+        .map((e) => ({
+          name: String(e._id).split(" ")[0],
+          leads: e.count,
+          conv: 0,
+        }))
+        .sort((a, b) => b.leads - a.leads)
+        .slice(0, 8);
+    }
+    const byOwner: Record<string, number> = {};
     for (const l of leads) {
-      if (!byOwner[l.currentOwner]) byOwner[l.currentOwner] = { leads: 0, hot: 0 };
-      byOwner[l.currentOwner].leads++;
-      if (l.scoreLabel === "Hot") byOwner[l.currentOwner].hot++;
+      byOwner[l.currentOwner] = (byOwner[l.currentOwner] ?? 0) + 1;
     }
     return Object.entries(byOwner)
-      .map(([name, v]) => ({
-        name: name.split(" ")[0] ?? name,
-        conv: v.leads > 0 ? Math.round((v.hot / v.leads) * 100) : 0,
-        leads: v.leads,
-      }))
+      .map(([name, leadsCount]) => ({ name: name.split(" ")[0] ?? name, leads: leadsCount, conv: 0 }))
       .sort((a, b) => b.leads - a.leads)
       .slice(0, 8);
-  }, [leads]);
+  }, [leads, pipeline]);
 
   const kpis = useMemo(() => {
-    const byStage = { C0: 0, C1: 0, C1A: 0, C2: 0, C3: 0 };
-    let slaMissed = 0;
-    for (const l of leads) {
-      const s = l.currentStage as keyof typeof byStage;
-      if (s in byStage) byStage[s]++;
-      if (l.slaCountdown === "Overdue") slaMissed++;
-    }
-    const total = leads.length;
+    const total = dashboard?.totalLeads ?? leads.length;
+    const slaMissed = dashboard?.slaMissed ?? leads.filter((l) => l.slaCountdown === "Overdue").length;
     const delivered = leads.filter((l) => l.status === "Delivered").length;
     return {
       total,
       slaPct: total > 0 ? `${((slaMissed / total) * 100).toFixed(1)}%` : "0%",
       conversion: total > 0 ? `${((delivered / total) * 100).toFixed(1)}%` : "0%",
-      c1Drop:
-        byStage.C1 > 0 ? `${Math.round((byStage.C1A / byStage.C1) * 100)}%` : "—",
+      hot: dashboard?.hot ?? leads.filter((l) => l.scoreLabel === "Hot").length,
     };
-  }, [leads]);
+  }, [leads, dashboard]);
 
   if (leads.length === 0) {
     return (
       <ModuleShell moduleId="reports">
         <EmptyState
           title="No report data yet"
-          description="Import leads from Excel to generate funnel, executive, and pipeline reports. You can still download the sample import template from Lead Upload."
+          description="Import leads from Excel to generate funnel, executive, and pipeline reports."
           actionLabel="Go to Lead Upload"
         />
       </ModuleShell>
@@ -62,21 +62,21 @@ const Reports = () => {
       moduleId="reports"
       actions={
         <ActionBar>
-          <Btn onClick={() => void performAction("Export Pipeline Report")}>Export Excel Report</Btn>
+          <Btn onClick={() => void performAction("Export Pipeline Report")}>Export Excel Report (API)</Btn>
           <Btn variant="outline" onClick={() => void performAction("Export Excel")}>
-            Export Leads
+            Export Leads (API)
           </Btn>
         </ActionBar>
       }
     >
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Total leads" value={kpis.total} />
+        <StatCard label="Hot leads" value={kpis.hot} accent="destructive" />
         <StatCard label="SLA missed %" value={kpis.slaPct} accent="destructive" />
         <StatCard label="Conversion %" value={kpis.conversion} accent="success" />
-        <StatCard label="C1 → C1A carry" value={kpis.c1Drop} accent="warning" />
       </div>
 
-      <Section title="Executive performance">
+      <Section title="Executive performance (GET /reports/pipeline)">
         {execData.length > 0 ? (
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
@@ -95,18 +95,14 @@ const Reports = () => {
 
       <Section title="Report types">
         <p className="mb-3 text-sm text-muted-foreground">
-          Export includes Leads sheet + Pipeline Report (stage funnel, sources, executives, KPIs).
+          Exports use GET /reports/export from the server.
         </p>
         <ul className="grid gap-2 text-sm sm:grid-cols-2">
           {[
             "Lead source wise",
             "Stage wise funnel",
             "Executive performance",
-            "Campaign ROI",
-            "Lead aging",
-            "Conversion %",
-            "Lost by reason",
-            "Dormant revived",
+            "Pipeline KPIs",
           ].map((r) => (
             <li key={r}>
               <button
