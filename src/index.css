@@ -167,12 +167,32 @@
     scrollbar-width: thin;
   }
 
-  .table-scroll::-webkit-scrollbar {
-    height: 6px;
+  .inbox-table-scroll {
+    @apply overflow-y-auto;
+    overscroll-behavior: contain;
   }
 
-  .table-scroll::-webkit-scrollbar-thumb {
+  .inbox-table-scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    @apply bg-secondary/95 backdrop-blur-sm;
+    box-shadow: 0 1px 0 hsl(var(--border) / 0.6);
+  }
+
+  .table-scroll::-webkit-scrollbar,
+  .inbox-table-scroll::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+
+  .table-scroll::-webkit-scrollbar-thumb,
+  .inbox-table-scroll::-webkit-scrollbar-thumb {
     @apply rounded-full bg-border;
+  }
+
+  .inbox-mobile-scroll {
+    @apply scroll-touch max-h-[min(60vh,calc(100dvh-16rem))] overflow-y-auto rounded-2xl border border-border/60 pr-1;
   }
 
   .chip-filter {
@@ -198,6 +218,6 @@
   }
 
   .page-content {
-    @apply mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8;
+    @apply mx-auto w-full max-w-[1600px] overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8;
   }
 }

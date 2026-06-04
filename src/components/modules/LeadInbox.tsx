@@ -4,9 +4,11 @@ import ModuleShell, { Section, FilterChips, DataTable, Btn, ActionBar } from "@/
 import EmptyState from "@/components/shared/EmptyState";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
 import MoveStageDialog from "@/components/shared/MoveStageDialog";
+import { TablePagination } from "@/components/shared/TablePagination";
 import type { Lead } from "@/adapters/lead-view.adapter";
 import { useOpportunityLeads } from "@/store/selectors";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
+import { usePagination, DEFAULT_PAGE_SIZE } from "@/hooks/use-pagination";
 import { Phone, MessageCircle, Eye, ArrowRightLeft } from "lucide-react";
 
 const FILTERS = ["All", "Stage", "Owner", "Priority", "Hot/Warm/Cold", "Source", "SLA Missed", "Today Follow-up"];
@@ -31,6 +33,8 @@ const LeadInbox = () => {
   const [filter, setFilter] = useState("All");
 
   const leads = useMemo(() => filterLeads(allLeads, filter), [allLeads, filter]);
+  const pagination = usePagination(leads, DEFAULT_PAGE_SIZE);
+  const { pageItems } = pagination;
 
   const onFilterSelect = (f: string) => {
     setFilter(f);
@@ -60,100 +64,146 @@ const LeadInbox = () => {
           description="Import leads from Excel — each opportunity starts at C0.1 Contact. Complete stages in order before moving to C1."
         />
       ) : (
-        <>
-      <Section title="Filters">
-        <FilterChips items={FILTERS} active={filter} onSelect={onFilterSelect} />
-        {filter !== "All" && (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Showing {leads.length} of {allLeads.length} leads
-          </p>
-        )}
-      </Section>
+        <div className="flex flex-col gap-4">
+          <Section title="Filters">
+            <FilterChips items={FILTERS} active={filter} onSelect={onFilterSelect} />
+            <p className="mt-2 text-xs text-muted-foreground">
+              {leads.length} lead{leads.length === 1 ? "" : "s"}
+              {filter !== "All" ? ` (filtered from ${allLeads.length})` : ""}
+              {leads.length > DEFAULT_PAGE_SIZE
+                ? ` · showing ${DEFAULT_PAGE_SIZE} per page`
+                : ""}
+            </p>
+          </Section>
 
-      <div className="space-y-3 md:hidden">
-        {leads.map((l) => (
-          <div key={l.leadId} className="space-y-2">
-            <LeadCardStrip lead={l} onClick={() => viewLead(l.opportunityId)} />
-            <div className="flex flex-wrap gap-2 px-1">
-              <IconBtn icon={Eye} label="View" onClick={() => viewLead(l.opportunityId)} />
-              <IconBtn icon={ArrowRightLeft} label="Move" onClick={() => setMoveLead(l)} />
-              <IconBtn icon={Phone} label="Call" onClick={() => callLead(l.mobile, l.customerName)} />
-              <IconBtn icon={MessageCircle} label="WA" onClick={() => openWhatsApp(l.opportunityId)} />
-            </div>
-          </div>
-        ))}
-        {leads.length === 0 && <EmptyInbox />}
-      </div>
+          {leads.length > 0 && (
+            <TablePagination
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              total={pagination.total}
+              rangeStart={pagination.rangeStart}
+              rangeEnd={pagination.rangeEnd}
+              pageSize={pagination.pageSize}
+              canPrev={pagination.canPrev}
+              canNext={pagination.canNext}
+              onPrev={pagination.goPrev}
+              onNext={pagination.goNext}
+              onFirst={pagination.goFirst}
+              onLast={pagination.goLast}
+              onPageChange={pagination.setPage}
+            />
+          )}
 
-      <DataTable minWidth={1400}>
-        <thead>
-          <tr className="border-b bg-secondary/40 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-            {[
-              "Lead ID",
-              "Customer ID",
-              "Opportunity ID",
-              "Customer",
-              "Mobile",
-              "Product",
-              "Stage",
-              "Score",
-              "Owner",
-              "Action",
-              "SLA",
-              "Status",
-              "Actions",
-            ].map((h) => (
-              <th key={h} className="whitespace-nowrap px-3 py-3">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {leads.map((l) => (
-            <tr key={l.leadId} className="border-b border-border/50 transition-colors hover:bg-secondary/25">
-              <td className="whitespace-nowrap px-3 py-3">
-                <p className="text-[9px] font-bold uppercase text-muted-foreground md:sr-only">Lead ID</p>
-                <span className="font-mono text-xs">{l.leadId}</span>
-              </td>
-              <td className="whitespace-nowrap px-3 py-3">
-                <p className="text-[9px] font-bold uppercase text-muted-foreground md:sr-only">Customer ID</p>
-                <span className="font-mono text-xs text-muted-foreground">{l.customerId}</span>
-              </td>
-              <td className="whitespace-nowrap px-3 py-3">
-                <p className="text-[9px] font-bold uppercase text-muted-foreground md:sr-only">Opportunity ID</p>
-                <span className="font-mono text-xs text-muted-foreground">{l.opportunityId}</span>
-              </td>
-              <td className="px-3 py-3 font-semibold">{l.customerName}</td>
-              <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">{l.mobile}</td>
-              <td className="px-3 py-3 text-xs">{l.product}</td>
-              <td className="px-3 py-3">
-                <span className="font-mono text-xs font-bold text-primary">{l.currentStage}</span>
-                <p className="max-w-[140px] truncate text-[10px] text-muted-foreground">{l.microStage}</p>
-              </td>
-              <td className="px-3 py-3 text-xs font-semibold">{l.leadScore} {l.scoreLabel}</td>
-              <td className="px-3 py-3 text-xs">{l.currentOwner}</td>
-              <td className="max-w-[140px] truncate px-3 py-3 text-xs">{l.currentAction}</td>
-              <td className={`whitespace-nowrap px-3 py-3 text-xs font-semibold ${l.slaCountdown === "Overdue" ? "text-destructive" : ""}`}>
-                {l.slaTime}
-              </td>
-              <td className="px-3 py-3 text-xs">{l.status}</td>
-              <td className="px-3 py-3">
-                <div className="flex flex-wrap gap-1">
-                  <MiniBtn onClick={() => viewLead(l.opportunityId)}>View</MiniBtn>
-                  <MiniBtn onClick={() => setMoveLead(l)}>Move</MiniBtn>
-                  <MiniBtn onClick={() => callLead(l.mobile, l.customerName)}>Call</MiniBtn>
-                  <MiniBtn onClick={() => openWhatsApp(l.opportunityId)}>WA</MiniBtn>
+          <div className="inbox-mobile-scroll space-y-3 md:hidden">
+            {pageItems.map((l) => (
+              <div key={l.leadId} className="space-y-2">
+                <LeadCardStrip lead={l} onClick={() => viewLead(l.opportunityId)} />
+                <div className="flex flex-wrap gap-2 px-1">
+                  <IconBtn icon={Eye} label="View" onClick={() => viewLead(l.opportunityId)} />
+                  <IconBtn icon={ArrowRightLeft} label="Move" onClick={() => setMoveLead(l)} />
+                  <IconBtn icon={Phone} label="Call" onClick={() => callLead(l.mobile, l.customerName)} />
+                  <IconBtn icon={MessageCircle} label="WA" onClick={() => openWhatsApp(l.opportunityId)} />
                 </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </DataTable>
-      {leads.length === 0 && <div className="hidden md:block"><EmptyInbox /></div>}
+              </div>
+            ))}
+            {pageItems.length === 0 && <EmptyInbox />}
+          </div>
 
-      {moveLead && (
-        <MoveStageDialog open lead={moveLead} onClose={() => setMoveLead(null)} onConfirm={() => setMoveLead(null)} />
-      )}
-        </>
+          <DataTable minWidth={1400}>
+            <thead>
+              <tr className="border-b text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                {[
+                  "Lead ID",
+                  "Customer ID",
+                  "Opportunity ID",
+                  "Customer",
+                  "Mobile",
+                  "Product",
+                  "Stage",
+                  "Score",
+                  "Owner",
+                  "Action",
+                  "SLA",
+                  "Status",
+                  "Actions",
+                ].map((h) => (
+                  <th key={h} className="whitespace-nowrap px-3 py-3">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {pageItems.map((l) => (
+                <tr key={l.leadId} className="border-b border-border/50 transition-colors hover:bg-secondary/25">
+                  <td className="whitespace-nowrap px-3 py-3">
+                    <span className="font-mono text-xs">{l.leadId}</span>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3">
+                    <span className="font-mono text-xs text-muted-foreground">{l.customerId}</span>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3">
+                    <span className="font-mono text-xs text-muted-foreground">{l.opportunityId}</span>
+                  </td>
+                  <td className="px-3 py-3 font-semibold">{l.customerName}</td>
+                  <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">{l.mobile}</td>
+                  <td className="px-3 py-3 text-xs">{l.product}</td>
+                  <td className="px-3 py-3">
+                    <span className="font-mono text-xs font-bold text-primary">{l.currentStage}</span>
+                    <p className="max-w-[140px] truncate text-[10px] text-muted-foreground">{l.microStage}</p>
+                  </td>
+                  <td className="px-3 py-3 text-xs font-semibold">
+                    {l.leadScore} {l.scoreLabel}
+                  </td>
+                  <td className="px-3 py-3 text-xs">{l.currentOwner}</td>
+                  <td className="max-w-[140px] truncate px-3 py-3 text-xs">{l.currentAction}</td>
+                  <td
+                    className={`whitespace-nowrap px-3 py-3 text-xs font-semibold ${l.slaCountdown === "Overdue" ? "text-destructive" : ""}`}
+                  >
+                    {l.slaTime}
+                  </td>
+                  <td className="px-3 py-3 text-xs">{l.status}</td>
+                  <td className="px-3 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      <MiniBtn onClick={() => viewLead(l.opportunityId)}>View</MiniBtn>
+                      <MiniBtn onClick={() => setMoveLead(l)}>Move</MiniBtn>
+                      <MiniBtn onClick={() => callLead(l.mobile, l.customerName)}>Call</MiniBtn>
+                      <MiniBtn onClick={() => openWhatsApp(l.opportunityId)}>WA</MiniBtn>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </DataTable>
+
+          {pageItems.length === 0 && leads.length > 0 && (
+            <div className="hidden md:block">
+              <EmptyInbox />
+            </div>
+          )}
+
+          {leads.length > 0 && (
+            <TablePagination
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              total={pagination.total}
+              rangeStart={pagination.rangeStart}
+              rangeEnd={pagination.rangeEnd}
+              pageSize={pagination.pageSize}
+              canPrev={pagination.canPrev}
+              canNext={pagination.canNext}
+              onPrev={pagination.goPrev}
+              onNext={pagination.goNext}
+              onFirst={pagination.goFirst}
+              onLast={pagination.goLast}
+              onPageChange={pagination.setPage}
+            />
+          )}
+
+          {moveLead && (
+            <MoveStageDialog open lead={moveLead} onClose={() => setMoveLead(null)} onConfirm={() => setMoveLead(null)} />
+          )}
+        </div>
       )}
     </ModuleShell>
   );
@@ -166,7 +216,11 @@ const EmptyInbox = () => (
 );
 
 const MiniBtn = ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
-  <button type="button" onClick={onClick} className="rounded-lg bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary hover:bg-primary/20">
+  <button
+    type="button"
+    onClick={onClick}
+    className="rounded-lg bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary hover:bg-primary/20"
+  >
     {children}
   </button>
 );

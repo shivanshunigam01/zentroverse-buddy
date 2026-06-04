@@ -235,8 +235,20 @@ export const ActionBar = ({ children }: { children: ReactNode }) => (
   <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">{children}</div>
 );
 
-export const DataTable = ({ children, minWidth = 720 }: { children: ReactNode; minWidth?: number }) => (
-  <div className="table-scroll hidden md:block">
+export const DataTable = ({
+  children,
+  minWidth = 720,
+  maxHeight = "min(70vh, calc(100dvh - 14rem))",
+}: {
+  children: ReactNode;
+  minWidth?: number;
+  /** Vertical scroll for large lists (keeps header sticky via .inbox-table-scroll) */
+  maxHeight?: string;
+}) => (
+  <div
+    className="inbox-table-scroll table-scroll hidden md:block"
+    style={{ maxHeight }}
+  >
     <table className="w-full text-left text-sm" style={{ minWidth }}>
       {children}
     </table>
