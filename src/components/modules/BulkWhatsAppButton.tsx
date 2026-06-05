@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MessageCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -13,62 +13,72 @@ import { Progress } from "@/components/ui/progress";
 import { Btn } from "@/components/shared/ModuleShell";
 import { ApiClientError } from "@/lib/api";
 import * as leadsApi from "@/api/leads.api";
-import { isValidMobile, normalizeMobile } from "@/lib/mobile";
-import type { Lead } from "@/adapters/lead-view.adapter";
 
-const BATCH_SIZE = 40;
+const PAGE_SIZE = 100;
 
-type Props = {
-  leads: Lead[];
-  disabled?: boolean;
-};
-
-export function BulkWhatsAppButton({ leads, disabled }: Props) {
+export function BulkWhatsAppButton() {
   const [open, setOpen] = useState(false);
   const [running, setRunning] = useState(false);
+  const [loadingCount, setLoadingCount] = useState(false);
+  const [contactCount, setContactCount] = useState<number | null>(null);
   const [progress, setProgress] = useState({ done: 0, total: 0, sent: 0, failed: 0 });
 
-  const uniqueMobiles = useMemo(() => {
-    const seen = new Set<string>();
-    const out: string[] = [];
-    for (const lead of leads) {
-      if (!isValidMobile(lead.mobile)) continue;
-      const key = normalizeMobile(lead.mobile);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push(lead.mobile);
-    }
-    return out;
-  }, [leads]);
+  useEffect(() => {
+    if (!open) return;
+
+    let cancelled = false;
+    setLoadingCount(true);
+    void leadsApi
+      .getBulkWhatsAppCount()
+      .then((res) => {
+        if (!cancelled) setContactCount(res.uniqueContacts);
+      })
+      .catch(() => {
+        if (!cancelled) setContactCount(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingCount(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   const runBulkSend = useCallback(async () => {
-    if (uniqueMobiles.length === 0) {
+    if (!contactCount || contactCount === 0) {
       toast.error("No valid mobiles", { description: "Import leads with valid numbers first." });
       return;
     }
 
     setRunning(true);
-    setProgress({ done: 0, total: uniqueMobiles.length, sent: 0, failed: 0 });
+    setProgress({ done: 0, total: contactCount, sent: 0, failed: 0 });
 
     let sent = 0;
     let failed = 0;
+    let processed = 0;
+    let page = 0;
 
     try {
-      for (let i = 0; i < uniqueMobiles.length; i += BATCH_SIZE) {
-        const batch = uniqueMobiles.slice(i, i + BATCH_SIZE);
-        const result = await leadsApi.sendBulkWhatsApp(batch);
+      let hasMore = true;
+      while (hasMore) {
+        const result = await leadsApi.sendBulkWhatsAppAll(page, PAGE_SIZE);
         sent += result.sent;
         failed += result.failed;
+        processed += result.total;
+        hasMore = result.hasMore ?? false;
+        page += 1;
+
         setProgress({
-          done: Math.min(i + batch.length, uniqueMobiles.length),
-          total: uniqueMobiles.length,
+          done: Math.min(processed, contactCount),
+          total: contactCount,
           sent,
           failed,
         });
       }
 
       toast.success("Bulk WhatsApp finished", {
-        description: `${sent} sent · ${failed} failed · ${uniqueMobiles.length} unique numbers`,
+        description: `${sent} sent · ${failed} failed · ${contactCount} unique contacts in database`,
       });
       setOpen(false);
     } catch (err) {
@@ -81,17 +91,15 @@ export function BulkWhatsAppButton({ leads, disabled }: Props) {
     } finally {
       setRunning(false);
     }
-  }, [uniqueMobiles]);
+  }, [contactCount]);
 
   const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
+  const countLabel =
+    loadingCount ? "…" : contactCount === null ? "—" : String(contactCount);
 
   return (
     <>
-      <Btn
-        variant="secondary"
-        disabled={disabled || uniqueMobiles.length === 0 || running}
-        onClick={() => setOpen(true)}
-      >
+      <Btn variant="secondary" disabled={running} onClick={() => setOpen(true)}>
         <span className="inline-flex items-center gap-2">
           <MessageCircle className="h-4 w-4" aria-hidden />
           Bulk WhatsApp
@@ -107,9 +115,9 @@ export function BulkWhatsAppButton({ leads, disabled }: Props) {
             </DialogTitle>
             <DialogDescription>
               Campaign template <strong>flowtest</strong> will be sent to{" "}
-              <strong>{uniqueMobiles.length}</strong> unique contact
-              {uniqueMobiles.length === 1 ? "" : "s"} (one API call per number). This can take several
-              minutes for large lists — keep this tab open.
+              <strong>{countLabel}</strong> unique contact
+              {contactCount === 1 ? "" : "s"} from your full lead database (one API call per
+              number). This can take several minutes for large lists — keep this tab open.
             </DialogDescription>
           </DialogHeader>
 
@@ -127,7 +135,7 @@ export function BulkWhatsAppButton({ leads, disabled }: Props) {
           ) : (
             <p className="text-sm text-muted-foreground">
               Numbers are formatted as <code className="text-foreground">0XXXXXXXXXX</code> for the
-              WhatsApp API. Duplicates in the inbox are skipped automatically.
+              WhatsApp API. Duplicate numbers in the database are skipped automatically.
             </p>
           )}
 
@@ -135,8 +143,11 @@ export function BulkWhatsAppButton({ leads, disabled }: Props) {
             <Btn variant="outline" disabled={running} onClick={() => setOpen(false)}>
               Cancel
             </Btn>
-            <Btn disabled={running || uniqueMobiles.length === 0} onClick={() => void runBulkSend()}>
-              {running ? "Sending…" : `Send to ${uniqueMobiles.length} contacts`}
+            <Btn
+              disabled={running || loadingCount || !contactCount}
+              onClick={() => void runBulkSend()}
+            >
+              {running ? "Sending…" : `Send to ${countLabel} contacts`}
             </Btn>
           </DialogFooter>
         </DialogContent>

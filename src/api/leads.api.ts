@@ -120,12 +120,33 @@ export type BulkWhatsAppResult = {
   sent: number;
   failed: number;
   errors: Array<{ destination: string; error: string }>;
+  hasMore?: boolean;
+  page?: number;
+  pageSize?: number;
 };
+
+export type BulkWhatsAppCount = {
+  totalCustomers: number;
+  uniqueContacts: number;
+};
+
+export async function getBulkWhatsAppCount(): Promise<BulkWhatsAppCount> {
+  return api<BulkWhatsAppCount>("/leads/bulk-whatsapp/count");
+}
 
 export async function sendBulkWhatsApp(mobiles: string[]): Promise<BulkWhatsAppResult> {
   return api<BulkWhatsAppResult>("/leads/bulk-whatsapp", {
     method: "POST",
     json: { mobiles },
+    timeoutMs: 900000,
+  });
+}
+
+/** Page through all customers in MongoDB (not limited to inbox bootstrap cap). */
+export async function sendBulkWhatsAppAll(page: number, pageSize = 100): Promise<BulkWhatsAppResult> {
+  return api<BulkWhatsAppResult>("/leads/bulk-whatsapp", {
+    method: "POST",
+    json: { all: true, page, pageSize },
     timeoutMs: 900000,
   });
 }

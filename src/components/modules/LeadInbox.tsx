@@ -49,7 +49,7 @@ const LeadInbox = () => {
       moduleId="lead-inbox"
       actions={
         <ActionBar>
-          <BulkWhatsAppButton leads={allLeads} disabled={allLeads.length === 0} />
+          <BulkWhatsAppButton />
           <Btn
             variant="outline"
             disabled={allLeads.length === 0}
