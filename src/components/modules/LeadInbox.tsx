@@ -10,6 +10,7 @@ import { useOpportunityLeads } from "@/store/selectors";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { usePagination, DEFAULT_PAGE_SIZE } from "@/hooks/use-pagination";
 import { LeadRowActions } from "@/components/shared/LeadRowActions";
+import { BulkWhatsAppButton } from "@/components/modules/BulkWhatsAppButton";
 
 const FILTERS = ["All", "Stage", "Owner", "Priority", "Hot/Warm/Cold", "Source", "SLA Missed", "Today Follow-up"];
 
@@ -48,6 +49,7 @@ const LeadInbox = () => {
       moduleId="lead-inbox"
       actions={
         <ActionBar>
+          <BulkWhatsAppButton leads={allLeads} disabled={allLeads.length === 0} />
           <Btn
             variant="outline"
             disabled={allLeads.length === 0}

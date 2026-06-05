@@ -22,7 +22,7 @@ export function toApiRows(rows: ExcelLeadRow[]): ApiImportRow[] {
     .map((r) => {
       const mobile = normalizeMobile(r.mobile);
       return {
-      customerName: String(r.customerName ?? "").trim() || `Lead ${digits}`,
+      customerName: String(r.customerName ?? "").trim() || `Lead ${mobile}`,
       mobile,
       product: String(r.product ?? "").trim() || "General",
       requirement: r.remarks?.trim() || r.leadType?.trim() || "",
@@ -113,4 +113,19 @@ export async function getLatestImport() {
 
 export async function downloadImportTemplate(): Promise<Blob> {
   return apiBlob("/leads/import/template");
+}
+
+export type BulkWhatsAppResult = {
+  total: number;
+  sent: number;
+  failed: number;
+  errors: Array<{ destination: string; error: string }>;
+};
+
+export async function sendBulkWhatsApp(mobiles: string[]): Promise<BulkWhatsAppResult> {
+  return api<BulkWhatsAppResult>("/leads/bulk-whatsapp", {
+    method: "POST",
+    json: { mobiles },
+    timeoutMs: 900000,
+  });
 }
