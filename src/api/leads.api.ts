@@ -150,3 +150,45 @@ export async function sendBulkWhatsAppAll(page: number, pageSize = 100): Promise
     timeoutMs: 900000,
   });
 }
+
+export type WhatsAppCampaignContact = {
+  id: string;
+  mobile: string;
+  userNumber: string;
+  userName: string;
+  sentAt: string | null;
+  deliveredAt: string | null;
+  readAt: string | null;
+  repliedAt: string | null;
+  failedAt: string | null;
+  error: string | null;
+  status: string;
+};
+
+export type WhatsAppCampaignReport = {
+  campaign: { id: string; name: string; status: string; type: string };
+  summary: {
+    total: number;
+    sent: number;
+    delivered: number;
+    readNoReply: number;
+    replied: number;
+    failed: number;
+    pendingDelivery: number;
+  };
+  contacts: {
+    sent: WhatsAppCampaignContact[];
+    delivered: WhatsAppCampaignContact[];
+    read_no_reply: WhatsAppCampaignContact[];
+    replied: WhatsAppCampaignContact[];
+    failed: WhatsAppCampaignContact[];
+  };
+  fetchedAt: string;
+};
+
+export async function getBulkWhatsAppReport(campaignName?: string): Promise<WhatsAppCampaignReport> {
+  const qs = campaignName ? `?campaignName=${encodeURIComponent(campaignName)}` : "";
+  return api<WhatsAppCampaignReport>(`/leads/bulk-whatsapp/report${qs}`, {
+    timeoutMs: 120000,
+  });
+}
