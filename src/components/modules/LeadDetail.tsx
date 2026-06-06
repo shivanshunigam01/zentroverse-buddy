@@ -7,7 +7,7 @@ import LeadIdentityTable from "@/components/shared/LeadIdentityTable";
 import { LeadManualEditForm } from "@/components/shared/LeadManualEditForm";
 import { LeadStageJourney } from "@/components/shared/LeadStageJourney";
 import { SCORING_RULES } from "@/domain/platform";
-import { buildStatusGridFromStep } from "@/domain/stages/c0-stage-fields";
+import { buildStatusGridFromStep } from "@/domain/stages/stage-journey-fields";
 import type { OpportunityMaster } from "@/domain/entities/opportunity";
 import { useLeadById, useOpportunityLeads, useActivitiesForOpportunity, useCustomer } from "@/store/selectors";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";

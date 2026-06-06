@@ -12,14 +12,14 @@ import {
   getNextJourneyMicroStage,
   type BusinessMicroStage,
 } from "@/domain/stages/business-stages";
+import { computeC0ScoreFromFields } from "@/domain/stages/c0-stage-fields";
 import {
-  C0_STAGE_CHECKLIST,
   C0_STAGE_PURPOSE,
-  computeC0ScoreFromFields,
-  getC0StageFields,
-  getC0StagePrefill,
-  isC0Stage,
-} from "@/domain/stages/c0-stage-fields";
+  getStageChecklist,
+  getStageFields,
+  getStagePrefill,
+  hasStructuredStageFields,
+} from "@/domain/stages/stage-journey-fields";
 import { advanceStageStep, saveStageStep } from "@/api/opportunities.api";
 import { getCurrentUserName } from "@/api/auth.api";
 import { ApiClientError } from "@/lib/api";
@@ -33,6 +33,9 @@ type Props = {
 };
 
 type StepStatus = "completed" | "current" | "upcoming";
+
+const SALES_GROUPS = STAGE_SELECT_GROUPS.filter((g) => !g.label.startsWith("Lifecycle"));
+const LIFECYCLE_GROUP = STAGE_SELECT_GROUPS.find((g) => g.label.startsWith("Lifecycle"));
 
 function stepStatus(stageIdx: number, currentIdx: number): StepStatus {
   if (stageIdx < 0 || currentIdx < 0) return "upcoming";
@@ -58,7 +61,9 @@ function buildDraftFields(
   lead: Lead,
   opportunity: OpportunityMaster,
 ): Record<string, string> {
-  const prefill = isC0Stage(stageCode) ? getC0StagePrefill(stageCode, lead, opportunity) : {};
+  const prefill = hasStructuredStageFields(stageCode)
+    ? getStagePrefill(stageCode, lead, opportunity)
+    : {};
   const savedFields = fieldsToStrings(saved?.fields);
   return { ...prefill, ...savedFields };
 }
@@ -167,17 +172,14 @@ export function LeadStageJourney({ lead, opportunity, customer }: Props) {
     });
   };
 
-  const c0Group = STAGE_SELECT_GROUPS.find((g) => g.label.startsWith("C0"));
-  const pipelineGroups = STAGE_SELECT_GROUPS.filter((g) => !g.label.startsWith("C0"));
-
   const renderStageCard = (stage: BusinessMicroStage) => {
     const idx = ALL_MICRO_STAGES.findIndex((s) => s.code === stage.code);
     const status = stepStatus(idx, currentIdx);
     const saved = stepData[stage.code];
     const isCurrent = status === "current";
-    const isC0 = isC0Stage(stage.code);
-    const fieldDefs = isC0 ? getC0StageFields(stage.code) : [];
-    const checklist = isC0 ? C0_STAGE_CHECKLIST[stage.code] : undefined;
+    const fieldDefs = getStageFields(stage.code);
+    const checklist = getStageChecklist(stage.code);
+    const hasFields = fieldDefs.length > 0;
 
     return (
       <div
@@ -219,7 +221,7 @@ export function LeadStageJourney({ lead, opportunity, customer }: Props) {
               Owner: {stage.owner} · SLA: {stage.sla} · Exit: {stage.exitCondition}
             </p>
 
-            {isC0 && fieldDefs.length > 0 && (
+            {hasFields && (
               <StageStepFieldsForm
                 fields={fieldDefs}
                 values={draftFields[stage.code] ?? {}}
@@ -228,7 +230,7 @@ export function LeadStageJourney({ lead, opportunity, customer }: Props) {
             )}
 
             <label className="mt-3 block text-[10px] font-bold uppercase text-muted-foreground">
-              {isC0 ? "Additional notes" : "Step notes / details"}
+              {hasFields ? "Additional notes" : "Step notes / details"}
             </label>
             <textarea
               className="input-app mt-1 min-h-[56px] w-full px-3 py-2 text-sm"
@@ -266,12 +268,12 @@ export function LeadStageJourney({ lead, opportunity, customer }: Props) {
   };
 
   return (
-    <Section title="C0 — Lead Maturity · Stage journey">
+    <Section title="Pipeline · Stage journey">
       <p className="mb-1 text-sm font-medium text-foreground">{C0_STAGE_PURPOSE}</p>
       <p className="mb-4 text-sm text-muted-foreground">
-        Fill each step below manually. Dropdowns mark status where required. Use{" "}
+        Fill each step manually from C0 through C3. Dropdowns mark status where required. Use{" "}
         <strong>Save step</strong> to store data, then <strong>Complete &amp; next step</strong> to
-        activate the next stage. Automation can update these fields later.
+        advance. Automation can update these fields later.
       </p>
 
       {currentIdx >= 0 && (
@@ -308,33 +310,26 @@ export function LeadStageJourney({ lead, opportunity, customer }: Props) {
         </div>
       )}
 
-      <div className="max-h-[min(75vh,800px)] space-y-4 overflow-y-auto rounded-xl border border-border/60 p-3 sm:p-4">
-        {c0Group && (
-          <div>
+      <div className="max-h-[min(75vh,800px)] space-y-6 overflow-y-auto rounded-xl border border-border/60 p-3 sm:p-4">
+        {SALES_GROUPS.map((group) => (
+          <div key={group.label}>
             <h3 className="mb-3 border-b border-border/60 pb-2 text-xs font-bold uppercase tracking-wide text-primary">
-              {c0Group.label}
+              {group.label}
             </h3>
-            <div className="space-y-3">{c0Group.stages.map(renderStageCard)}</div>
+            <div className="space-y-3">{group.stages.map(renderStageCard)}</div>
           </div>
-        )}
+        ))}
 
-        {pipelineGroups.length > 0 && (
+        {LIFECYCLE_GROUP && (
           <details className="rounded-xl border border-border/50 bg-secondary/10 p-3">
             <summary className="cursor-pointer text-sm font-semibold text-foreground">
-              Pipeline stages (C1 → Lifecycle) — notes only for now
+              {LIFECYCLE_GROUP.label} — notes only
             </summary>
             <p className="mt-2 text-xs text-muted-foreground">
-              Structured fields for C1+ will be added later. Use notes or advance from C0.10 into C1.
+              Lifecycle revenue touchpoints (L1–L7) — structured fields coming later.
             </p>
-            <div className="mt-4 space-y-6">
-              {pipelineGroups.map((group) => (
-                <div key={group.label}>
-                  <h4 className="mb-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                    {group.label}
-                  </h4>
-                  <div className="space-y-2">{group.stages.map(renderStageCard)}</div>
-                </div>
-              ))}
+            <div className="mt-4 space-y-3">
+              {LIFECYCLE_GROUP.stages.map(renderStageCard)}
             </div>
           </details>
         )}
