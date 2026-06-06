@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { BarChart3, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -13,6 +13,8 @@ import { Btn } from "@/components/shared/ModuleShell";
 import { ApiClientError } from "@/lib/api";
 import * as leadsApi from "@/api/leads.api";
 import type { WhatsAppCampaignContact, WhatsAppCampaignReport } from "@/api/leads.api";
+
+export const BULK_WHATSAPP_REPORT_EVENT = "zentroflow:bulk-whatsapp-report";
 
 type TabKey = "all" | "sent" | "delivered" | "read_no_reply" | "replied" | "failed";
 
@@ -47,6 +49,9 @@ function contactsForTab(report: WhatsAppCampaignReport, tab: TabKey): WhatsAppCa
 
 function downloadCsv(report: WhatsAppCampaignReport, tab: TabKey) {
   const rows = contactsForTab(report, tab).sort((a, b) => a.mobile.localeCompare(b.mobile));
+  const header = ["mobile", "userName", "status", "sentAt", "deliveredAt", "readAt", "repliedAt", "error"];
+  const lines = [header.join(",")];
+  for (const r of rows) {
     lines.push(
       [
         r.mobile,
@@ -79,22 +84,28 @@ export function BulkWhatsAppReportButton() {
   const loadReport = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await leadsApi.getBulkWhatsAppReport();
+      const data = await leadsApi.getBulkWhatsAppReport("flowtest");
       setReport(data);
       setTab("all");
     } catch (err) {
-      toast.error("Could not load campaign report", {
-        description: err instanceof ApiClientError ? err.message : "AiSensy API error",
+      toast.error("Could not load bulk message report", {
+        description: err instanceof ApiClientError ? err.message : "AiSensy audience API error",
       });
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const openDialog = () => {
+  const openDialog = useCallback(() => {
     setOpen(true);
-    if (!report) void loadReport();
-  };
+    void loadReport();
+  }, [loadReport]);
+
+  useEffect(() => {
+    const onOpen = () => openDialog();
+    window.addEventListener(BULK_WHATSAPP_REPORT_EVENT, onOpen);
+    return () => window.removeEventListener(BULK_WHATSAPP_REPORT_EVENT, onOpen);
+  }, [openDialog]);
 
   const tableRows = useMemo(() => {
     if (!report) return [];
@@ -106,7 +117,7 @@ export function BulkWhatsAppReportButton() {
       <Btn variant="outline" onClick={openDialog}>
         <span className="inline-flex items-center gap-2">
           <BarChart3 className="h-4 w-4" aria-hidden />
-          WA Campaign Report
+          Bulk Message Report
         </span>
       </Btn>
 
@@ -115,19 +126,19 @@ export function BulkWhatsAppReportButton() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary" aria-hidden />
-              WhatsApp campaign report
+              Bulk message report
             </DialogTitle>
             <DialogDescription>
-              Live data from AiSensy for campaign{" "}
-              <strong>{report?.campaign.name ?? "flowtest"}</strong> — sent, delivered, read, replied,
-              and failed numbers.
+              Delivery status from AiSensy for bulk campaign{" "}
+              <strong>{report?.campaign.name ?? "flowtest"}</strong> — who received, read, replied,
+              or failed.
             </DialogDescription>
           </DialogHeader>
 
           {loading && (
             <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground justify-center">
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-              Fetching audience from AiSensy…
+              Loading campaign audience from AiSensy…
             </div>
           )}
 
@@ -160,11 +171,12 @@ export function BulkWhatsAppReportButton() {
               </div>
 
               <p className="text-xs text-muted-foreground">
-                Pending delivery: {report.summary.pendingDelivery} · Last synced{" "}
+                Pending delivery: {report.summary.pendingDelivery} · Campaign id{" "}
+                <code className="text-foreground">{report.campaign.id}</code> · Synced{" "}
                 {formatWhen(report.fetchedAt)}
               </p>
 
-              <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-border/60">
+              <div className="min-h-0 flex-1 overflow-auto rounded-xl border border-border/60 max-h-[50vh]">
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-card text-left text-xs text-muted-foreground">
                     <tr>
@@ -190,7 +202,9 @@ export function BulkWhatsAppReportButton() {
                   </tbody>
                 </table>
                 {tableRows.length === 0 && (
-                  <p className="px-4 py-8 text-center text-sm text-muted-foreground">No contacts in this bucket.</p>
+                  <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    No contacts yet — run bulk WhatsApp first, then refresh.
+                  </p>
                 )}
               </div>
             </>

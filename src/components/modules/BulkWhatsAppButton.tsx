@@ -79,6 +79,10 @@ export function BulkWhatsAppButton() {
 
       toast.success("Bulk WhatsApp finished", {
         description: `${sent} sent · ${failed} failed · ${contactCount} unique contacts in database`,
+        action: {
+          label: "View report",
+          onClick: () => window.dispatchEvent(new Event("zentroflow:bulk-whatsapp-report")),
+        },
       });
       setOpen(false);
     } catch (err) {
