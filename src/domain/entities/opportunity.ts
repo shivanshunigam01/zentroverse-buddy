@@ -14,6 +14,14 @@ export type OpportunityStatus = "Open" | "Hold" | "Lost" | "Delivered" | "Closed
 
 export type PriorityCode = "P1" | "P2" | "P3" | "P4" | "P5";
 
+/** Per micro-stage notes saved from Lead Detail journey form */
+export type StageStepData = {
+  notes?: string;
+  owner?: string;
+  updated_at?: string;
+  completed_at?: string;
+};
+
 /**
  * opportunity_master — child of customer; backbone fields are mandatory on every row.
  * Engines (scoring, contact health, SLA, action) write parallel attributes — never replace stage.
@@ -51,6 +59,8 @@ export interface OpportunityMaster {
   last_activity_at: string;
   created_at: string;
   updated_at: string;
+  /** Manual step notes keyed by micro stage code (C0.1, L1, …) */
+  stage_step_data?: Record<string, StageStepData>;
 }
 
 /** Mandatory backbone — enforced at service layer before persist */

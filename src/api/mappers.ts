@@ -54,6 +54,7 @@ export function mapOpportunity(raw: OpportunityDto | Record<string, unknown>): O
     last_activity_at: iso(o.last_activity_at),
     created_at: iso(o.created_at),
     updated_at: iso(o.updated_at),
+    stage_step_data: (o.stage_step_data as OpportunityMaster["stage_step_data"]) ?? {},
   };
 }
 

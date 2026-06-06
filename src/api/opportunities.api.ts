@@ -71,3 +71,25 @@ export async function manualEditLead(
   });
   return mapOpportunity(dto);
 }
+
+export async function saveStageStep(
+  opportunityId: string,
+  body: { micro_stage: string; notes?: string; owner?: string; changed_by?: string },
+): Promise<OpportunityMaster> {
+  const dto = await api<Record<string, unknown>>(`/opportunities/${opportunityId}/stage-step`, {
+    method: "POST",
+    json: body,
+  });
+  return mapOpportunity(dto);
+}
+
+export async function advanceStageStep(
+  opportunityId: string,
+  body: { notes?: string; owner?: string; changed_by?: string },
+): Promise<OpportunityMaster> {
+  const dto = await api<Record<string, unknown>>(`/opportunities/${opportunityId}/advance-stage`, {
+    method: "POST",
+    json: body,
+  });
+  return mapOpportunity(dto);
+}

@@ -123,6 +123,15 @@ export const ALL_MICRO_STAGES: BusinessMicroStage[] = [
   ...LIFECYCLE_MICRO_STAGES,
 ];
 
+/** Full C0 → C3 → lifecycle order — matches backend FULL_JOURNEY_MICRO_STAGES */
+export const FULL_JOURNEY_MICRO_STAGE_CODES = ALL_MICRO_STAGES.map((s) => s.code);
+
+export function getNextJourneyMicroStage(currentMicro: string): string | null {
+  const idx = FULL_JOURNEY_MICRO_STAGE_CODES.indexOf(currentMicro);
+  if (idx < 0 || idx >= FULL_JOURNEY_MICRO_STAGE_CODES.length - 1) return null;
+  return FULL_JOURNEY_MICRO_STAGE_CODES[idx + 1] ?? null;
+}
+
 /** Dropdown label — matches manual entry format e.g. C1 · C1.3 Objection */
 export function formatStageOptionLabel(stage: BusinessMicroStage): string {
   return `${stage.macro} · ${stage.code} ${stage.title}`;

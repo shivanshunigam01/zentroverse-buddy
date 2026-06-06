@@ -5,6 +5,7 @@ import EmptyState from "@/components/shared/EmptyState";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
 import LeadIdentityTable from "@/components/shared/LeadIdentityTable";
 import { LeadManualEditForm } from "@/components/shared/LeadManualEditForm";
+import { LeadStageJourney } from "@/components/shared/LeadStageJourney";
 import { SCORING_RULES } from "@/domain/platform";
 import { useLeadById, useOpportunityLeads, useActivitiesForOpportunity, useCustomer } from "@/store/selectors";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
@@ -119,8 +120,16 @@ const LeadDetail = ({ leadId }: Props) => {
         </div>
 
         <TabsContent value="Overview" className="mt-4 space-y-4">
+          {opp && <LeadStageJourney lead={lead} opportunity={opp} />}
           {opp && (
-            <LeadManualEditForm lead={lead} opportunity={opp} customer={customer} />
+            <details className="rounded-2xl border border-border/60 bg-secondary/10 p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-foreground">
+                Advanced — edit all database fields
+              </summary>
+              <div className="mt-4">
+                <LeadManualEditForm lead={lead} opportunity={opp} customer={customer} />
+              </div>
+            </details>
           )}
           <OverviewTab lead={lead} run={run} />
         </TabsContent>
@@ -166,13 +175,6 @@ const OverviewTab = ({ lead, run }: { lead: import("@/adapters/lead-view.adapter
   <>
     <Section title="Lead identity">
       <LeadIdentityTable lead={lead} />
-    </Section>
-    <Section title={`${lead.microStage} · Current stage`}>
-      <p className="text-sm text-muted-foreground">{lead.currentAction}</p>
-      <ActionBar>
-        <Btn onClick={() => run("Complete Contact")}>Complete Contact</Btn>
-        <Btn variant="outline" onClick={() => run("Verify Number")}>Verify Number</Btn>
-      </ActionBar>
     </Section>
     <Section title="C0.8 · Lead scoring">
       <div className="grid gap-2 sm:grid-cols-2">
