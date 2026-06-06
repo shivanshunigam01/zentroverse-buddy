@@ -91,7 +91,7 @@ export function LeadStageJourney({ lead, opportunity, customer }: Props) {
   }, [initDrafts]);
 
   useEffect(() => {
-    currentRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    currentRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [opportunity.current_micro_stage]);
 
   const currentIdx = useMemo(
@@ -183,7 +183,7 @@ export function LeadStageJourney({ lead, opportunity, customer }: Props) {
       <div
         key={stage.code}
         ref={isCurrent ? currentRef : undefined}
-        className={`rounded-xl border px-3 py-3 transition-colors sm:px-4 ${
+        className={`scroll-mt-4 rounded-xl border px-3 py-3 transition-colors sm:px-4 ${
           isCurrent
             ? "border-primary bg-primary/5 shadow-sm"
             : status === "completed"
@@ -210,18 +210,12 @@ export function LeadStageJourney({ lead, opportunity, customer }: Props) {
             </div>
             <p className="mt-1 text-xs text-muted-foreground">{stage.systemAction}</p>
             {checklist && checklist.length > 0 && (
-              <ul className="mt-2 flex flex-wrap gap-1.5">
-                {checklist.map((item) => (
-                  <li
-                    key={item}
-                    className="rounded-md bg-secondary/40 px-2 py-0.5 text-[10px] text-muted-foreground"
-                  >
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
+                <span className="font-semibold uppercase tracking-wide">Captures: </span>
+                {checklist.join(" · ")}
+              </p>
             )}
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-2 text-xs text-muted-foreground">
               Owner: {stage.owner} · SLA: {stage.sla} · Exit: {stage.exitCondition}
             </p>
 
@@ -317,10 +311,10 @@ export function LeadStageJourney({ lead, opportunity, customer }: Props) {
       <div className="max-h-[min(75vh,800px)] space-y-4 overflow-y-auto rounded-xl border border-border/60 p-3 sm:p-4">
         {c0Group && (
           <div>
-            <h3 className="sticky top-0 z-10 mb-2 bg-card/95 py-1 text-xs font-bold uppercase tracking-wide text-primary backdrop-blur-sm">
+            <h3 className="mb-3 border-b border-border/60 pb-2 text-xs font-bold uppercase tracking-wide text-primary">
               {c0Group.label}
             </h3>
-            <div className="space-y-2">{c0Group.stages.map(renderStageCard)}</div>
+            <div className="space-y-3">{c0Group.stages.map(renderStageCard)}</div>
           </div>
         )}
 

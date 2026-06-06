@@ -11,7 +11,7 @@ export function StageStepFieldsForm({ fields, values, onChange, disabled }: Prop
   if (fields.length === 0) return null;
 
   return (
-    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+    <div className="mt-4 grid gap-4 sm:grid-cols-2">
       {fields.map((field) => (
         <FieldInput
           key={field.key}
@@ -37,12 +37,12 @@ function FieldInput({
   disabled?: boolean;
 }) {
   const label = (
-    <label className="block text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+    <label className="mb-1.5 block text-[10px] font-bold uppercase leading-snug tracking-wide text-muted-foreground">
       {field.label}
     </label>
   );
-  const className = `input-app mt-1 w-full px-3 py-2 text-sm ${field.fullWidth ? "sm:col-span-2" : ""}`;
-  const wrapClass = field.fullWidth ? "sm:col-span-2" : "";
+  const className = `input-app w-full px-3 py-2 text-sm`;
+  const wrapClass = field.fullWidth ? "sm:col-span-2" : "min-w-0";
 
   if (field.type === "select") {
     return (
