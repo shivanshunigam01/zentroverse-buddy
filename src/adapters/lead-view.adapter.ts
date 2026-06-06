@@ -61,6 +61,8 @@ export type Lead = {
   currentStage: string;
   /** Business micro stage label */
   microStage: string;
+  /** Exact micro stage code for filtering e.g. C0.5 */
+  microStageCode: string;
   leadScore: number;
   scoreLabel: "Cold" | "Warm" | "Hot" | "Critical";
   priority: OpportunityMaster["priority"];
@@ -93,6 +95,7 @@ export function opportunityToLead(opp: OpportunityMaster, customer: CustomerMast
     leadType: `${opp.opportunity_type} Opportunity`,
     currentStage: stage,
     microStage: microLabel,
+    microStageCode: opp.current_micro_stage,
     leadScore: opp.lead_score,
     scoreLabel: opp.score_classification,
     priority: opp.priority,

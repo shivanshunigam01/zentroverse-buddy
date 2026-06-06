@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import ModuleShell, { Section, FilterChips, DataTable, Btn, ActionBar } from "@/components/shared/ModuleShell";
+import ModuleShell, { Section, DataTable, Btn, ActionBar } from "@/components/shared/ModuleShell";
 import EmptyState from "@/components/shared/EmptyState";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
 import MoveStageDialog from "@/components/shared/MoveStageDialog";
 import { TablePagination } from "@/components/shared/TablePagination";
+import { C0StageFilterBar, C0_STAGE_FILTER_ALL } from "@/components/shared/C0StageFilterBar";
 import type { Lead } from "@/adapters/lead-view.adapter";
 import { useOpportunityLeads } from "@/store/selectors";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
@@ -12,37 +12,39 @@ import { usePagination, DEFAULT_PAGE_SIZE } from "@/hooks/use-pagination";
 import { LeadRowActions } from "@/components/shared/LeadRowActions";
 import { BulkWhatsAppButton } from "@/components/modules/BulkWhatsAppButton";
 import { BulkWhatsAppReportButton } from "@/components/modules/BulkWhatsAppReportButton";
+import { C0_MICRO_STAGES } from "@/domain/stages/business-stages";
 
-const FILTERS = ["All", "Stage", "Owner", "Priority", "Hot/Warm/Cold", "Source", "SLA Missed", "Today Follow-up"];
+function filterLeadsByStage(leads: Lead[], stageCode: string): Lead[] {
+  if (stageCode === C0_STAGE_FILTER_ALL) return leads;
+  return leads.filter((l) => l.microStageCode === stageCode);
+}
 
-function filterLeads(leads: Lead[], filter: string): Lead[] {
-  switch (filter) {
-    case "SLA Missed":
-      return leads.filter((l) => l.slaCountdown === "Overdue");
-    case "Today Follow-up":
-      return leads.filter((l) => l.nextActionAt.toLowerCase().includes("today"));
-    case "Hot/Warm/Cold":
-      return leads.filter((l) => ["Hot", "Warm", "Cold"].includes(l.scoreLabel));
-    default:
-      return leads;
+function buildStageCounts(leads: Lead[]): Record<string, number> {
+  const counts: Record<string, number> = { [C0_STAGE_FILTER_ALL]: leads.length };
+  for (const stage of C0_MICRO_STAGES) {
+    counts[stage.code] = leads.filter((l) => l.microStageCode === stage.code).length;
   }
+  return counts;
 }
 
 const LeadInbox = () => {
   const { viewLead, callLead, openWhatsApp, performAction } = useDashboardActions();
   const allLeads = useOpportunityLeads();
   const [moveLead, setMoveLead] = useState<Lead | null>(null);
-  const [filter, setFilter] = useState("All");
+  const [stageFilter, setStageFilter] = useState(C0_STAGE_FILTER_ALL);
 
-  const leads = useMemo(() => filterLeads(allLeads, filter), [allLeads, filter]);
+  const stageCounts = useMemo(() => buildStageCounts(allLeads), [allLeads]);
+  const leads = useMemo(
+    () => filterLeadsByStage(allLeads, stageFilter),
+    [allLeads, stageFilter],
+  );
+
   const pagination = usePagination(leads, DEFAULT_PAGE_SIZE);
   const { pageItems } = pagination;
 
-  const onFilterSelect = (f: string) => {
-    setFilter(f);
-    if (["Stage", "Owner", "Priority", "Source"].includes(f)) {
-      toast.info(`${f} filter`, { description: "Use inbox columns · full filter UI coming with API" });
-    }
+  const onStageSelect = (code: string) => {
+    setStageFilter(code);
+    pagination.setPage(1);
   };
 
   return (
@@ -69,15 +71,36 @@ const LeadInbox = () => {
         />
       ) : (
         <div className="flex flex-col gap-4">
-          <Section title="Filters">
-            <FilterChips items={FILTERS} active={filter} onSelect={onFilterSelect} />
-            <p className="mt-2 text-xs text-muted-foreground">
-              {leads.length} lead{leads.length === 1 ? "" : "s"}
-              {filter !== "All" ? ` (filtered from ${allLeads.length})` : ""}
-              {leads.length > DEFAULT_PAGE_SIZE
-                ? ` · showing ${DEFAULT_PAGE_SIZE} per page`
-                : ""}
+          <Section title="Filter by C0 stage">
+            <p className="mb-3 text-sm text-muted-foreground">
+              Select a lead maturity step (C0.1–C0.10) to show only leads currently in that stage.
             </p>
+            <C0StageFilterBar
+              active={stageFilter}
+              onSelect={onStageSelect}
+              counts={stageCounts}
+            />
+            <div className="mt-4 rounded-xl border border-border/50 bg-secondary/20 px-4 py-3">
+              <p className="text-sm font-semibold text-foreground">
+                {leads.length} lead{leads.length === 1 ? "" : "s"}
+                {stageFilter !== C0_STAGE_FILTER_ALL && (
+                  <span className="font-normal text-muted-foreground">
+                    {" "}
+                    in {stageFilter}
+                  </span>
+                )}
+              </p>
+              {stageFilter !== C0_STAGE_FILTER_ALL && (
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Filtered from {allLeads.length} total leads in inbox
+                </p>
+              )}
+              {leads.length > DEFAULT_PAGE_SIZE && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Showing {DEFAULT_PAGE_SIZE} per page · page {pagination.page} of {pagination.totalPages}
+                </p>
+              )}
+            </div>
           </Section>
 
           {leads.length > 0 && (
@@ -113,7 +136,7 @@ const LeadInbox = () => {
                 </div>
               </div>
             ))}
-            {pageItems.length === 0 && <EmptyInbox />}
+            {pageItems.length === 0 && <EmptyInbox stageFilter={stageFilter} />}
           </div>
 
           <DataTable minWidth={1400}>
@@ -156,7 +179,7 @@ const LeadInbox = () => {
                   <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">{l.mobile}</td>
                   <td className="px-3 py-3 text-xs">{l.product}</td>
                   <td className="px-3 py-3">
-                    <span className="font-mono text-xs font-bold text-primary">{l.currentStage}</span>
+                    <span className="font-mono text-xs font-bold text-primary">{l.microStageCode}</span>
                     <p className="max-w-[140px] truncate text-[10px] text-muted-foreground">{l.microStage}</p>
                   </td>
                   <td className="px-3 py-3 text-xs font-semibold">
@@ -185,7 +208,7 @@ const LeadInbox = () => {
 
           {pageItems.length === 0 && leads.length > 0 && (
             <div className="hidden md:block">
-              <EmptyInbox />
+              <EmptyInbox stageFilter={stageFilter} />
             </div>
           )}
 
@@ -216,9 +239,11 @@ const LeadInbox = () => {
   );
 };
 
-const EmptyInbox = () => (
+const EmptyInbox = ({ stageFilter }: { stageFilter: string }) => (
   <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-    No leads match this filter.
+    {stageFilter === C0_STAGE_FILTER_ALL
+      ? "No leads match this filter."
+      : `No leads are currently in ${stageFilter}.`}
   </p>
 );
 
