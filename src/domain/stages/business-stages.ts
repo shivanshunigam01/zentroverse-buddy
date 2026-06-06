@@ -113,3 +113,26 @@ export function getMicroStagesForMacro(macroId: import("./types").MacroStageId):
     default: return [];
   }
 }
+
+export const ALL_MICRO_STAGES: BusinessMicroStage[] = [
+  ...C0_MICRO_STAGES,
+  ...C1_MICRO_STAGES,
+  ...C1A_MICRO_STAGES,
+  ...C2_MICRO_STAGES,
+  ...C3_MICRO_STAGES,
+  ...LIFECYCLE_MICRO_STAGES,
+];
+
+/** Dropdown label — matches manual entry format e.g. C1 · C1.3 Objection */
+export function formatStageOptionLabel(stage: BusinessMicroStage): string {
+  return `${stage.macro} · ${stage.code} ${stage.title}`;
+}
+
+export const STAGE_SELECT_GROUPS: ReadonlyArray<{ label: string; stages: BusinessMicroStage[] }> = [
+  { label: "C0 — Lead Maturity", stages: C0_MICRO_STAGES },
+  { label: "C1 — Sales Discussion", stages: C1_MICRO_STAGES },
+  { label: "C1A — Finance Approval", stages: C1A_MICRO_STAGES },
+  { label: "C2 — Booking to Billing", stages: C2_MICRO_STAGES },
+  { label: "C3 — Retail / Delivery", stages: C3_MICRO_STAGES },
+  { label: "Lifecycle (L1–L7)", stages: LIFECYCLE_MICRO_STAGES },
+];

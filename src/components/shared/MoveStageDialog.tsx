@@ -3,6 +3,10 @@ import { toast } from "sonner";
 import { Btn } from "@/components/shared/ModuleShell";
 import type { Lead } from "@/domain/leads";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
+import {
+  STAGE_SELECT_GROUPS,
+  formatStageOptionLabel,
+} from "@/domain/stages/business-stages";
 
 type Props = {
   open: boolean;
@@ -60,12 +64,12 @@ const MoveStageDialog = ({ open, lead, onClose, onConfirm }: Props) => {
           Move Stage
         </h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          Enter micro stage code e.g. C1A.5 or C1 · C1.3 Objection
+          Choose the target micro stage from the list below.
         </p>
 
         <div className="mt-5 space-y-4 text-sm">
           <Row label="Current stage" value={`${lead.currentStage} · ${lead.microStage}`} />
-          <Field name="newStage" label="New stage" placeholder="e.g. C1A.5 or C1 · C1.3 Objection" required />
+          <StageSelect name="newStage" label="New stage" required />
           <Field name="reason" label="Reason" placeholder="Why moving stage" />
           <Row label="Current action" value={lead.currentAction} />
           <Field name="newAction" label="New action" placeholder="Required" required />
@@ -91,6 +95,46 @@ const Row = ({ label, value }: { label: string; value: string }) => (
   <div className="rounded-xl bg-secondary/40 px-3 py-2.5">
     <p className="text-[10px] font-bold uppercase text-muted-foreground">{label}</p>
     <p className="mt-0.5 font-medium text-foreground">{value}</p>
+  </div>
+);
+
+const StageSelect = ({
+  name,
+  label,
+  required,
+}: {
+  name: string;
+  label: string;
+  required?: boolean;
+}) => (
+  <div>
+    <label htmlFor={name} className="text-[10px] font-bold uppercase text-muted-foreground">
+      {label}
+      {required && <span className="text-destructive"> *</span>}
+    </label>
+    <select
+      id={name}
+      name={name}
+      required={required}
+      defaultValue=""
+      className="input-app mt-1.5 w-full px-3 py-2.5 text-sm"
+    >
+      <option value="" disabled>
+        Select a stage…
+      </option>
+      {STAGE_SELECT_GROUPS.map((group) => (
+        <optgroup key={group.label} label={group.label}>
+          {group.stages.map((stage) => {
+            const optionLabel = formatStageOptionLabel(stage);
+            return (
+              <option key={stage.code} value={optionLabel}>
+                {optionLabel}
+              </option>
+            );
+          })}
+        </optgroup>
+      ))}
+    </select>
   </div>
 );
 

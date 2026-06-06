@@ -4,8 +4,9 @@ import ModuleShell, { Btn, Section, FormGrid, ActionBar } from "@/components/sha
 import EmptyState from "@/components/shared/EmptyState";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
 import LeadIdentityTable from "@/components/shared/LeadIdentityTable";
+import { LeadManualEditForm } from "@/components/shared/LeadManualEditForm";
 import { SCORING_RULES } from "@/domain/platform";
-import { useLeadById, useOpportunityLeads, useActivitiesForOpportunity } from "@/store/selectors";
+import { useLeadById, useOpportunityLeads, useActivitiesForOpportunity, useCustomer } from "@/store/selectors";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useOpportunityActions } from "@/hooks/use-opportunity-actions";
 import { getNextMicroStage } from "@/domain/stages/stage-gates";
@@ -41,6 +42,7 @@ const LeadDetail = ({ leadId }: Props) => {
   const resolved = useLeadById(leadId);
   const lead = resolved ?? leads[0];
   const opp = useZentroFlowStore((s) => (lead ? s.opportunities[lead.opportunityId] : undefined));
+  const customer = useCustomer(lead?.customerId ?? "");
   const nextStep = opp ? getNextMicroStage(opp) : null;
   const [tab, setTab] = useState<string>("Overview");
   const { callLead, openWhatsApp } = useDashboardActions();
@@ -117,6 +119,9 @@ const LeadDetail = ({ leadId }: Props) => {
         </div>
 
         <TabsContent value="Overview" className="mt-4 space-y-4">
+          {opp && (
+            <LeadManualEditForm lead={lead} opportunity={opp} customer={customer} />
+          )}
           <OverviewTab lead={lead} run={run} />
         </TabsContent>
         <TabsContent value="Activity Timeline" className="mt-4">

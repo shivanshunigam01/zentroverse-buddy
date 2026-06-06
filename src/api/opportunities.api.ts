@@ -60,3 +60,14 @@ export async function patchOpportunity(
   });
   return mapOpportunity(dto);
 }
+
+export async function manualEditLead(
+  opportunityId: string,
+  body: Record<string, unknown>,
+): Promise<OpportunityMaster> {
+  const dto = await api<Record<string, unknown>>(`/opportunities/${opportunityId}/manual-edit`, {
+    method: "POST",
+    json: body,
+  });
+  return mapOpportunity(dto);
+}
