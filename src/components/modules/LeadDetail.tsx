@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { refreshOpportunity } from "@/services/sync.service";
-import ModuleShell, { Btn, Section, FormGrid, ActionBar } from "@/components/shared/ModuleShell";
+import ModuleShell, { Btn, Section, ActionBar } from "@/components/shared/ModuleShell";
 import EmptyState from "@/components/shared/EmptyState";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
 import LeadIdentityTable from "@/components/shared/LeadIdentityTable";
 import { LeadManualEditForm } from "@/components/shared/LeadManualEditForm";
 import { LeadStageJourney } from "@/components/shared/LeadStageJourney";
 import { SCORING_RULES } from "@/domain/platform";
+import { buildStatusGridFromStep } from "@/domain/stages/c0-stage-fields";
+import type { OpportunityMaster } from "@/domain/entities/opportunity";
 import { useLeadById, useOpportunityLeads, useActivitiesForOpportunity, useCustomer } from "@/store/selectors";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useOpportunityActions } from "@/hooks/use-opportunity-actions";
@@ -120,7 +122,7 @@ const LeadDetail = ({ leadId }: Props) => {
         </div>
 
         <TabsContent value="Overview" className="mt-4 space-y-4">
-          {opp && <LeadStageJourney lead={lead} opportunity={opp} />}
+          {opp && <LeadStageJourney lead={lead} opportunity={opp} customer={customer} />}
           {opp && (
             <details className="rounded-2xl border border-border/60 bg-secondary/10 p-4">
               <summary className="cursor-pointer text-sm font-semibold text-foreground">
@@ -131,19 +133,19 @@ const LeadDetail = ({ leadId }: Props) => {
               </div>
             </details>
           )}
-          <OverviewTab lead={lead} run={run} />
+          <OverviewTab lead={lead} opp={opp} />
         </TabsContent>
         <TabsContent value="Activity Timeline" className="mt-4">
           <TimelineTab leadId={lead.opportunityId} />
         </TabsContent>
         <TabsContent value="Contact Health" className="mt-4">
-          <ContactHealthTab run={run} />
+          <ContactHealthTab opp={opp} run={run} />
         </TabsContent>
         <TabsContent value="Engagement" className="mt-4">
-          <EngagementTab run={run} />
+          <EngagementTab opp={opp} run={run} />
         </TabsContent>
         <TabsContent value="Qualification" className="mt-4">
-          <QualificationTab run={run} />
+          <QualificationTab opp={opp} run={run} />
         </TabsContent>
         <TabsContent value="Quote" className="mt-4">
           <QuoteTab run={run} />
@@ -171,102 +173,160 @@ const LeadDetail = ({ leadId }: Props) => {
   );
 };
 
-const OverviewTab = ({ lead, run }: { lead: import("@/adapters/lead-view.adapter").Lead; run: (label: string) => void }) => (
-  <>
-    <Section title="Lead identity">
-      <LeadIdentityTable lead={lead} />
-    </Section>
-    <Section title="C0.8 · Lead scoring">
-      <div className="grid gap-2 sm:grid-cols-2">
-        {SCORING_RULES.map((r) => (
-          <div key={r.activity} className="flex justify-between rounded-lg bg-secondary/30 px-3 py-2 text-sm">
-            <span>{r.activity}</span>
-            <span className="font-mono font-bold">{r.points > 0 ? `+${r.points}` : r.points}</span>
-          </div>
-        ))}
-      </div>
-      <p className="mt-3 text-center text-lg font-bold">Output: {lead.scoreLabel}</p>
-    </Section>
-    <Section title="C0.9 · Next best action">
-      <p className="text-sm"><strong>Suggested:</strong> {lead.nextAction}</p>
-      <p className="text-sm text-muted-foreground">Owner: {lead.currentOwner} · SLA: {lead.slaTime} · Escalation: {lead.escalationOwner}</p>
-      <ActionBar>
-        <Btn onClick={() => run("Accept Action")}>Accept Action</Btn>
-        <Btn onClick={() => run("Pass Score Gate")}>Pass Score Gate</Btn>
-        <Btn variant="outline" onClick={() => run("Change Action")}>Change Action</Btn>
-        <Btn variant="outline" onClick={() => run("Assign Owner")}>Assign Owner</Btn>
-      </ActionBar>
-    </Section>
-    <Section title="C0.10 · Quote readiness checklist">
-      <Checklist items={["Variant Known", "Budget Discussed", "Finance Need Known", "Decision Maker Known", "Timeline Known", "Competition Known"]} />
-      <div className="mt-4">
-        <Btn onClick={() => run("Move to C1")}>Move to C1</Btn>
-      </div>
-    </Section>
-  </>
-);
+const OverviewTab = ({ lead, opp }: { lead: import("@/adapters/lead-view.adapter").Lead; opp?: OpportunityMaster }) => {
+  const c08 = opp?.stage_step_data?.["C0.8"]?.fields;
+  const scoreFromForm = c08?.calculated_score != null ? String(c08.calculated_score) : null;
+  const labelFromForm = c08?.score_output != null ? String(c08.score_output) : null;
 
-const ContactHealthTab = ({ run }: { run: (label: string) => void }) => (
-  <div className="space-y-4">
-    <Section title="C0.3 · Contact health">
-      <StatusGrid items={[
-        ["Mobile Valid", "Yes"], ["WhatsApp Active", "Yes"], ["Call Reachable", "Yes"],
-        ["Email Valid", "—"], ["Territory Valid", "Yes"], ["Contactability Score", "82"],
-      ]} />
-      <ActionBar>
-        <Btn onClick={() => run("Verify Number")}>Verify Number</Btn>
-        <Btn variant="outline" onClick={() => run("Check WhatsApp")}>Check WhatsApp</Btn>
-        <Btn variant="outline" onClick={() => run("Send Test Message")}>Send Test Message</Btn>
-        <Btn variant="secondary" onClick={() => run("Move to Bot")}>Move to Bot</Btn>
-        <Btn variant="secondary" onClick={() => run("Move to Dialer")}>Move to Dialer</Btn>
-        <Btn variant="danger" onClick={() => run("Mark Invalid")}>Mark Invalid</Btn>
-      </ActionBar>
-    </Section>
-    <Section title="C0.2 · Duplicate check">
-      <StatusGrid items={[["Existing Customer?", "No"], ["Same Mobile?", "Yes"], ["Same Product?", "No"], ["Different Product?", "Cross-sell"], ["Old Lead?", "—"]]} />
-      <ActionBar>
-        <Btn variant="secondary" onClick={() => run("Merge Lead")}>Merge Lead</Btn>
-        <Btn variant="secondary" onClick={() => run("New Opportunity")}>New Opportunity</Btn>
-        <Btn variant="secondary" onClick={() => run("Reopen Old Lead")}>Reopen Old Lead</Btn>
-        <Btn variant="outline" onClick={() => run("Alert Manager")}>Alert Manager</Btn>
-      </ActionBar>
-    </Section>
-  </div>
-);
+  return (
+    <>
+      <Section title="Lead identity">
+        <LeadIdentityTable lead={lead} />
+      </Section>
+      <Section title="Scoring reference (C0.8)">
+        <p className="mb-3 text-sm text-muted-foreground">
+          Enter scoring signals in the stage journey on Overview. Reference point values:
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {SCORING_RULES.map((r) => (
+            <div key={r.activity} className="flex justify-between rounded-lg bg-secondary/30 px-3 py-2 text-sm">
+              <span>{r.activity}</span>
+              <span className="font-mono font-bold">{r.points > 0 ? `+${r.points}` : r.points}</span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-center text-lg font-bold">
+          Current output: {labelFromForm ?? lead.scoreLabel} ({scoreFromForm ?? lead.leadScore})
+        </p>
+      </Section>
+    </>
+  );
+};
 
-const EngagementTab = ({ run }: { run: (label: string) => void }) => (
-  <Section title="C0.4 · Bot engagement">
-    <StatusGrid items={[["Welcome Sent", "Yes"], ["Product Asked", "Yes"], ["Location Asked", "Pending"], ["Timeline Asked", "—"], ["Finance Asked", "—"], ["Callback Asked", "—"]]} />
-    <div className="mt-4 flex flex-wrap gap-2">
-      <Btn onClick={() => run("Send Bot Message")}>Send Bot Message</Btn>
-      <Btn variant="outline" onClick={() => run("Resend Message")}>Resend Message</Btn>
-      <Btn variant="outline" onClick={() => run("View Reply")}>View Reply</Btn>
-      <Btn variant="secondary" onClick={() => run("Transfer to Executive")}>Transfer to Executive</Btn>
+const ContactHealthTab = ({ opp, run }: { opp?: OpportunityMaster; run: (label: string) => void }) => {
+  const c03 = buildStatusGridFromStep("C0.3", opp?.stage_step_data?.["C0.3"]?.fields);
+  const c02 = buildStatusGridFromStep("C0.2", opp?.stage_step_data?.["C0.2"]?.fields);
+
+  return (
+    <div className="space-y-4">
+      <Section title="C0.3 · Contact health">
+        {c03.length > 0 ? (
+          <StatusGrid items={c03} />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No contact health data yet — fill C0.3 in the Overview stage journey.
+          </p>
+        )}
+        <ActionBar>
+          <Btn onClick={() => run("Verify Number")}>Verify Number</Btn>
+          <Btn variant="outline" onClick={() => run("Check WhatsApp")}>Check WhatsApp</Btn>
+          <Btn variant="outline" onClick={() => run("Send Test Message")}>Send Test Message</Btn>
+          <Btn variant="secondary" onClick={() => run("Move to Bot")}>Move to Bot</Btn>
+          <Btn variant="secondary" onClick={() => run("Move to Dialer")}>Move to Dialer</Btn>
+          <Btn variant="danger" onClick={() => run("Mark Invalid")}>Mark Invalid</Btn>
+        </ActionBar>
+      </Section>
+      <Section title="C0.2 · Duplicate check">
+        {c02.length > 0 ? (
+          <StatusGrid items={c02} />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No duplicate check data yet — fill C0.2 in the Overview stage journey.
+          </p>
+        )}
+        <ActionBar>
+          <Btn variant="secondary" onClick={() => run("Merge Lead")}>Merge Lead</Btn>
+          <Btn variant="secondary" onClick={() => run("New Opportunity")}>New Opportunity</Btn>
+          <Btn variant="secondary" onClick={() => run("Reopen Old Lead")}>Reopen Old Lead</Btn>
+          <Btn variant="outline" onClick={() => run("Alert Manager")}>Alert Manager</Btn>
+        </ActionBar>
+      </Section>
     </div>
-  </Section>
-);
+  );
+};
 
-const QualificationTab = ({ run }: { run: (label: string) => void }) => (
-  <>
-    <Section title="C0.6 · Discovery">
-      <FormGrid fields={["Usage", "Route", "Load", "Current Vehicle", "Pain Point", "Budget", "Timeline", "Buyer Type", "Finance Need"]} />
-      <ActionBar>
-        <Btn onClick={() => run("Save Discovery")}>Save Discovery</Btn>
-        <Btn variant="outline" onClick={() => run("Lock Variant")}>Lock Variant</Btn>
-        <Btn variant="outline" onClick={() => run("Confirm Budget")}>Confirm Budget</Btn>
-      </ActionBar>
-    </Section>
-    <Section title="C0.7 · Qualification">
-      <FormGrid fields={["Vehicle Type", "Variant", "Budget", "Finance", "Exchange", "Decision Maker", "Competition", "Timeline"]} />
-      <ActionBar>
-        <Btn onClick={() => run("Mark Qualified")}>Mark Qualified</Btn>
-        <Btn variant="outline" onClick={() => run("Add Competitor Offer")}>Add Competitor Offer</Btn>
-        <Btn variant="outline" onClick={() => run("Schedule Demo")}>Schedule Demo</Btn>
-        <Btn variant="outline" onClick={() => run("Confirm Authority")}>Confirm Authority</Btn>
-      </ActionBar>
-    </Section>
-  </>
-);
+const EngagementTab = ({ opp, run }: { opp?: OpportunityMaster; run: (label: string) => void }) => {
+  const c04 = buildStatusGridFromStep("C0.4", opp?.stage_step_data?.["C0.4"]?.fields);
+  const c05 = buildStatusGridFromStep("C0.5", opp?.stage_step_data?.["C0.5"]?.fields);
+
+  return (
+    <div className="space-y-4">
+      <Section title="C0.4 · Bot engagement">
+        {c04.length > 0 ? (
+          <StatusGrid items={c04} />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No bot engagement data yet — fill C0.4 in the Overview stage journey.
+          </p>
+        )}
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Btn onClick={() => run("Send Bot Message")}>Send Bot Message</Btn>
+          <Btn variant="outline" onClick={() => run("Resend Message")}>Resend Message</Btn>
+          <Btn variant="outline" onClick={() => run("View Reply")}>View Reply</Btn>
+          <Btn variant="secondary" onClick={() => run("Transfer to Executive")}>Transfer to Executive</Btn>
+        </div>
+      </Section>
+      <Section title="C0.5 · Autodialer / AI call">
+        {c05.length > 0 ? (
+          <StatusGrid items={c05} />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No call data yet — fill C0.5 in the Overview stage journey.
+          </p>
+        )}
+      </Section>
+    </div>
+  );
+};
+
+const QualificationTab = ({ opp, run }: { opp?: OpportunityMaster; run: (label: string) => void }) => {
+  const c06 = buildStatusGridFromStep("C0.6", opp?.stage_step_data?.["C0.6"]?.fields);
+  const c07 = buildStatusGridFromStep("C0.7", opp?.stage_step_data?.["C0.7"]?.fields);
+  const c010 = buildStatusGridFromStep("C0.10", opp?.stage_step_data?.["C0.10"]?.fields);
+
+  return (
+    <>
+      <Section title="C0.6 · Discovery">
+        {c06.length > 0 ? (
+          <StatusGrid items={c06} />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No discovery data yet — fill C0.6 in the Overview stage journey.
+          </p>
+        )}
+        <ActionBar>
+          <Btn onClick={() => run("Save Discovery")}>Save Discovery</Btn>
+          <Btn variant="outline" onClick={() => run("Lock Variant")}>Lock Variant</Btn>
+          <Btn variant="outline" onClick={() => run("Confirm Budget")}>Confirm Budget</Btn>
+        </ActionBar>
+      </Section>
+      <Section title="C0.7 · Qualification">
+        {c07.length > 0 ? (
+          <StatusGrid items={c07} />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No qualification data yet — fill C0.7 in the Overview stage journey.
+          </p>
+        )}
+        <ActionBar>
+          <Btn onClick={() => run("Mark Qualified")}>Mark Qualified</Btn>
+          <Btn variant="outline" onClick={() => run("Add Competitor Offer")}>Add Competitor Offer</Btn>
+          <Btn variant="outline" onClick={() => run("Schedule Demo")}>Schedule Demo</Btn>
+          <Btn variant="outline" onClick={() => run("Confirm Authority")}>Confirm Authority</Btn>
+        </ActionBar>
+      </Section>
+      <Section title="C0.10 · Quote readiness">
+        {c010.length > 0 ? (
+          <StatusGrid items={c010} />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No quote readiness checklist yet — fill C0.10 in the Overview stage journey.
+          </p>
+        )}
+      </Section>
+    </>
+  );
+};
 
 const QuoteTab = ({ run }: { run: (label: string) => void }) => (
   <Section title="C1 · Sales pipeline actions">

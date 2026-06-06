@@ -74,7 +74,13 @@ export async function manualEditLead(
 
 export async function saveStageStep(
   opportunityId: string,
-  body: { micro_stage: string; notes?: string; owner?: string; changed_by?: string },
+  body: {
+    micro_stage: string;
+    notes?: string;
+    fields?: Record<string, string | number | boolean>;
+    owner?: string;
+    changed_by?: string;
+  },
 ): Promise<OpportunityMaster> {
   const dto = await api<Record<string, unknown>>(`/opportunities/${opportunityId}/stage-step`, {
     method: "POST",
@@ -85,7 +91,12 @@ export async function saveStageStep(
 
 export async function advanceStageStep(
   opportunityId: string,
-  body: { notes?: string; owner?: string; changed_by?: string },
+  body: {
+    notes?: string;
+    fields?: Record<string, string | number | boolean>;
+    owner?: string;
+    changed_by?: string;
+  },
 ): Promise<OpportunityMaster> {
   const dto = await api<Record<string, unknown>>(`/opportunities/${opportunityId}/advance-stage`, {
     method: "POST",

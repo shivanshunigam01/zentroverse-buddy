@@ -17,8 +17,11 @@ export type PriorityCode = "P1" | "P2" | "P3" | "P4" | "P5";
 /** Per micro-stage notes saved from Lead Detail journey form */
 export type StageStepData = {
   notes?: string;
+  /** Structured C0 (and future) stage field values */
+  fields?: Record<string, string | number | boolean>;
   owner?: string;
   updated_at?: string;
+  updated_by?: string;
   completed_at?: string;
 };
 

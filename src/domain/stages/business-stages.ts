@@ -5,7 +5,7 @@ export const SALES_STAGES: ReadonlyArray<{
   name: string;
   purpose: string;
 }> = [
-  { code: "C0", name: "Lead Maturity", purpose: "Contact through quote readiness" },
+  { code: "C0", name: "Lead Maturity", purpose: "Capture, clean, verify, engage, qualify, and score lead" },
   { code: "C1", name: "Sales Discussion", purpose: "Quote, objection, negotiation, finance discussion" },
   { code: "C1A", name: "Finance Approval & Intent", purpose: "Convert sales discussion into commercial readiness" },
   { code: "C2", name: "Booking to Billing", purpose: "Complete booking and delivery preparation" },
@@ -27,16 +27,16 @@ export const LIFECYCLE_STAGES: ReadonlyArray<{
 ] as const;
 
 export const C0_MICRO_STAGES: BusinessMicroStage[] = [
-  { code: "C0.1", macro: "C0", title: "Contact", trigger: "Lead captured", systemAction: "Validate contact details", owner: "System", sla: "Instant", exitCondition: "Contact established" },
-  { code: "C0.2", macro: "C0", title: "Discovery", trigger: "Contact valid", systemAction: "Capture usage, route, load, pain point", owner: "Sales Executive", sla: "Same day", exitCondition: "Requirement captured" },
-  { code: "C0.3", macro: "C0", title: "Qualification", trigger: "Discovery complete", systemAction: "Validate need, budget band, timeline", owner: "Sales Executive", sla: "Same day", exitCondition: "Qualified or disqualified" },
-  { code: "C0.4", macro: "C0", title: "Variant", trigger: "Qualified", systemAction: "Lock vehicle type and variant interest", owner: "Sales Executive", sla: "Same day", exitCondition: "Variant known" },
-  { code: "C0.5", macro: "C0", title: "Budget", trigger: "Variant known", systemAction: "Capture budget, EMI expectation, DP", owner: "Sales Executive", sla: "Same day", exitCondition: "Budget discussed" },
-  { code: "C0.6", macro: "C0", title: "Competition", trigger: "Budget captured", systemAction: "Map competitor offers", owner: "Sales Executive", sla: "Same day", exitCondition: "Competition logged" },
-  { code: "C0.7", macro: "C0", title: "Demo", trigger: "Customer requests demo", systemAction: "Schedule test drive / route demo", owner: "Sales Executive", sla: "Same day", exitCondition: "Demo completed or waived" },
-  { code: "C0.8", macro: "C0", title: "Authority", trigger: "Demo complete", systemAction: "Identify decision maker and influencers", owner: "Sales Executive", sla: "Same day", exitCondition: "Authority known" },
-  { code: "C0.9", macro: "C0", title: "Scoring Gate", trigger: "All C0 fields captured", systemAction: "Confirm score band meets quote threshold", owner: "System", sla: "Real-time", exitCondition: "Score gate passed" },
-  { code: "C0.10", macro: "C0", title: "Quote Ready", trigger: "Score gate passed", systemAction: "Enable quote creation", owner: "Sales Executive", sla: "1 hr", exitCondition: "Move to C1" },
+  { code: "C0.1", macro: "C0", title: "Lead Captured", trigger: "Lead ingested", systemAction: "Capture source, campaign, product, territory, customer details", owner: "System", sla: "Instant", exitCondition: "Lead record created" },
+  { code: "C0.2", macro: "C0", title: "Unique ID + Duplicate Check", trigger: "Lead captured", systemAction: "Create Customer ID, Lead ID, Opportunity ID; check duplicates", owner: "System", sla: "Instant", exitCondition: "IDs assigned, duplicate status known" },
+  { code: "C0.3", macro: "C0", title: "Contact Health Check", trigger: "IDs created", systemAction: "Validate mobile, WhatsApp, call, email, territory, contactability", owner: "System / Sales Executive", sla: "Same day", exitCondition: "Contact health scored" },
+  { code: "C0.4", macro: "C0", title: "Bot Engagement", trigger: "Contact reachable", systemAction: "Bot asks product, location, timeline, finance/cash, callback/quote/test drive", owner: "WhatsApp Bot", sla: "24 hrs", exitCondition: "Bot intent captured" },
+  { code: "C0.5", macro: "C0", title: "Autodialer / AI Call", trigger: "Priority assigned", systemAction: "P1–P5 priority calling and AI call summary", owner: "Autodialer / Sales Executive", sla: "Per priority SLA", exitCondition: "Call outcome logged" },
+  { code: "C0.6", macro: "C0", title: "Lead Discovery", trigger: "Engagement started", systemAction: "Capture usage, route, load, existing vehicle, pain point, budget, timeline, buyer type, finance need", owner: "Sales Executive", sla: "Same day", exitCondition: "Discovery complete" },
+  { code: "C0.7", macro: "C0", title: "Qualification", trigger: "Discovery complete", systemAction: "Validate vehicle type, variant, budget, finance, exchange, decision maker, competition, timeline", owner: "Sales Executive", sla: "Same day", exitCondition: "Qualified or nurture" },
+  { code: "C0.8", macro: "C0", title: "Lead Scoring", trigger: "Engagement signals", systemAction: "Score from call, WhatsApp, brochure, finance, test drive, no response, wrong number", owner: "System", sla: "Real-time", exitCondition: "Cold / Warm / Hot / Critical + priority" },
+  { code: "C0.9", macro: "C0", title: "Next Best Action", trigger: "Score calculated", systemAction: "Send brochure, schedule call, assign executive, EMI, visit, nurture, escalate", owner: "Action Engine", sla: "Per SLA", exitCondition: "Action accepted and assigned" },
+  { code: "C0.10", macro: "C0", title: "Quote Readiness", trigger: "Score gate passed", systemAction: "Confirm variant, budget, finance, decision maker, timeline, competition known", owner: "Sales Executive", sla: "1 hr", exitCondition: "Move to C1" },
 ];
 
 export const C1_MICRO_STAGES: BusinessMicroStage[] = [
@@ -138,7 +138,7 @@ export function formatStageOptionLabel(stage: BusinessMicroStage): string {
 }
 
 export const STAGE_SELECT_GROUPS: ReadonlyArray<{ label: string; stages: BusinessMicroStage[] }> = [
-  { label: "C0 — Lead Maturity", stages: C0_MICRO_STAGES },
+  { label: "C0 — Lead Maturity Stage", stages: C0_MICRO_STAGES },
   { label: "C1 — Sales Discussion", stages: C1_MICRO_STAGES },
   { label: "C1A — Finance Approval", stages: C1A_MICRO_STAGES },
   { label: "C2 — Booking to Billing", stages: C2_MICRO_STAGES },
