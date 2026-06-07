@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import { mapActivity, mapOpportunity } from "@/api/mappers";
+import { persistLeadFromApiDto } from "@/services/lead-persist.service";
 import type { OpportunityDto } from "@/api/contracts/opportunities";
 import type { OpportunityMaster } from "@/domain/entities/opportunity";
 import type { MicroStageCode } from "@/domain/stages/types";
@@ -19,22 +20,22 @@ export async function runAction(
   opportunityId: string,
   body: { action_label: string; changed_by: string; force?: boolean; reason?: string },
 ): Promise<OpportunityMaster> {
-  const dto = await api<OpportunityDto>(`/opportunities/${opportunityId}/actions`, {
+  const dto = await api<Record<string, unknown>>(`/opportunities/${opportunityId}/actions`, {
     method: "POST",
     json: body,
   });
-  return mapOpportunity(dto);
+  return persistLeadFromApiDto(dto);
 }
 
 export async function stageTransition(
   opportunityId: string,
   body: { new_micro_stage: MicroStageCode; changed_by: string; force?: boolean; reason?: string },
 ): Promise<OpportunityMaster> {
-  const dto = await api<OpportunityDto>(`/opportunities/${opportunityId}/stage-transition`, {
+  const dto = await api<Record<string, unknown>>(`/opportunities/${opportunityId}/stage-transition`, {
     method: "POST",
     json: body,
   });
-  return mapOpportunity(dto);
+  return persistLeadFromApiDto(dto);
 }
 
 export async function getActivities(opportunityId: string): Promise<LeadActivity[]> {
@@ -69,7 +70,7 @@ export async function manualEditLead(
     method: "POST",
     json: body,
   });
-  return mapOpportunity(dto);
+  return persistLeadFromApiDto(dto);
 }
 
 export async function saveStageStep(
@@ -86,7 +87,7 @@ export async function saveStageStep(
     method: "POST",
     json: body,
   });
-  return mapOpportunity(dto);
+  return persistLeadFromApiDto(dto);
 }
 
 export async function advanceStageStep(
@@ -102,5 +103,5 @@ export async function advanceStageStep(
     method: "POST",
     json: body,
   });
-  return mapOpportunity(dto);
+  return persistLeadFromApiDto(dto);
 }

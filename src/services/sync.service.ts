@@ -1,8 +1,11 @@
 import { fetchBootstrap } from "@/api/bootstrap.api";
 import { getActivities, getOpportunity } from "@/api/opportunities.api";
+import { getCustomer } from "@/api/customers.api";
 import { getZentroFlowStore } from "@/store/opportunity-store";
 import type { OpportunityMaster } from "@/domain/entities/opportunity";
 import type { ImportBatchResult } from "@/services/excel-import.service";
+
+export { persistLeadFromApiDto } from "@/services/lead-persist.service";
 
 export async function refreshFromApi(): Promise<void> {
   const payload = await fetchBootstrap();
@@ -18,6 +21,10 @@ export async function refreshOpportunity(opportunityId: string): Promise<Opportu
     ]);
     store.upsertOpportunity(opp);
     store.setActivitiesForOpportunity(opportunityId, activities);
+
+    const customer = await getCustomer(opp.customer_id);
+    store.upsertCustomer(customer);
+
     return opp;
   } catch {
     return null;

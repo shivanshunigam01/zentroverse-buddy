@@ -23,7 +23,6 @@ import {
 import { advanceStageStep, saveStageStep } from "@/api/opportunities.api";
 import { getCurrentUserName } from "@/api/auth.api";
 import { ApiClientError } from "@/lib/api";
-import { getZentroFlowStore } from "@/store/opportunity-store";
 import { refreshOpportunity } from "@/services/sync.service";
 
 type Props = {
@@ -109,8 +108,7 @@ export function LeadStageJourney({ lead, opportunity, customer }: Props) {
     ? ALL_MICRO_STAGES.find((s) => s.code === nextStage)
     : undefined;
 
-  const persistOpp = async (opp: OpportunityMaster) => {
-    getZentroFlowStore().upsertOpportunity(opp);
+  const persistOpp = async () => {
     await refreshOpportunity(lead.opportunityId).catch(() => undefined);
   };
 
@@ -124,11 +122,11 @@ export function LeadStageJourney({ lead, opportunity, customer }: Props) {
   const handleSaveStep = async (stage: BusinessMicroStage) => {
     setSavingCode(stage.code);
     try {
-      const opp = await saveStageStep(lead.opportunityId, {
+      await saveStageStep(lead.opportunityId, {
         micro_stage: stage.code,
         ...payloadForStage(stage.code),
       });
-      await persistOpp(opp);
+      await persistOpp();
       toast.success(`${stage.code} saved`);
     } catch (err) {
       toast.error("Save failed", {
@@ -144,8 +142,8 @@ export function LeadStageJourney({ lead, opportunity, customer }: Props) {
     const current = opportunity.current_micro_stage;
     setAdvancing(true);
     try {
-      const opp = await advanceStageStep(lead.opportunityId, payloadForStage(current));
-      await persistOpp(opp);
+      await advanceStageStep(lead.opportunityId, payloadForStage(current));
+      await persistOpp();
       toast.success("Stage advanced", {
         description: nextStageMeta
           ? `Now at ${nextStageMeta.code} ${nextStageMeta.title}`

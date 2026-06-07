@@ -9,6 +9,8 @@ import type { ApiResponse } from "./customers";
 export interface OpportunityDto extends OpportunityMaster {
   customer_name: string;
   customer_mobile: string;
+  customer_email?: string | null;
+  customer_address?: string | null;
 }
 
 export interface ListOpportunitiesQuery {

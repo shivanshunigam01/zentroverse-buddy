@@ -12,7 +12,6 @@ import {
 import { manualEditLead } from "@/api/opportunities.api";
 import { getCurrentUserName } from "@/api/auth.api";
 import { ApiClientError } from "@/lib/api";
-import { getZentroFlowStore } from "@/store/opportunity-store";
 import { refreshOpportunity } from "@/services/sync.service";
 
 type Props = {
@@ -71,20 +70,7 @@ export function LeadManualEditForm({ lead, opportunity, customer }: Props) {
       if (nextAt) body.next_action_date = new Date(nextAt).toISOString();
       if (slaDue) body.sla_due_at = new Date(slaDue).toISOString();
 
-      const opp = await manualEditLead(lead.opportunityId, body);
-      const store = getZentroFlowStore();
-      store.upsertOpportunity(opp);
-
-      if (customer) {
-        store.upsertCustomer({
-          ...customer,
-          name: str("customer_name") || customer.name,
-          mobile: str("customer_mobile") || customer.mobile,
-          email: str("customer_email") || customer.email || null,
-          address: str("customer_address") || customer.address || null,
-        });
-      }
-
+      await manualEditLead(lead.opportunityId, body);
       await refreshOpportunity(lead.opportunityId).catch(() => undefined);
       toast.success("Lead updated", { description: "Changes saved to database." });
     } catch (err) {
