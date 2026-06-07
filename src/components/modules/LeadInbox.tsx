@@ -4,7 +4,14 @@ import EmptyState from "@/components/shared/EmptyState";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
 import MoveStageDialog from "@/components/shared/MoveStageDialog";
 import { TablePagination } from "@/components/shared/TablePagination";
-import { C0StageFilterBar, C0_STAGE_FILTER_ALL } from "@/components/shared/C0StageFilterBar";
+import {
+  PipelineStageFilterBar,
+  STAGE_FILTER_ALL,
+  buildStageFilterCounts,
+  filterLeadsByStageFilter,
+  isMacroFilter,
+  resolveActiveStageMeta,
+} from "@/components/shared/PipelineStageFilterBar";
 import type { Lead } from "@/adapters/lead-view.adapter";
 import { useOpportunityLeads } from "@/store/selectors";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
@@ -13,32 +20,19 @@ import { LeadRowActions } from "@/components/shared/LeadRowActions";
 import { BulkWhatsAppButton } from "@/components/modules/BulkWhatsAppButton";
 import { BulkWhatsAppReportButton } from "@/components/modules/BulkWhatsAppReportButton";
 import { SmartfloSyncButton } from "@/components/modules/SmartfloSyncButton";
-import { C0_MICRO_STAGES } from "@/domain/stages/business-stages";
-
-function filterLeadsByStage(leads: Lead[], stageCode: string): Lead[] {
-  if (stageCode === C0_STAGE_FILTER_ALL) return leads;
-  return leads.filter((l) => l.microStageCode === stageCode);
-}
-
-function buildStageCounts(leads: Lead[]): Record<string, number> {
-  const counts: Record<string, number> = { [C0_STAGE_FILTER_ALL]: leads.length };
-  for (const stage of C0_MICRO_STAGES) {
-    counts[stage.code] = leads.filter((l) => l.microStageCode === stage.code).length;
-  }
-  return counts;
-}
 
 const LeadInbox = () => {
   const { viewLead, callLead, openWhatsApp, performAction } = useDashboardActions();
   const allLeads = useOpportunityLeads();
   const [moveLead, setMoveLead] = useState<Lead | null>(null);
-  const [stageFilter, setStageFilter] = useState(C0_STAGE_FILTER_ALL);
+  const [stageFilter, setStageFilter] = useState(STAGE_FILTER_ALL);
 
-  const stageCounts = useMemo(() => buildStageCounts(allLeads), [allLeads]);
+  const stageCounts = useMemo(() => buildStageFilterCounts(allLeads), [allLeads]);
   const leads = useMemo(
-    () => filterLeadsByStage(allLeads, stageFilter),
+    () => filterLeadsByStageFilter(allLeads, stageFilter) as Lead[],
     [allLeads, stageFilter],
   );
+  const activeStageMeta = useMemo(() => resolveActiveStageMeta(stageFilter), [stageFilter]);
 
   const pagination = usePagination(leads, DEFAULT_PAGE_SIZE);
   const { pageItems } = pagination;
@@ -73,11 +67,12 @@ const LeadInbox = () => {
         />
       ) : (
         <div className="flex flex-col gap-4">
-          <Section title="Filter by C0 stage">
+          <Section title="Filter by pipeline stage">
             <p className="mb-3 text-sm text-muted-foreground">
-              Select a lead maturity step (C0.1–C0.10) to show only leads currently in that stage.
+              Pick a macro stage (C0, C1, C1A, C2, C3) then select a step — or use{" "}
+              <strong>All C1</strong> to see every lead in that pipeline section.
             </p>
-            <C0StageFilterBar
+            <PipelineStageFilterBar
               active={stageFilter}
               onSelect={onStageSelect}
               counts={stageCounts}
@@ -85,14 +80,18 @@ const LeadInbox = () => {
             <div className="mt-4 rounded-xl border border-border/50 bg-secondary/20 px-4 py-3">
               <p className="text-sm font-semibold text-foreground">
                 {leads.length} lead{leads.length === 1 ? "" : "s"}
-                {stageFilter !== C0_STAGE_FILTER_ALL && (
+                {stageFilter !== STAGE_FILTER_ALL && (
                   <span className="font-normal text-muted-foreground">
                     {" "}
-                    in {stageFilter}
+                    {activeStageMeta
+                      ? `in ${activeStageMeta.code}`
+                      : isMacroFilter(stageFilter)
+                        ? `in ${stageFilter.replace("macro:", "")}`
+                        : ""}
                   </span>
                 )}
               </p>
-              {stageFilter !== C0_STAGE_FILTER_ALL && (
+              {stageFilter !== STAGE_FILTER_ALL && (
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   Filtered from {allLeads.length} total leads in inbox
                 </p>
@@ -243,9 +242,11 @@ const LeadInbox = () => {
 
 const EmptyInbox = ({ stageFilter }: { stageFilter: string }) => (
   <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-    {stageFilter === C0_STAGE_FILTER_ALL
+    {stageFilter === STAGE_FILTER_ALL
       ? "No leads match this filter."
-      : `No leads are currently in ${stageFilter}.`}
+      : isMacroFilter(stageFilter)
+        ? `No leads are currently in ${stageFilter.replace("macro:", "")}.`
+        : `No leads are currently in ${stageFilter}.`}
   </p>
 );
 
