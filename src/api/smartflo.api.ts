@@ -24,12 +24,14 @@ export type SmartfloSyncResult = {
 export async function getSmartfloConfig(): Promise<{
   configured: boolean;
   clickToCallConfigured?: boolean;
+  directAgentCallConfigured?: boolean;
   ivrId?: string;
 }> {
   return api("/admin/smartflo/config");
 }
 
-export async function triggerSmartfloIvrCall(body: {
+/** IVR Click-to-Call Support — POST /smartflo/call (unchanged) */
+export async function initiateSmartfloIvrCall(body: {
   phoneNumber: string;
   opportunityId?: string;
   customerName?: string;
@@ -45,6 +47,27 @@ export async function triggerSmartfloIvrCall(body: {
     json: body,
   });
 }
+
+/** Direct agent Click-to-Call — POST /smartflo/agent-call */
+export async function initiateSmartfloAgentCall(body: {
+  phoneNumber: string;
+  opportunityId?: string;
+  customerName?: string;
+}): Promise<{
+  success: boolean;
+  message: string;
+  phoneNumber: string;
+  agentNumber?: string;
+  smartflo?: unknown;
+}> {
+  return api("/smartflo/agent-call", {
+    method: "POST",
+    json: body,
+  });
+}
+
+/** @deprecated Use initiateSmartfloIvrCall */
+export const triggerSmartfloIvrCall = initiateSmartfloIvrCall;
 
 export async function syncLeadsToSmartflo(): Promise<SmartfloSyncResult> {
   return api<SmartfloSyncResult>("/admin/smartflo/sync-leads", {

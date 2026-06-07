@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import ModuleShell, { Section, DataTable, Btn, ActionBar } from "@/components/shared/ModuleShell";
 import EmptyState from "@/components/shared/EmptyState";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
@@ -20,10 +21,46 @@ import { LeadRowActions } from "@/components/shared/LeadRowActions";
 import { BulkWhatsAppButton } from "@/components/modules/BulkWhatsAppButton";
 import { BulkWhatsAppReportButton } from "@/components/modules/BulkWhatsAppReportButton";
 import { SmartfloSyncButton } from "@/components/modules/SmartfloSyncButton";
+import { initiateSmartfloAgentCall } from "@/api/smartflo.api";
+import { ApiClientError } from "@/lib/api";
 
 const LeadInbox = () => {
-  const { viewLead, callLead, ivrCallLead, openWhatsApp, performAction } = useDashboardActions();
+  const { viewLead, ivrCallLead, openWhatsApp, performAction } = useDashboardActions();
+  const [callingLeadId, setCallingLeadId] = useState<string | null>(null);
   const [ivrCallingId, setIvrCallingId] = useState<string | null>(null);
+
+  const handleCallLead = async (lead: Lead) => {
+    console.log("Clicked lead data:", lead);
+    setCallingLeadId(lead.leadId);
+    try {
+      const phoneNumber = (lead.mobile || "").replace(/\s/g, "");
+      console.log("Phone number:", phoneNumber);
+
+      if (!phoneNumber) {
+        toast.error("Phone number not found");
+        return;
+      }
+
+      const response = await initiateSmartfloAgentCall({
+        phoneNumber,
+        opportunityId: lead.opportunityId,
+        customerName: lead.customerName,
+      });
+
+      console.log("Smartflo call response:", response);
+      toast.success("Call initiated successfully");
+    } catch (error) {
+      console.error(
+        "Smartflo call error:",
+        error instanceof ApiClientError ? { message: error.message, status: error.status } : error,
+      );
+      toast.error(
+        error instanceof ApiClientError ? error.message : "Failed to initiate call",
+      );
+    } finally {
+      setCallingLeadId(null);
+    }
+  };
 
   const handleIvrCall = async (lead: Lead) => {
     setIvrCallingId(lead.leadId);
@@ -141,7 +178,8 @@ const LeadInbox = () => {
                     variant="labeled"
                     onView={() => viewLead(l.opportunityId)}
                     onMove={() => setMoveLead(l)}
-                    onCall={() => callLead(l.mobile, l.customerName)}
+                    onCall={() => void handleCallLead(l)}
+                    callLoading={callingLeadId === l.leadId}
                     onIvrCall={() => void handleIvrCall(l)}
                     ivrLoading={ivrCallingId === l.leadId}
                     onWhatsApp={() => openWhatsApp(l.opportunityId)}
@@ -210,7 +248,8 @@ const LeadInbox = () => {
                     <LeadRowActions
                       onView={() => viewLead(l.opportunityId)}
                       onMove={() => setMoveLead(l)}
-                      onCall={() => callLead(l.mobile, l.customerName)}
+                      onCall={() => void handleCallLead(l)}
+                      callLoading={callingLeadId === l.leadId}
                       onIvrCall={() => void handleIvrCall(l)}
                       ivrLoading={ivrCallingId === l.leadId}
                       onWhatsApp={() => openWhatsApp(l.opportunityId)}
