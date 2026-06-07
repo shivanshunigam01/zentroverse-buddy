@@ -21,7 +21,7 @@ import { LeadRowActions } from "@/components/shared/LeadRowActions";
 import { BulkWhatsAppButton } from "@/components/modules/BulkWhatsAppButton";
 import { BulkWhatsAppReportButton } from "@/components/modules/BulkWhatsAppReportButton";
 import { SmartfloSyncButton } from "@/components/modules/SmartfloSyncButton";
-import { initiateSmartfloCall } from "@/api/smartflo.api";
+import { initiateSmartfloAgentCall } from "@/api/smartflo.api";
 import { ApiClientError } from "@/lib/api";
 
 const LeadInbox = () => {
@@ -41,7 +41,7 @@ const LeadInbox = () => {
         return;
       }
 
-      const response = await initiateSmartfloCall({
+      const response = await initiateSmartfloAgentCall({
         phoneNumber,
         opportunityId: lead.opportunityId,
         customerName: lead.customerName,

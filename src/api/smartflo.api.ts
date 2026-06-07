@@ -30,8 +30,8 @@ export async function getSmartfloConfig(): Promise<{
   return api("/admin/smartflo/config");
 }
 
-/** Smartflo Click-to-Call — POST /smartflo/call (green Call button) */
-export async function initiateSmartfloCall(body: {
+/** IVR Click-to-Call Support — POST /smartflo/call (unchanged) */
+export async function initiateSmartfloIvrCall(body: {
   phoneNumber: string;
   opportunityId?: string;
   customerName?: string;
@@ -39,6 +39,7 @@ export async function initiateSmartfloCall(body: {
   success: boolean;
   message: string;
   phoneNumber: string;
+  ivrId?: string;
   smartflo?: unknown;
 }> {
   return api("/smartflo/call", {
@@ -46,9 +47,6 @@ export async function initiateSmartfloCall(body: {
     json: body,
   });
 }
-
-/** @deprecated Use initiateSmartfloCall */
-export const initiateSmartfloIvrCall = initiateSmartfloCall;
 
 /** Direct agent Click-to-Call — POST /smartflo/agent-call */
 export async function initiateSmartfloAgentCall(body: {
