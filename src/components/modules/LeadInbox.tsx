@@ -12,6 +12,7 @@ import { usePagination, DEFAULT_PAGE_SIZE } from "@/hooks/use-pagination";
 import { LeadRowActions } from "@/components/shared/LeadRowActions";
 import { BulkWhatsAppButton } from "@/components/modules/BulkWhatsAppButton";
 import { BulkWhatsAppReportButton } from "@/components/modules/BulkWhatsAppReportButton";
+import { SmartfloSyncButton } from "@/components/modules/SmartfloSyncButton";
 import { C0_MICRO_STAGES } from "@/domain/stages/business-stages";
 
 function filterLeadsByStage(leads: Lead[], stageCode: string): Lead[] {
@@ -52,6 +53,7 @@ const LeadInbox = () => {
       moduleId="lead-inbox"
       actions={
         <ActionBar>
+          <SmartfloSyncButton />
           <BulkWhatsAppButton />
           <BulkWhatsAppReportButton />
           <Btn
