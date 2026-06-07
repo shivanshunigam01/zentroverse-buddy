@@ -21,8 +21,29 @@ export type SmartfloSyncResult = {
   batchResults: SmartfloBatchResult[];
 };
 
-export async function getSmartfloConfig(): Promise<{ configured: boolean }> {
-  return api<{ configured: boolean }>("/admin/smartflo/config");
+export async function getSmartfloConfig(): Promise<{
+  configured: boolean;
+  clickToCallConfigured?: boolean;
+  ivrId?: string;
+}> {
+  return api("/admin/smartflo/config");
+}
+
+export async function triggerSmartfloIvrCall(body: {
+  phoneNumber: string;
+  opportunityId?: string;
+  customerName?: string;
+}): Promise<{
+  success: boolean;
+  message: string;
+  phoneNumber: string;
+  ivrId?: string;
+  smartflo?: unknown;
+}> {
+  return api("/smartflo/call", {
+    method: "POST",
+    json: body,
+  });
 }
 
 export async function syncLeadsToSmartflo(): Promise<SmartfloSyncResult> {

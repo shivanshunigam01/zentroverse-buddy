@@ -48,7 +48,8 @@ const LeadDetail = ({ leadId }: Props) => {
   const customer = useCustomer(lead?.customerId ?? "");
   const nextStep = opp ? getNextMicroStage(opp) : null;
   const [tab, setTab] = useState<string>("Overview");
-  const { callLead, openWhatsApp } = useDashboardActions();
+  const [ivrLoading, setIvrLoading] = useState(false);
+  const { callLead, ivrCallLead, openWhatsApp } = useDashboardActions();
   const { run } = useOpportunityActions(lead?.opportunityId);
 
   useEffect(() => {
@@ -97,6 +98,18 @@ const LeadDetail = ({ leadId }: Props) => {
         </div>
         <div className="mt-4 flex flex-wrap gap-2 border-t border-border/60 pt-4">
           <Btn onClick={() => callLead(lead.mobile, lead.customerName)}>Call Customer</Btn>
+          <Btn
+            variant="secondary"
+            disabled={ivrLoading}
+            onClick={() => {
+              setIvrLoading(true);
+              void ivrCallLead(lead.mobile, lead.customerName, lead.opportunityId).finally(() =>
+                setIvrLoading(false),
+              );
+            }}
+          >
+            {ivrLoading ? "IVR calling…" : "IVR Call (Smartflo)"}
+          </Btn>
           <Btn variant="outline" onClick={() => openWhatsApp(lead.opportunityId)}>
             WhatsApp
           </Btn>

@@ -13,7 +13,7 @@ const CALL_RESULTS = [
 
 const Autodialer = () => {
   const leads = useOpportunityLeads();
-  const { performAction, viewLead, callLead } = useDashboardActions();
+  const { performAction, viewLead, callLead, ivrCallLead } = useDashboardActions();
   const queueLead = leads[1] ?? leads[0];
 
   const logCallResult = (result: string) => {
@@ -67,6 +67,15 @@ const Autodialer = () => {
       </div>
       <ActionBar>
         <Btn onClick={() => queueLead && callLead(queueLead.mobile, queueLead.customerName)}>Call Now</Btn>
+        <Btn
+          variant="secondary"
+          onClick={() =>
+            queueLead &&
+            void ivrCallLead(queueLead.mobile, queueLead.customerName, queueLead.opportunityId)
+          }
+        >
+          IVR Call
+        </Btn>
         <Btn onClick={() => queueLead && performAction("Schedule Retry", { opportunityId: queueLead.opportunityId })}>Schedule Retry</Btn>
         <Btn onClick={() => queueLead && performAction("Assign Executive", { opportunityId: queueLead.opportunityId })}>Assign Executive</Btn>
         <Btn onClick={() => queueLead && performAction("Move Dormant", { opportunityId: queueLead.opportunityId })}>Move Dormant</Btn>

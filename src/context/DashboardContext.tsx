@@ -9,6 +9,8 @@ import {
   confirmManualStageMove,
   type PerformActionOptions,
 } from "@/services/opportunity-action.service";
+import { triggerSmartfloIvrCall } from "@/api/smartflo.api";
+import { ApiClientError } from "@/lib/api";
 
 export type DashboardActions = {
   selectedLeadId?: string;
@@ -22,6 +24,8 @@ export type DashboardActions = {
     form: { newStage: string; newAction: string; owner: string; reason?: string },
   ) => Promise<boolean>;
   callLead: (mobile: string, customerName?: string) => void;
+  /** Smartflo IVR click-to-call via backend API */
+  ivrCallLead: (mobile: string, customerName?: string, opportunityId?: string) => Promise<void>;
   openWhatsApp: (leadId?: string) => void;
   moveToStage: (stage: "C0" | "C1" | "C1A" | "C2" | "C3" | "lifecycle") => void;
   logout: () => void;
@@ -111,6 +115,31 @@ export function DashboardProvider({
     toast.info(customerName ? `Calling ${customerName}` : "Opening dialer", { description: mobile });
   }, []);
 
+  const ivrCallLead = useCallback(
+    async (mobile: string, customerName?: string, opportunityId?: string) => {
+      const toastId = toast.loading(
+        customerName ? `Starting IVR call to ${customerName}…` : "Starting Smartflo IVR call…",
+      );
+      try {
+        const result = await triggerSmartfloIvrCall({
+          phoneNumber: mobile.replace(/\s/g, ""),
+          customerName,
+          opportunityId,
+        });
+        toast.success(result.message || "IVR call started", {
+          id: toastId,
+          description: `${result.phoneNumber}${result.ivrId ? ` · IVR ${result.ivrId}` : ""}`,
+        });
+      } catch (err) {
+        toast.error("IVR call failed", {
+          id: toastId,
+          description: err instanceof ApiClientError ? err.message : "Could not reach Smartflo",
+        });
+      }
+    },
+    [],
+  );
+
   const openWhatsApp = useCallback(
     (leadId?: string) => {
       void performOpportunityAction(
@@ -151,11 +180,12 @@ export function DashboardProvider({
       performAction,
       confirmStageMove,
       callLead,
+      ivrCallLead,
       openWhatsApp,
       moveToStage,
       logout,
     }),
-    [selectedLeadId, navigate, viewLead, runAction, performAction, confirmStageMove, callLead, openWhatsApp, moveToStage, logout],
+    [selectedLeadId, navigate, viewLead, runAction, performAction, confirmStageMove, callLead, ivrCallLead, openWhatsApp, moveToStage, logout],
   );
 
   return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>;

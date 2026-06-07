@@ -22,7 +22,17 @@ import { BulkWhatsAppReportButton } from "@/components/modules/BulkWhatsAppRepor
 import { SmartfloSyncButton } from "@/components/modules/SmartfloSyncButton";
 
 const LeadInbox = () => {
-  const { viewLead, callLead, openWhatsApp, performAction } = useDashboardActions();
+  const { viewLead, callLead, ivrCallLead, openWhatsApp, performAction } = useDashboardActions();
+  const [ivrCallingId, setIvrCallingId] = useState<string | null>(null);
+
+  const handleIvrCall = async (lead: Lead) => {
+    setIvrCallingId(lead.leadId);
+    try {
+      await ivrCallLead(lead.mobile, lead.customerName, lead.opportunityId);
+    } finally {
+      setIvrCallingId(null);
+    }
+  };
   const allLeads = useOpportunityLeads();
   const [moveLead, setMoveLead] = useState<Lead | null>(null);
   const [stageFilter, setStageFilter] = useState(STAGE_FILTER_ALL);
@@ -132,6 +142,8 @@ const LeadInbox = () => {
                     onView={() => viewLead(l.opportunityId)}
                     onMove={() => setMoveLead(l)}
                     onCall={() => callLead(l.mobile, l.customerName)}
+                    onIvrCall={() => void handleIvrCall(l)}
+                    ivrLoading={ivrCallingId === l.leadId}
                     onWhatsApp={() => openWhatsApp(l.opportunityId)}
                   />
                 </div>
@@ -199,6 +211,8 @@ const LeadInbox = () => {
                       onView={() => viewLead(l.opportunityId)}
                       onMove={() => setMoveLead(l)}
                       onCall={() => callLead(l.mobile, l.customerName)}
+                      onIvrCall={() => void handleIvrCall(l)}
+                      ivrLoading={ivrCallingId === l.leadId}
                       onWhatsApp={() => openWhatsApp(l.opportunityId)}
                     />
                   </td>
