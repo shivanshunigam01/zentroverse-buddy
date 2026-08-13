@@ -3,14 +3,16 @@ import type { OpportunityMaster } from "@/domain/entities/opportunity";
 import { getMicroStagesForMacro } from "@/domain/stages/business-stages";
 import type { MacroStageId, MicroStageCode, SalesStage } from "@/domain/stages/types";
 import { microStageToMacro } from "@/domain/stages/types";
+import { assertStageExitAllowsTransition } from "@/domain/stages/stage-exit-validation";
 
 /** Last micro stage of each macro — must be completed before entering the next */
+/** Spec Stage Master exit micros — C3 exits at C3.9 (referral) before L1 */
 export const MACRO_EXIT_STAGE: Record<SalesStage, MicroStageCode> = {
   C0: "C0.10",
   C1: "C1.10",
   C1A: "C1A.10",
   C2: "C2.10",
-  C3: "C3.10",
+  C3: "C3.9",
 };
 
 export const SALES_MACRO_ORDER: SalesStage[] = ["C0", "C1", "C1A", "C2", "C3"];
@@ -122,6 +124,8 @@ export function validateSequentialTransition(
   allowOverride = false,
 ): void {
   if (allowOverride) return;
+
+  assertStageExitAllowsTransition(opp, target, allowOverride);
 
   const current = opp.current_micro_stage;
   const currentMacro = microStageToMacro(current);

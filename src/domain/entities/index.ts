@@ -4,3 +4,4 @@ export * from "./activity";
 export * from "./stage-history";
 export * from "./communication";
 export * from "./ownership";
+export * from "./golden-rule";

@@ -11,10 +11,21 @@ const CALL_RESULTS = [
   "Wrong Number", "Not Interested", "Purchased Competitor",
 ];
 
+const PRIORITY_RANK: Record<string, number> = { P1: 1, P2: 2, P3: 3, P4: 4, P5: 5 };
+
 const Autodialer = () => {
   const leads = useOpportunityLeads();
   const { performAction, viewLead, callLead, ivrCallLead } = useDashboardActions();
-  const queueLead = leads[1] ?? leads[0];
+
+  const dialerQueue = [...leads]
+    .filter((l) => l.microStageCode === "C0.5" || l.status === "Open")
+    .sort((a, b) => (PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9) || b.leadScore - a.leadScore);
+
+  const queueLead = dialerQueue[0] ?? leads[0];
+  const byPriority = DIALER_PRIORITIES.map((p) => ({
+    ...p,
+    count: dialerQueue.filter((l) => l.priority === p.code).length,
+  }));
 
   const logCallResult = (result: string) => {
     if (queueLead) {
@@ -34,19 +45,20 @@ const Autodialer = () => {
       <>
     <Section title="C0.5 · Priority queue">
       <div className="grid grid-cols-1 gap-2 xs:grid-cols-2 lg:grid-cols-5">
-        {DIALER_PRIORITIES.map((p) => (
+        {byPriority.map((p) => (
           <div key={p.code} className="rounded-2xl border border-border/70 bg-card p-4 transition-shadow hover:shadow-md">
             <span className="font-mono text-xs font-bold text-primary">{p.code}</span>
             <p className="mt-1 text-sm font-semibold">{p.label}</p>
             <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{p.description}</p>
+            <p className="mt-2 text-lg font-bold tabular-nums">{p.count}</p>
           </div>
         ))}
       </div>
     </Section>
 
-    <Section title="Queue">
+    <Section title="Queue (P1 → P5, then score)">
       <div className="space-y-3">
-        {leads.slice(0, 3).map((l) => (
+        {dialerQueue.slice(0, 8).map((l) => (
           <LeadCardStrip key={l.leadId} lead={l} onClick={() => viewLead(l.opportunityId)} />
         ))}
       </div>

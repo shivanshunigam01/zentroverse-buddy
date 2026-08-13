@@ -34,10 +34,16 @@ npm run dev
 ```
 
 Domain model (C0–C3 micro stages, scoring, events): `src/domain/platform.ts`  
-Navigation: `src/domain/app-nav.ts`
+Stage Master SSOT (54 stages): `src/domain/stages/stage-master.ts`  
+Navigation: `src/domain/app-nav.ts`  
+Spec gap / acceptance: [docs/SPEC_GAP.md](docs/SPEC_GAP.md), [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)
 
-## Backend (Node.js + Express + MongoDB)
+## Backend (Express + MongoDB)
 
-Full API spec, folder structure, Mongoose models, routes, controllers, middleware, and frontend wiring:
+Sibling app: [`../zentroflow-api`](../zentroflow-api) — run on `:8787`.
 
-**[docs/BACKEND.md](docs/BACKEND.md)**
+```env
+VITE_API_URL=http://localhost:8787
+```
+
+Action Engine / Stage Master / rules / masters are served from the same API.

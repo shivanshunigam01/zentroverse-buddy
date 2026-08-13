@@ -1,10 +1,11 @@
 # ZentroFlow Backend — Complete Implementation Guide
 
-**Stack:** Node.js · Express.js · MongoDB (Mongoose)  
-**Frontend:** `zentroverse-buddy/` (React + Vite — already built)  
-**Purpose:** Replace browser `localStorage` + in-memory services with a real API.
+> **Live backend:** sibling [`zentroflow-api/`](../../zentroflow-api/) (Express + MongoDB).  
+> Action Engine / Stage Master / rules / masters were ported onto that API from the Consolidated Developer Spec.
 
-This document is the single source of truth for building the backend. It mirrors your existing TypeScript domain (`src/domain/`, `src/api/contracts/`, `database/schema.sql`).
+**Stack:** Node.js · Express.js · MongoDB (Mongoose)  
+**Frontend:** `zentroverse-buddy/` (React + Vite)  
+**Purpose:** Persist customers, opportunities, engines, and Action Engine workflows.
 
 ---
 

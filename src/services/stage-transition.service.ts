@@ -8,6 +8,8 @@ import { eventBus, createCorrelationId } from "@/domain/events/event-bus";
 import { actionEngineService } from "./action-engine.service";
 import { validateSingleOwner } from "./ownership.service";
 import { validateSequentialTransition } from "@/domain/stages/stage-gates";
+import { assertGoldenRule } from "@/domain/entities/golden-rule";
+import { getStageMaster, parseSlaToMinutes } from "@/domain/stages/stage-master";
 
 export interface StageTransitionRequest {
   opportunity: OpportunityMaster;
@@ -86,6 +88,28 @@ export async function transitionStage(req: StageTransitionRequest): Promise<Stag
 
   const enginePatch = actionEngineService.applyToOpportunity(updated);
   Object.assign(updated, enginePatch);
+
+  const master = getStageMaster(req.new_micro_stage);
+  if (master) {
+    if (!updated.current_action) updated.current_action = master.currentAction;
+    if (!updated.next_action) updated.next_action = master.nextAction;
+    if (!updated.current_owner) updated.current_owner = master.currentOwner;
+    if (!updated.escalation_owner && master.escalationPath) {
+      updated.escalation_owner = master.nextOwner || master.currentOwner;
+    }
+    if (!updated.sla) updated.sla = master.defaultSla;
+    const minutes = parseSlaToMinutes(master.defaultSla);
+    if (minutes != null && !updated.sla_due_at) {
+      updated.sla_due_at = new Date(Date.now() + minutes * 60_000).toISOString();
+    }
+    if (!updated.next_action_date) {
+      updated.next_action_date = updated.sla_due_at ?? now;
+    }
+  }
+
+  if (updated.status === "Open") {
+    assertGoldenRule(updated);
+  }
 
   const history: StageHistory = {
     history_id: id("sh"),

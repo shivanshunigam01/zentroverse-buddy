@@ -4,11 +4,42 @@ import ModuleShell, { Btn, Section } from "@/components/shared/ModuleShell";
 import { DATABASE_TABLES } from "@/domain/platform";
 import { fetchModuleAccess } from "@/api/access.api";
 import { listCustomers } from "@/api/customers.api";
+import {
+  createMasterOrg,
+  createMasterProduct,
+  listMasterBranches,
+  listMasterOrgs,
+  listMasterProducts,
+  listMasterRoles,
+} from "@/api/action-engine.api";
 import { ApiClientError } from "@/lib/api";
 
 const MastersSettings = () => {
   const [customerCount, setCustomerCount] = useState<number | null>(null);
   const [modules, setModules] = useState<Record<string, { allowed: boolean }> | null>(null);
+  const [orgs, setOrgs] = useState<Awaited<ReturnType<typeof listMasterOrgs>>>([]);
+  const [branches, setBranches] = useState<Awaited<ReturnType<typeof listMasterBranches>>>([]);
+  const [products, setProducts] = useState<Awaited<ReturnType<typeof listMasterProducts>>>([]);
+  const [roles, setRoles] = useState<Awaited<ReturnType<typeof listMasterRoles>>>([]);
+  const [orgName, setOrgName] = useState("");
+  const [productModel, setProductModel] = useState("");
+
+  const loadMasters = async () => {
+    try {
+      const [o, b, p, r] = await Promise.all([
+        listMasterOrgs(),
+        listMasterBranches(),
+        listMasterProducts(),
+        listMasterRoles(),
+      ]);
+      setOrgs(o);
+      setBranches(b);
+      setProducts(p);
+      setRoles(r);
+    } catch {
+      /* Action Engine offline */
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -24,6 +55,7 @@ const MastersSettings = () => {
           description: err instanceof ApiClientError ? err.message : "API error",
         });
       }
+      await loadMasters();
     })();
   }, []);
 
@@ -45,27 +77,76 @@ const MastersSettings = () => {
       </Section>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Section title="Masters">
+        <Section title="Organisation & branches">
+          <div className="mb-3 flex gap-2">
+            <input
+              className="input-app flex-1 px-3 py-2 text-sm"
+              placeholder="New organisation name"
+              value={orgName}
+              onChange={(e) => setOrgName(e.target.value)}
+            />
+            <Btn
+              onClick={() =>
+                void createMasterOrg(orgName || "New Org")
+                  .then(() => {
+                    setOrgName("");
+                    toast.success("Organisation created");
+                    return loadMasters();
+                  })
+                  .catch((e) => toast.error(String(e.message ?? e)))
+              }
+            >
+              Add
+            </Btn>
+          </div>
           <ul className="space-y-2 text-sm">
-            {["Branches", "Executives", "Products & variants", "Lead sources", "Campaigns", "Territories", "Objection scripts", "Lost reasons"].map((m) => (
-              <li key={m} className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2">
-                {m}
-                <Btn variant="outline" onClick={() => toast.info(m, { description: "Master CRUD coming soon on API" })}>
-                  Manage
-                </Btn>
+            {orgs.map((o) => (
+              <li key={o.organisation_id} className="rounded-lg border border-border/60 px-3 py-2">
+                {o.name} · {o.oem_brand || "—"}
               </li>
             ))}
+            {branches.map((b) => (
+              <li key={b.branch_id} className="rounded-lg border border-border/60 px-3 py-2 text-xs">
+                Branch {b.name} · {b.territory}
+              </li>
+            ))}
+            {orgs.length === 0 && (
+              <p className="text-xs text-muted-foreground">Start zentroflow-api (:4000) to manage masters.</p>
+            )}
           </ul>
         </Section>
 
-        <Section title="Settings">
+        <Section title="Products & roles">
+          <div className="mb-3 flex gap-2">
+            <input
+              className="input-app flex-1 px-3 py-2 text-sm"
+              placeholder="New model"
+              value={productModel}
+              onChange={(e) => setProductModel(e.target.value)}
+            />
+            <Btn
+              onClick={() =>
+                void createMasterProduct(productModel || "Model", "OEM")
+                  .then(() => {
+                    setProductModel("");
+                    toast.success("Product created");
+                    return loadMasters();
+                  })
+                  .catch((e) => toast.error(String(e.message ?? e)))
+              }
+            >
+              Add
+            </Btn>
+          </div>
           <ul className="space-y-2 text-sm">
-            {["SLA defaults", "Dialer retry rules", "WhatsApp templates", "Scoring rules", "Duplicate window (30 days)", "Working hours", "DND / opt-out"].map((s) => (
-              <li key={s} className="flex items-center justify-between rounded-lg border border-border/60 px-3 py-2">
-                {s}
-                <Btn variant="outline" onClick={() => toast.info(s, { description: "Configure via server .env for now" })}>
-                  Configure
-                </Btn>
+            {products.map((p) => (
+              <li key={p.product_id} className="rounded-lg border border-border/60 px-3 py-2">
+                {p.oem} {p.model} {p.variant}
+              </li>
+            ))}
+            {roles.map((r) => (
+              <li key={r.role_id} className="rounded-lg border border-border/60 px-3 py-2 text-xs">
+                Role {r.name} · {r.permissions.slice(0, 3).join(", ")}
               </li>
             ))}
           </ul>
@@ -75,7 +156,9 @@ const MastersSettings = () => {
       <Section title="Database tables (backend reference)">
         <div className="flex flex-wrap gap-1.5">
           {DATABASE_TABLES.map((t) => (
-            <span key={t} className="rounded-md bg-secondary font-mono text-[10px] px-2 py-1">{t}</span>
+            <span key={t} className="rounded-md bg-secondary px-2 py-1 font-mono text-[10px]">
+              {t}
+            </span>
           ))}
         </div>
       </Section>

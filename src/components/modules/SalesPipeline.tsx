@@ -1,11 +1,13 @@
 import { useState } from "react";
 import ModuleShell, { Btn, Section, StagePills, ActionBar } from "@/components/shared/ModuleShell";
 import EmptyState from "@/components/shared/EmptyState";
+import { StageWorkqueue } from "@/components/shared/StageWorkqueue";
 import { C1_MICRO_STAGES, C1_OBJECTION_CATEGORIES } from "@/domain/platform";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useOpportunityLeads } from "@/store/selectors";
 import { getNextMicroStage } from "@/domain/stages/stage-gates";
 import { useZentroFlowStore } from "@/store/opportunity-store";
+import { getStageMaster } from "@/domain/stages/stage-master";
 
 const SALES_ACTIONS = [
   "Create Quote", "Send Quote", "Capture Objection", "Schedule Demo",
@@ -13,10 +15,11 @@ const SALES_ACTIONS = [
 ];
 
 const SalesPipeline = () => {
-  const { performAction, selectedLeadId } = useDashboardActions();
+  const { performAction, selectedLeadId, viewLead } = useDashboardActions();
   const leads = useOpportunityLeads();
   const [active, setActive] = useState(0);
   const stage = C1_MICRO_STAGES[active];
+  const master = getStageMaster(stage.code);
   const opp = useZentroFlowStore((s) =>
     selectedLeadId ? s.opportunities[selectedLeadId] : undefined,
   );
@@ -44,16 +47,27 @@ const SalesPipeline = () => {
           Selected lead next step: <strong>{nextStep}</strong>
         </p>
       )}
+      <StageWorkqueue
+        title="C1 workqueue"
+        stagePrefix="C1"
+        leads={leads}
+        onSelect={viewLead}
+        emptyHint="No opportunities in C1 yet — finish C0.10 quote readiness first."
+      />
+
       <StagePills stages={C1_MICRO_STAGES} activeIndex={active} onSelect={setActive} />
 
       <Section title={`${stage.code} · ${stage.title}`}>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 text-sm">
-          <Info label="Trigger" value={stage.trigger} />
-          <Info label="Owner" value={stage.owner} />
-          <Info label="SLA" value={stage.sla} />
-          <Info label="Exit" value={stage.exitCondition} className="sm:col-span-2 lg:col-span-3" />
+          <Info label="Trigger" value={master?.entryTrigger ?? stage.trigger} />
+          <Info label="Owner" value={master?.currentOwner ?? stage.owner} />
+          <Info label="SLA" value={master?.defaultSla ?? stage.sla} />
+          <Info label="Exit" value={master?.exitCondition ?? stage.exitCondition} className="sm:col-span-2 lg:col-span-3" />
+          {master?.mandatoryValidation && (
+            <Info label="Mandatory" value={master.mandatoryValidation} className="sm:col-span-2 lg:col-span-3" />
+          )}
         </div>
-        <p className="mt-3 text-sm text-muted-foreground">{stage.systemAction}</p>
+        <p className="mt-3 text-sm text-muted-foreground">{master?.currentAction ?? stage.systemAction}</p>
       </Section>
 
       {active === 2 && (

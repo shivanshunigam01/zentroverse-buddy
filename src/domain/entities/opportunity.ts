@@ -80,6 +80,9 @@ export const OPPORTUNITY_BACKBONE_KEYS = [
   "escalation_owner",
 ] as const satisfies readonly (keyof OpportunityMaster)[];
 
+/** Golden-rule due-time fields — at least one required for Open status */
+export const OPPORTUNITY_DUE_TIME_KEYS = ["next_action_date", "sla_due_at"] as const;
+
 export type OpportunityBackbone = Pick<
   OpportunityMaster,
   (typeof OPPORTUNITY_BACKBONE_KEYS)[number]

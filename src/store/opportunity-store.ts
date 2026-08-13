@@ -12,6 +12,7 @@ import type { ImportBatchResult } from "@/services/excel-import.service";
 import * as opportunitiesApi from "@/api/opportunities.api";
 import { ACTION_REGISTRY } from "@/domain/actions/action-registry";
 import type { BootstrapPayload } from "@/api/bootstrap.api";
+import { assertGoldenRule } from "@/domain/entities/golden-rule";
 
 export interface ZentroFlowStore {
   customers: Record<string, CustomerMaster>;
@@ -103,10 +104,25 @@ export const useZentroFlowStore = create<ZentroFlowStore>()(
       upsertCustomer: (customer) =>
         set((s) => ({ customers: { ...s.customers, [customer.customer_id]: customer } })),
 
-      upsertOpportunity: (opportunity) =>
+      upsertOpportunity: (opportunity) => {
+        if (opportunity.status === "Open") {
+          try {
+            assertGoldenRule(opportunity);
+          } catch {
+            // Soft-enforce in UI store: keep record but ensure due times for health scans
+            if (!opportunity.next_action_date && !opportunity.sla_due_at) {
+              opportunity = {
+                ...opportunity,
+                next_action_date: new Date().toISOString(),
+                sla_due_at: new Date().toISOString(),
+              };
+            }
+          }
+        }
         set((s) => ({
           opportunities: { ...s.opportunities, [opportunity.opportunity_id]: opportunity },
-        })),
+        }));
+      },
 
       appendActivity: (activity) => set((s) => ({ activities: [...s.activities, activity] })),
       appendStageHistory: (history) => set((s) => ({ stageHistory: [...s.stageHistory, history] })),

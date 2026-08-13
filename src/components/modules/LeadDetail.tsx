@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { refreshOpportunity } from "@/services/sync.service";
 import ModuleShell, { Btn, Section, ActionBar } from "@/components/shared/ModuleShell";
 import EmptyState from "@/components/shared/EmptyState";
@@ -15,6 +16,8 @@ import { useOpportunityActions } from "@/hooks/use-opportunity-actions";
 import { getNextMicroStage } from "@/domain/stages/stage-gates";
 import { useZentroFlowStore } from "@/store/opportunity-store";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { fetchActionContext, type ActionContext } from "@/api/action-engine.api";
+import { getStageMaster } from "@/domain/stages/stage-master";
 
 type Props = { leadId?: string };
 
@@ -49,12 +52,17 @@ const LeadDetail = ({ leadId }: Props) => {
   const nextStep = opp ? getNextMicroStage(opp) : null;
   const [tab, setTab] = useState<string>("Overview");
   const [ivrLoading, setIvrLoading] = useState(false);
+  const [actionCtx, setActionCtx] = useState<ActionContext | null>(null);
   const { callLead, ivrCallLead, openWhatsApp } = useDashboardActions();
   const { run } = useOpportunityActions(lead?.opportunityId);
+  const stageMaster = opp ? getStageMaster(opp.current_micro_stage) : undefined;
 
   useEffect(() => {
     if (!lead?.opportunityId) return;
     void refreshOpportunity(lead.opportunityId);
+    void fetchActionContext(lead.opportunityId)
+      .then(setActionCtx)
+      .catch(() => setActionCtx(null));
   }, [lead?.opportunityId]);
 
   if (!lead) {
@@ -73,6 +81,18 @@ const LeadDetail = ({ leadId }: Props) => {
       {nextStep && (
         <p className="rounded-xl bg-primary/5 px-4 py-2 text-sm text-primary">
           Next step: <strong>{nextStep}</strong> — only the matching action button is enabled.
+        </p>
+      )}
+      {actionCtx && (
+        <p className="rounded-xl border border-border/60 bg-card px-4 py-2 font-mono text-xs text-muted-foreground">
+          Action context · {actionCtx.micro_stage} · {actionCtx.owner} · {actionCtx.current_action} ·{" "}
+          {actionCtx.sla_status}
+          {actionCtx.blockers.length ? ` · ${actionCtx.blockers.join(", ")}` : ""}
+        </p>
+      )}
+      {stageMaster && (
+        <p className="text-xs text-muted-foreground">
+          Stage Master: {stageMaster.name} — {stageMaster.currentAction} (SLA {stageMaster.defaultSla})
         </p>
       )}
       {/* Top header */}
@@ -176,10 +196,48 @@ const LeadDetail = ({ leadId }: Props) => {
           <LifecycleTab run={run} />
         </TabsContent>
         <TabsContent value="Documents" className="mt-4">
-          <Section title="Documents"><Btn onClick={() => run("Upload Document")}>Upload Document</Btn></Section>
+          <DocumentsTab
+            initial={String(opp?.stage_step_data?.[opp.current_micro_stage]?.fields?.documents ?? "")}
+            onSave={(docs) => {
+              if (!opp) return;
+              useZentroFlowStore.getState().upsertOpportunity({
+                ...opp,
+                stage_step_data: {
+                  ...opp.stage_step_data,
+                  [opp.current_micro_stage]: {
+                    ...opp.stage_step_data?.[opp.current_micro_stage],
+                    fields: {
+                      ...opp.stage_step_data?.[opp.current_micro_stage]?.fields,
+                      documents: docs,
+                    },
+                    updated_at: new Date().toISOString(),
+                  },
+                },
+              });
+              toast.success("Documents saved on opportunity");
+            }}
+          />
         </TabsContent>
         <TabsContent value="Notes" className="mt-4">
-          <Section title="Notes"><textarea className="input-app min-h-[120px] w-full" placeholder="Add note..." /></Section>
+          <NotesTab
+            initial={opp?.stage_step_data?.[opp.current_micro_stage]?.notes ?? ""}
+            onSave={(notes) => {
+              if (!opp) return;
+              useZentroFlowStore.getState().upsertOpportunity({
+                ...opp,
+                stage_step_data: {
+                  ...opp.stage_step_data,
+                  [opp.current_micro_stage]: {
+                    ...opp.stage_step_data?.[opp.current_micro_stage],
+                    notes,
+                    updated_at: new Date().toISOString(),
+                    updated_by: "ui",
+                  },
+                },
+              });
+              toast.success("Note saved");
+            }}
+          />
         </TabsContent>
       </Tabs>
     </ModuleShell>
@@ -479,5 +537,44 @@ const StageList = ({ stages }: { stages: string[] }) => (
     ))}
   </ol>
 );
+
+const NotesTab = ({ initial, onSave }: { initial: string; onSave: (v: string) => void }) => {
+  const [value, setValue] = useState(initial);
+  useEffect(() => setValue(initial), [initial]);
+  return (
+    <Section title="Notes">
+      <textarea
+        className="input-app min-h-[120px] w-full"
+        placeholder="Add note for current micro stage..."
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+      />
+      <ActionBar>
+        <Btn onClick={() => onSave(value)}>Save note</Btn>
+      </ActionBar>
+    </Section>
+  );
+};
+
+const DocumentsTab = ({ initial, onSave }: { initial: string; onSave: (v: string) => void }) => {
+  const [value, setValue] = useState(initial);
+  useEffect(() => setValue(initial), [initial]);
+  return (
+    <Section title="Documents">
+      <p className="mb-2 text-xs text-muted-foreground">
+        List document names or URLs (comma-separated). Persisted on the opportunity stage step.
+      </p>
+      <textarea
+        className="input-app min-h-[80px] w-full"
+        placeholder="PAN.pdf, Aadhaar.pdf, Sanction.pdf"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+      />
+      <ActionBar>
+        <Btn onClick={() => onSave(value)}>Save documents</Btn>
+      </ActionBar>
+    </Section>
+  );
+};
 
 export default LeadDetail;

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ModuleShell, { Btn, Section, StagePills, ActionBar } from "@/components/shared/ModuleShell";
 import EmptyState from "@/components/shared/EmptyState";
+import { StageWorkqueue } from "@/components/shared/StageWorkqueue";
 import { C1A_MICRO_STAGES } from "@/domain/platform";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useOpportunityLeads } from "@/store/selectors";
@@ -15,7 +16,7 @@ const FINANCE_ACTIONS = [
 
 const FinanceDesk = () => {
   const [active, setActive] = useState(0);
-  const { performAction, selectedLeadId } = useDashboardActions();
+  const { performAction, selectedLeadId, viewLead } = useDashboardActions();
   const leads = useOpportunityLeads();
   const stage = C1A_MICRO_STAGES[active];
   const opp = useZentroFlowStore((s) =>
@@ -42,6 +43,7 @@ const FinanceDesk = () => {
           Selected lead next step: <strong>{nextStep}</strong>
         </p>
       )}
+      <StageWorkqueue title="C1A finance workqueue" stagePrefix="C1A" leads={leads} onSelect={viewLead} />
       <StagePills stages={C1A_MICRO_STAGES} activeIndex={active} onSelect={setActive} />
       <Section title={`${stage.code} · ${stage.title}`}>
         <p className="text-sm text-muted-foreground">{stage.systemAction}</p>

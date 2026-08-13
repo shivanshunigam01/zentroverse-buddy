@@ -1,5 +1,7 @@
 import type { BusinessMicroStage, LifecycleStage, SalesStage } from "./types";
 
+export type { BusinessMicroStage, MicroStage, MicroStageCode } from "./types";
+
 export const SALES_STAGES: ReadonlyArray<{
   code: SalesStage;
   name: string;
@@ -127,7 +129,7 @@ export const ALL_MICRO_STAGES: BusinessMicroStage[] = [
 export const FULL_JOURNEY_MICRO_STAGE_CODES = ALL_MICRO_STAGES.map((s) => s.code);
 
 export function getNextJourneyMicroStage(currentMicro: string): string | null {
-  const idx = FULL_JOURNEY_MICRO_STAGE_CODES.indexOf(currentMicro);
+  const idx = FULL_JOURNEY_MICRO_STAGE_CODES.indexOf(currentMicro as (typeof FULL_JOURNEY_MICRO_STAGE_CODES)[number]);
   if (idx < 0 || idx >= FULL_JOURNEY_MICRO_STAGE_CODES.length - 1) return null;
   return FULL_JOURNEY_MICRO_STAGE_CODES[idx + 1] ?? null;
 }

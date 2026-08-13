@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import ModuleShell, { StatCard, Section, Btn } from "@/components/shared/ModuleShell";
 import EmptyState from "@/components/shared/EmptyState";
@@ -6,6 +6,9 @@ import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useLiveStats } from "@/hooks/use-live-stats";
 import { useOpportunityLeads } from "@/store/selectors";
 import type { AppModuleId } from "@/domain/app-nav";
+import { fetchEngineHealth } from "@/api/action-engine.api";
+import { findGoldenRuleExceptions } from "@/domain/entities/golden-rule";
+import { useZentroFlowStore } from "@/store/opportunity-store";
 
 const COLORS = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b"];
 
@@ -27,7 +30,14 @@ const STAT_LINKS: Partial<Record<string, AppModuleId>> = {
 const MainDashboard = () => {
   const { navigate, performAction } = useDashboardActions();
   const leads = useOpportunityLeads();
+  const opportunities = useZentroFlowStore((s) => s.listOpportunities());
+  const contactHealth = useZentroFlowStore((s) => s.contactHealth);
   const { dashboard, pipeline } = useLiveStats(leads.length > 0);
+  const [engineHealth, setEngineHealth] = useState<Awaited<ReturnType<typeof fetchEngineHealth>> | null>(null);
+
+  useEffect(() => {
+    void fetchEngineHealth().then(setEngineHealth).catch(() => setEngineHealth(null));
+  }, []);
 
   const stats = useMemo(() => {
     const byStage = { C0: 0, C1: 0, C1A: 0, C2: 0, C3: 0, lifecycle: 0 };
@@ -86,6 +96,21 @@ const MainDashboard = () => {
       })),
     [stats.byStage],
   );
+
+  const goldenExceptions = useMemo(() => findGoldenRuleExceptions(opportunities), [opportunities]);
+
+  const contactHealthStats = useMemo(() => {
+    const rows = Object.values(contactHealth);
+    if (rows.length === 0) {
+      return { wa: 0, call: 0, mobile: 0, total: leads.length };
+    }
+    return {
+      total: rows.length,
+      wa: rows.filter((r) => r.whatsapp_active).length,
+      call: rows.filter((r) => r.call_reachable).length,
+      mobile: rows.filter((r) => r.mobile_valid).length,
+    };
+  }, [contactHealth, leads.length]);
 
   if (leads.length === 0) {
     return (
@@ -152,6 +177,32 @@ const MainDashboard = () => {
               </BarChart>
             </ResponsiveContainer>
           </ChartWrap>
+        </Section>
+
+        <Section title="Manager · health exceptions">
+          <p className="mb-2 text-sm text-muted-foreground">
+            Golden-rule orphans (local): <strong>{goldenExceptions.length}</strong>
+            {engineHealth
+              ? ` · Engine API: ${engineHealth.status}, orphans ${engineHealth.orphan_leads?.length ?? 0}`
+              : " · Engine API offline"}
+          </p>
+          {goldenExceptions.slice(0, 5).map((e) => (
+            <p key={e.opportunity_id} className="font-mono text-xs text-warning">
+              {e.opportunity_id}: {e.violations.map((v) => v.field).join(", ")}
+            </p>
+          ))}
+          <Btn className="mt-3" variant="outline" onClick={() => navigate("action-engine")}>
+            Open Action Engine
+          </Btn>
+        </Section>
+
+        <Section title="Contact health">
+          <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+            <StatCard label="Profiles" value={contactHealthStats.total} />
+            <StatCard label="WA active" value={contactHealthStats.wa} accent="success" />
+            <StatCard label="Callable" value={contactHealthStats.call} />
+            <StatCard label="Mobile valid" value={contactHealthStats.mobile} />
+          </div>
         </Section>
 
         <Section title="Quick start">
