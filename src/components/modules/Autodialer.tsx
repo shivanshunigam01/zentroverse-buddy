@@ -1,102 +1,126 @@
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import ModuleShell, { Btn, Section, ActionBar } from "@/components/shared/ModuleShell";
-import EmptyState from "@/components/shared/EmptyState";
-import LeadCardStrip from "@/components/shared/LeadCardStrip";
-import { useOpportunityLeads } from "@/store/selectors";
-import { DIALER_PRIORITIES } from "@/domain/platform";
+import ModuleShell from "@/components/shared/ModuleShell";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/context/AuthContext";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
+import { ApiClientError } from "@/lib/api";
+import { getDialerCalls, getDialerCampaign, getDialerLeads, syncDialerLead, syncPendingDialerLeads } from "@/api/dialer.api";
+import type { DialerCall, DialerCampaign, DialerLeadRow } from "@/domain/dialer/types";
+import { AgentPanel } from "@/components/modules/autodialer/AgentPanel";
+import { CampaignPanel } from "@/components/modules/autodialer/CampaignPanel";
+import { LeadsPanel } from "@/components/modules/autodialer/LeadsPanel";
+import { CallsPanel } from "@/components/modules/autodialer/CallsPanel";
+import { TestPanel } from "@/components/modules/autodialer/TestPanel";
 
-const CALL_RESULTS = [
-  "Connected Interested", "Callback Later", "No Answer", "Busy", "Switched Off",
-  "Wrong Number", "Not Interested", "Purchased Competitor",
-];
-
-const PRIORITY_RANK: Record<string, number> = { P1: 1, P2: 2, P3: 3, P4: 4, P5: 5 };
+function friendly(err: unknown): string {
+  if (err instanceof ApiClientError) return err.message;
+  return "Unable to load Auto Dialer";
+}
 
 const Autodialer = () => {
-  const leads = useOpportunityLeads();
-  const { performAction, viewLead, callLead, ivrCallLead } = useDashboardActions();
+  const { user } = useAuth();
+  const { viewLead } = useDashboardActions();
+  const isAdmin = user?.role === "admin";
+  const [campaign, setCampaign] = useState<DialerCampaign | null>(null);
+  const [leads, setLeads] = useState<DialerLeadRow[]>([]);
+  const [calls, setCalls] = useState<DialerCall[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  const dialerQueue = [...leads]
-    .filter((l) => l.microStageCode === "C0.5" || l.status === "Open")
-    .sort((a, b) => (PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9) || b.leadScore - a.leadScore);
-
-  const queueLead = dialerQueue[0] ?? leads[0];
-  const byPriority = DIALER_PRIORITIES.map((p) => ({
-    ...p,
-    count: dialerQueue.filter((l) => l.priority === p.code).length,
-  }));
-
-  const logCallResult = (result: string) => {
-    if (queueLead) {
-      void performAction("Call Now", { opportunityId: queueLead.opportunityId });
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [c, l, k] = await Promise.all([
+        getDialerCampaign(),
+        getDialerLeads().catch(() => [] as DialerLeadRow[]),
+        getDialerCalls().catch(() => [] as DialerCall[]),
+      ]);
+      setCampaign(c);
+      setLeads(l);
+      setCalls(k);
+    } catch (err) {
+      toast.error(friendly(err));
+    } finally {
+      setLoading(false);
     }
-    toast.success("Call result logged", { description: result });
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+    const timer = window.setInterval(() => {
+      void getDialerCalls()
+        .then(setCalls)
+        .catch(() => undefined);
+    }, 10000);
+    return () => window.clearInterval(timer);
+  }, [refresh]);
+
+  const onSync = async (id: string) => {
+    setBusyId(id);
+    try {
+      await syncDialerLead(id);
+      toast.success("Lead synced to Smartflo");
+      await refresh();
+    } catch (err) {
+      toast.error(friendly(err));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const onSyncPending = async () => {
+    setLoading(true);
+    try {
+      const result = await syncPendingDialerLeads();
+      toast.success(`Synced ${result.total} pending lead(s)`);
+      await refresh();
+    } catch (err) {
+      toast.error(friendly(err));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-  <ModuleShell moduleId="autodialer">
-    {leads.length === 0 ? (
-      <EmptyState
-        title="No leads in queue"
-        description="Upload and import leads from Excel. Autodialer queue fills from opportunities in the C0 funnel."
-      />
-    ) : (
-      <>
-    <Section title="C0.5 · Priority queue">
-      <div className="grid grid-cols-1 gap-2 xs:grid-cols-2 lg:grid-cols-5">
-        {byPriority.map((p) => (
-          <div key={p.code} className="rounded-2xl border border-border/70 bg-card p-4 transition-shadow hover:shadow-md">
-            <span className="font-mono text-xs font-bold text-primary">{p.code}</span>
-            <p className="mt-1 text-sm font-semibold">{p.label}</p>
-            <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{p.description}</p>
-            <p className="mt-2 text-lg font-bold tabular-nums">{p.count}</p>
-          </div>
-        ))}
-      </div>
-    </Section>
-
-    <Section title="Queue (P1 → P5, then score)">
-      <div className="space-y-3">
-        {dialerQueue.slice(0, 8).map((l) => (
-          <LeadCardStrip key={l.leadId} lead={l} onClick={() => viewLead(l.opportunityId)} />
-        ))}
-      </div>
-    </Section>
-
-    <Section title="Call result">
-      <div className="flex flex-wrap gap-2">
-        {CALL_RESULTS.map((r) => (
-          <button
-            key={r}
-            type="button"
-            onClick={() => logCallResult(r)}
-            className="chip-filter text-left"
-          >
-            {r}
-          </button>
-        ))}
-      </div>
-      <ActionBar>
-        <Btn onClick={() => queueLead && callLead(queueLead.mobile, queueLead.customerName)}>Call Now</Btn>
-        <Btn
-          variant="secondary"
-          onClick={() =>
-            queueLead &&
-            void ivrCallLead(queueLead.mobile, queueLead.customerName, queueLead.opportunityId)
-          }
-        >
-          IVR Call
-        </Btn>
-        <Btn onClick={() => queueLead && performAction("Schedule Retry", { opportunityId: queueLead.opportunityId })}>Schedule Retry</Btn>
-        <Btn onClick={() => queueLead && performAction("Assign Executive", { opportunityId: queueLead.opportunityId })}>Assign Executive</Btn>
-        <Btn onClick={() => queueLead && performAction("Move Dormant", { opportunityId: queueLead.opportunityId })}>Move Dormant</Btn>
-        <Btn variant="danger" onClick={() => queueLead && performAction("Mark Lost", { opportunityId: queueLead.opportunityId })}>Mark Lost</Btn>
-      </ActionBar>
-    </Section>
-      </>
-    )}
-  </ModuleShell>
+    <ModuleShell moduleId="autodialer">
+      <Tabs defaultValue="agent">
+        <TabsList className="mb-4 flex h-auto w-full flex-wrap justify-start gap-1">
+          <TabsTrigger value="agent">Agent</TabsTrigger>
+          <TabsTrigger value="campaign">Campaign</TabsTrigger>
+          <TabsTrigger value="leads">Leads</TabsTrigger>
+          <TabsTrigger value="calls">Calls</TabsTrigger>
+          {isAdmin ? <TabsTrigger value="test">Test</TabsTrigger> : null}
+        </TabsList>
+        <TabsContent value="agent">
+          <AgentPanel campaign={campaign} />
+        </TabsContent>
+        <TabsContent value="campaign">
+          <CampaignPanel
+            campaign={campaign}
+            loading={loading}
+            onRefresh={() => void refresh()}
+            onSyncPending={() => void onSyncPending()}
+          />
+        </TabsContent>
+        <TabsContent value="leads">
+          <LeadsPanel
+            leads={leads}
+            busyId={busyId}
+            onSync={(id) => void onSync(id)}
+            onView={(id) => viewLead(id)}
+          />
+        </TabsContent>
+        <TabsContent value="calls">
+          <CallsPanel calls={calls} />
+        </TabsContent>
+        {isAdmin ? (
+          <TabsContent value="test">
+            <TestPanel campaign={campaign} />
+          </TabsContent>
+        ) : null}
+      </Tabs>
+    </ModuleShell>
   );
 };
 

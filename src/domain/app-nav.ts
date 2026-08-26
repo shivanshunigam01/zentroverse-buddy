@@ -84,7 +84,7 @@ export const MODULE_TITLES: Record<AppModuleId, { title: string; subtitle: strin
   "lead-inbox": { title: "All Leads", subtitle: "Where it is · who owns it · what happens next" },
   "lead-detail": { title: "Lead Detail", subtitle: "Full customer journey — overview to lifecycle" },
   "action-engine": { title: "Action Engine", subtitle: "Rules, SLA, escalation, next best action" },
-  autodialer: { title: "Autodialer", subtitle: "C0.5 priority queue P1–P5" },
+  autodialer: { title: "Autodialer", subtitle: "Smartflo Auto Dialer — campaign, leads, calls, C0.5 queue" },
   "whatsapp-bot": { title: "WhatsApp Bot", subtitle: "C0.4 bot engagement journey" },
   "sales-pipeline": { title: "Sales Pipeline", subtitle: "C1 — quote, objection, affordability, demo" },
   "finance-desk": { title: "Finance Desk", subtitle: "C1A — Finance Approval & Intent (10 phases)" },

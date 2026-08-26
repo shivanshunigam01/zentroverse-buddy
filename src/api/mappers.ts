@@ -55,6 +55,21 @@ export function mapOpportunity(raw: OpportunityDto | Record<string, unknown>): O
     created_at: iso(o.created_at),
     updated_at: iso(o.updated_at),
     stage_step_data: (o.stage_step_data as OpportunityMaster["stage_step_data"]) ?? {},
+    smartflo_lead_id: o.smartflo_lead_id ?? null,
+    smartflo_lead_list_id: o.smartflo_lead_list_id ?? null,
+    smartflo_sync_status: o.smartflo_sync_status ?? null,
+    smartflo_sync_error: o.smartflo_sync_error ?? null,
+    smartflo_last_synced_at: o.smartflo_last_synced_at ?? null,
+    smartflo_dial_status: o.smartflo_dial_status ?? null,
+    smartflo_disposition: o.smartflo_disposition ?? null,
+    smartflo_sub_disposition: o.smartflo_sub_disposition ?? null,
+    smartflo_external_disposition: o.smartflo_external_disposition ?? null,
+    smartflo_last_call_id: o.smartflo_last_call_id ?? null,
+    smartflo_last_call_at: o.smartflo_last_call_at ?? null,
+    smartflo_retry_count: o.smartflo_retry_count ?? 0,
+    callback_at: o.callback_at ?? null,
+    callback_note: o.callback_note ?? null,
+    callback_agent_id: o.callback_agent_id ?? null,
   };
 }
 

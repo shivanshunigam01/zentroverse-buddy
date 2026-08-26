@@ -22,12 +22,14 @@ import { BulkWhatsAppButton } from "@/components/modules/BulkWhatsAppButton";
 import { BulkWhatsAppReportButton } from "@/components/modules/BulkWhatsAppReportButton";
 import { SmartfloSyncButton } from "@/components/modules/SmartfloSyncButton";
 import { initiateSmartfloAgentCall } from "@/api/smartflo.api";
+import { syncDialerLead } from "@/api/dialer.api";
 import { ApiClientError } from "@/lib/api";
 
 const LeadInbox = () => {
   const { viewLead, ivrCallLead, openWhatsApp, performAction } = useDashboardActions();
   const [callingLeadId, setCallingLeadId] = useState<string | null>(null);
   const [ivrCallingId, setIvrCallingId] = useState<string | null>(null);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
 
   const handleCallLead = async (lead: Lead) => {
     console.log("Clicked lead data:", lead);
@@ -68,6 +70,18 @@ const LeadInbox = () => {
       await ivrCallLead(lead.mobile, lead.customerName, lead.opportunityId);
     } finally {
       setIvrCallingId(null);
+    }
+  };
+
+  const handleDialerSync = async (lead: Lead) => {
+    setSyncingId(lead.opportunityId);
+    try {
+      await syncDialerLead(lead.opportunityId);
+      toast.success("Synced to Auto Dialer");
+    } catch (error) {
+      toast.error(error instanceof ApiClientError ? error.message : "Unable to sync lead with Smartflo");
+    } finally {
+      setSyncingId(null);
     }
   };
   const allLeads = useOpportunityLeads();
@@ -184,6 +198,13 @@ const LeadInbox = () => {
                     ivrLoading={ivrCallingId === l.leadId}
                     onWhatsApp={() => openWhatsApp(l.opportunityId)}
                   />
+                  <Btn
+                    variant="outline"
+                    disabled={syncingId === l.opportunityId}
+                    onClick={() => void handleDialerSync(l)}
+                  >
+                    {syncingId === l.opportunityId ? "Syncing…" : "Add to Auto Dialer"}
+                  </Btn>
                 </div>
               </div>
             ))}
@@ -245,6 +266,7 @@ const LeadInbox = () => {
                   </td>
                   <td className="px-3 py-3 text-xs">{l.status}</td>
                   <td className="whitespace-nowrap px-3 py-2.5">
+                    <div className="flex items-center gap-1">
                     <LeadRowActions
                       onView={() => viewLead(l.opportunityId)}
                       onMove={() => setMoveLead(l)}
@@ -254,6 +276,15 @@ const LeadInbox = () => {
                       ivrLoading={ivrCallingId === l.leadId}
                       onWhatsApp={() => openWhatsApp(l.opportunityId)}
                     />
+                    <Btn
+                      variant="ghost"
+                      className="ml-1"
+                      disabled={syncingId === l.opportunityId}
+                      onClick={() => void handleDialerSync(l)}
+                    >
+                      {syncingId === l.opportunityId ? "Syncing…" : "Sync"}
+                    </Btn>
+                    </div>
                   </td>
                 </tr>
               ))}

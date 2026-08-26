@@ -1,0 +1,130 @@
+export type DialerSyncStatus = "PENDING" | "SYNCED" | "FAILED";
+
+export type DialerMode = "dial_out_each_call" | "session";
+
+export type DialerHealth = {
+  smartflo: boolean;
+  campaignConfigured: boolean;
+  leadListConfigured: boolean;
+  dispositionConfigured: boolean;
+  callerIdConfigured: boolean;
+  dialerMode: DialerMode | string;
+  sessionEnabled: boolean;
+};
+
+export type DialerCampaign = {
+  name: string;
+  status: string;
+  campaignIdMasked: string;
+  leadListIdMasked: string;
+  dispositionListIdMasked: string;
+  callerIdConfigured: boolean;
+  dialerMode: DialerMode | string;
+  sessionEnabled: boolean;
+  agentCount: number;
+  leadCount: number;
+  newLeadCount: number;
+  syncedLeadCount: number;
+  pendingLeadCount: number;
+  completedCalls: number;
+  successfulCalls: number;
+  failedCalls: number;
+  connected: boolean;
+  lastWebhook: {
+    event: string | null;
+    callId: string | null;
+    disposition: string | null;
+    receivedAt: string;
+  } | null;
+};
+
+export type DialerCampaignStatus = {
+  campaignId: string;
+  status: string;
+  leadCount: number;
+  availableLeadCount: number;
+  activeAgents: number;
+  dialerMode: DialerMode | string;
+  connected: boolean;
+};
+
+export type DialerSessionStatus = {
+  dialerMode: DialerMode | string;
+  sessionEnabled: boolean;
+  status: string;
+  campaignId: string | null;
+  startedAt: string | null;
+  message: string;
+};
+
+export type DialerDisposition = {
+  id: string;
+  name: string;
+  listId: string | null;
+};
+
+export type DialerCall = {
+  _id?: string;
+  opportunity_id?: string | null;
+  lead_id?: string | null;
+  customer_id?: string | null;
+  customer_number?: string | null;
+  smartflo_call_id?: string | null;
+  smartflo_uuid?: string | null;
+  campaign_id?: string | null;
+  agent_id?: string | null;
+  agent_name?: string | null;
+  caller_id?: string | null;
+  direction?: string | null;
+  status?: string | null;
+  disposition?: string | null;
+  disposition_code?: string | null;
+  duration?: number | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  created_at?: string;
+};
+
+export type DialerLeadRow = {
+  opportunity_id: string;
+  lead_id: string;
+  customer_id: string;
+  customer_name?: string;
+  customer_mobile?: string;
+  customer_email?: string | null;
+  smartflo_lead_id?: string | null;
+  smartflo_sync_status?: DialerSyncStatus | null;
+  smartflo_sync_error?: string | null;
+  smartflo_dial_status?: string | null;
+  smartflo_disposition?: string | null;
+  smartflo_last_call_at?: string | null;
+  smartflo_retry_count?: number;
+};
+
+export type DialerSyncResult = {
+  opportunity_id: string;
+  lead_id?: string;
+  smartflo_lead_id?: string | null;
+  smartflo_lead_list_id?: string;
+  smartflo_sync_status: string;
+  result?: string;
+  error?: string;
+};
+
+export type DialerTestLead = {
+  local: {
+    opportunity_id: string;
+    lead_id: string;
+    smartflo_lead_id?: string | null;
+    smartflo_sync_status?: string | null;
+    smartflo_dial_status?: string | null;
+    smartflo_disposition?: string | null;
+  };
+  remote: {
+    id?: string | null;
+    field_0?: string | null;
+    field_1?: string | null;
+    status?: string | null;
+  } | null;
+  matched: boolean;
+};

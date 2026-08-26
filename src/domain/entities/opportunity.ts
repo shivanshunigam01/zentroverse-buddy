@@ -64,6 +64,22 @@ export interface OpportunityMaster {
   updated_at: string;
   /** Manual step notes keyed by micro stage code (C0.1, L1, …) */
   stage_step_data?: Record<string, StageStepData>;
+  /** Smartflo Auto Dialer mapping */
+  smartflo_lead_id?: string | null;
+  smartflo_lead_list_id?: string | null;
+  smartflo_sync_status?: "PENDING" | "SYNCED" | "FAILED" | null;
+  smartflo_sync_error?: string | null;
+  smartflo_last_synced_at?: string | null;
+  smartflo_dial_status?: string | null;
+  smartflo_disposition?: string | null;
+  smartflo_sub_disposition?: string | null;
+  smartflo_external_disposition?: string | null;
+  smartflo_last_call_id?: string | null;
+  smartflo_last_call_at?: string | null;
+  smartflo_retry_count?: number;
+  callback_at?: string | null;
+  callback_note?: string | null;
+  callback_agent_id?: string | null;
 }
 
 /** Mandatory backbone — enforced at service layer before persist */
