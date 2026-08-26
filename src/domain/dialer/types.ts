@@ -64,25 +64,43 @@ export type DialerDisposition = {
 };
 
 export type DialerCall = {
+  id?: string;
   _id?: string;
   opportunity_id?: string | null;
   lead_id?: string | null;
+  leadId?: string | null;
   customer_id?: string | null;
   customer_number?: string | null;
+  customerPhone?: string | null;
   smartflo_call_id?: string | null;
+  smartfloCallId?: string | null;
   smartflo_uuid?: string | null;
+  smartflo_lead_id?: string | null;
+  smartfloLeadId?: string | null;
   campaign_id?: string | null;
+  campaignId?: string | null;
   agent_id?: string | null;
+  agentId?: string | null;
   agent_name?: string | null;
   caller_id?: string | null;
+  callerId?: string | null;
   direction?: string | null;
   status?: string | null;
   disposition?: string | null;
   disposition_code?: string | null;
   duration?: number | null;
   start_time?: string | null;
+  startedAt?: string | null;
+  answered_at?: string | null;
+  answeredAt?: string | null;
   end_time?: string | null;
+  endedAt?: string | null;
+  recording_ref?: string | null;
+  recordingUrl?: string | null;
   created_at?: string;
+  createdAt?: string;
+  updated_at?: string;
+  updatedAt?: string;
 };
 
 export type DialerLeadRow = {
