@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import ModuleShell, { Section, DataTable, Btn, ActionBar } from "@/components/shared/ModuleShell";
+import ModuleShell, { Section, Btn, ActionBar } from "@/components/shared/ModuleShell";
 import EmptyState from "@/components/shared/EmptyState";
-import LeadCardStrip from "@/components/shared/LeadCardStrip";
 import MoveStageDialog from "@/components/shared/MoveStageDialog";
 import { TablePagination } from "@/components/shared/TablePagination";
 import {
@@ -17,7 +16,7 @@ import type { Lead } from "@/adapters/lead-view.adapter";
 import { useOpportunityLeads } from "@/store/selectors";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { usePagination, DEFAULT_PAGE_SIZE } from "@/hooks/use-pagination";
-import { LeadRowActions } from "@/components/shared/LeadRowActions";
+import { LeadShowcaseCard } from "@/components/shared/LeadShowcaseCard";
 import { BulkWhatsAppButton } from "@/components/modules/BulkWhatsAppButton";
 import { BulkWhatsAppReportButton } from "@/components/modules/BulkWhatsAppReportButton";
 import { SmartfloSyncButton } from "@/components/modules/SmartfloSyncButton";
@@ -33,33 +32,21 @@ const LeadInbox = () => {
   const [syncingId, setSyncingId] = useState<string | null>(null);
 
   const handleCallLead = async (lead: Lead) => {
-    console.log("Clicked lead data:", lead);
     setCallingLeadId(lead.leadId);
     try {
       const phoneNumber = (lead.mobile || "").replace(/\s/g, "");
-      console.log("Phone number:", phoneNumber);
-
       if (!phoneNumber) {
         toast.error("Phone number not found");
         return;
       }
-
-      const response = await initiateSmartfloAgentCall({
+      await initiateSmartfloAgentCall({
         phoneNumber,
         opportunityId: lead.opportunityId,
         customerName: lead.customerName,
       });
-
-      console.log("Smartflo call response:", response);
       toast.success("Call initiated successfully");
     } catch (error) {
-      console.error(
-        "Smartflo call error:",
-        error instanceof ApiClientError ? { message: error.message, status: error.status } : error,
-      );
-      toast.error(
-        error instanceof ApiClientError ? error.message : "Failed to initiate call",
-      );
+      toast.error(error instanceof ApiClientError ? error.message : "Failed to initiate call");
     } finally {
       setCallingLeadId(null);
     }
@@ -85,6 +72,7 @@ const LeadInbox = () => {
       setSyncingId(null);
     }
   };
+
   const allLeads = useOpportunityLeads();
   const [moveLead, setMoveLead] = useState<Lead | null>(null);
   const [stageFilter, setStageFilter] = useState(STAGE_FILTER_ALL);
@@ -147,28 +135,30 @@ const LeadInbox = () => {
               onSelect={onStageSelect}
               counts={stageCounts}
             />
-            <div className="mt-4 rounded-xl border border-border/50 bg-secondary/20 px-4 py-3">
-              <p className="text-sm font-semibold text-foreground">
-                {leads.length} lead{leads.length === 1 ? "" : "s"}
-                {stageFilter !== STAGE_FILTER_ALL && (
-                  <span className="font-normal text-muted-foreground">
-                    {" "}
-                    {activeStageMeta
-                      ? `in ${activeStageMeta.code}`
-                      : isMacroFilter(stageFilter)
-                        ? `in ${stageFilter.replace("macro:", "")}`
-                        : ""}
-                  </span>
-                )}
-              </p>
-              {stageFilter !== STAGE_FILTER_ALL && (
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Filtered from {allLeads.length} total leads in inbox
+            <div className="mt-4 flex flex-wrap items-end justify-between gap-3 rounded-xl border border-border/50 bg-secondary/20 px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  {leads.length} lead{leads.length === 1 ? "" : "s"}
+                  {stageFilter !== STAGE_FILTER_ALL && (
+                    <span className="font-normal text-muted-foreground">
+                      {" "}
+                      {activeStageMeta
+                        ? `in ${activeStageMeta.code}`
+                        : isMacroFilter(stageFilter)
+                          ? `in ${stageFilter.replace("macro:", "")}`
+                          : ""}
+                    </span>
+                  )}
                 </p>
-              )}
+                {stageFilter !== STAGE_FILTER_ALL && (
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Filtered from {allLeads.length} total leads in inbox
+                  </p>
+                )}
+              </div>
               {leads.length > DEFAULT_PAGE_SIZE && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Showing {DEFAULT_PAGE_SIZE} per page · page {pagination.page} of {pagination.totalPages}
+                <p className="text-xs text-muted-foreground">
+                  Page {pagination.page} of {pagination.totalPages} · {DEFAULT_PAGE_SIZE} / page
                 </p>
               )}
             </div>
@@ -192,13 +182,18 @@ const LeadInbox = () => {
             />
           )}
 
-          <div className="inbox-mobile-scroll space-y-3 md:hidden">
-            {pageItems.map((l) => (
-              <div key={l.leadId} className="space-y-2">
-                <LeadCardStrip lead={l} onClick={() => viewLead(l.opportunityId)} />
-                <div className="px-1">
-                  <LeadRowActions
-                    variant="labeled"
+          <Section title="Lead showcase">
+            <p className="mb-4 text-sm text-muted-foreground">
+              Review each lead, then nurture with Direct Call, IVR, WhatsApp, or Auto Dialer — or move stage when ready.
+            </p>
+            {pageItems.length === 0 ? (
+              <EmptyInbox stageFilter={stageFilter} />
+            ) : (
+              <div className="space-y-3">
+                {pageItems.map((l) => (
+                  <LeadShowcaseCard
+                    key={l.leadId}
+                    lead={l}
                     onView={() => viewLead(l.opportunityId)}
                     onMove={() => setMoveLead(l)}
                     onCall={() => void handleCallLead(l)}
@@ -206,105 +201,13 @@ const LeadInbox = () => {
                     onIvrCall={() => void handleIvrCall(l)}
                     ivrLoading={ivrCallingId === l.leadId}
                     onWhatsApp={() => openWhatsApp(l.opportunityId)}
+                    onDialerSync={() => void handleDialerSync(l)}
+                    dialerLoading={syncingId === l.opportunityId}
                   />
-                  <Btn
-                    variant="outline"
-                    disabled={syncingId === l.opportunityId}
-                    onClick={() => void handleDialerSync(l)}
-                  >
-                    {syncingId === l.opportunityId ? "Syncing…" : "Add to Auto Dialer"}
-                  </Btn>
-                </div>
-              </div>
-            ))}
-            {pageItems.length === 0 && <EmptyInbox stageFilter={stageFilter} />}
-          </div>
-
-          <DataTable minWidth={1400}>
-            <thead>
-              <tr className="border-b text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                {[
-                  "Lead ID",
-                  "Customer ID",
-                  "Opportunity ID",
-                  "Customer",
-                  "Mobile",
-                  "Product",
-                  "Stage",
-                  "Score",
-                  "Owner",
-                  "Action",
-                  "SLA",
-                  "Status",
-                  "Actions",
-                ].map((h) => (
-                  <th key={h} className="whitespace-nowrap px-3 py-3">
-                    {h}
-                  </th>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {pageItems.map((l) => (
-                <tr key={l.leadId} className="border-b border-border/50 transition-colors hover:bg-secondary/25">
-                  <td className="whitespace-nowrap px-3 py-3">
-                    <span className="font-mono text-xs">{l.leadId}</span>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-3">
-                    <span className="font-mono text-xs text-muted-foreground">{l.customerId}</span>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-3">
-                    <span className="font-mono text-xs text-muted-foreground">{l.opportunityId}</span>
-                  </td>
-                  <td className="px-3 py-3 font-semibold">{l.customerName}</td>
-                  <td className="whitespace-nowrap px-3 py-3 text-xs text-muted-foreground">{l.mobile}</td>
-                  <td className="px-3 py-3 text-xs">{l.product}</td>
-                  <td className="px-3 py-3">
-                    <span className="font-mono text-xs font-bold text-primary">{l.microStageCode}</span>
-                    <p className="max-w-[140px] truncate text-[10px] text-muted-foreground">{l.microStage}</p>
-                  </td>
-                  <td className="px-3 py-3 text-xs font-semibold">
-                    {l.leadScore} {l.scoreLabel}
-                  </td>
-                  <td className="px-3 py-3 text-xs">{l.currentOwner}</td>
-                  <td className="max-w-[140px] truncate px-3 py-3 text-xs">{l.currentAction}</td>
-                  <td
-                    className={`whitespace-nowrap px-3 py-3 text-xs font-semibold ${l.slaCountdown === "Overdue" ? "text-destructive" : ""}`}
-                  >
-                    {l.slaTime}
-                  </td>
-                  <td className="px-3 py-3 text-xs">{l.status}</td>
-                  <td className="whitespace-nowrap px-3 py-2.5">
-                    <div className="flex items-center gap-1">
-                    <LeadRowActions
-                      onView={() => viewLead(l.opportunityId)}
-                      onMove={() => setMoveLead(l)}
-                      onCall={() => void handleCallLead(l)}
-                      callLoading={callingLeadId === l.leadId}
-                      onIvrCall={() => void handleIvrCall(l)}
-                      ivrLoading={ivrCallingId === l.leadId}
-                      onWhatsApp={() => openWhatsApp(l.opportunityId)}
-                    />
-                    <Btn
-                      variant="ghost"
-                      className="ml-1"
-                      disabled={syncingId === l.opportunityId}
-                      onClick={() => void handleDialerSync(l)}
-                    >
-                      {syncingId === l.opportunityId ? "Syncing…" : "Sync"}
-                    </Btn>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </DataTable>
-
-          {pageItems.length === 0 && leads.length > 0 && (
-            <div className="hidden md:block">
-              <EmptyInbox stageFilter={stageFilter} />
-            </div>
-          )}
+              </div>
+            )}
+          </Section>
 
           {leads.length > 0 && (
             <TablePagination
