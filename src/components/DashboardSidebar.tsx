@@ -65,10 +65,10 @@ const DashboardSidebar = ({
             </div>
             {expanded && (
               <>
-                <p className="mt-2 text-center text-[10px] font-bold uppercase tracking-widest text-[hsl(220,14%,75%)]">
+                <p className="mt-2 text-center text-xs font-bold uppercase tracking-widest text-[hsl(220,14%,75%)]">
                   {POSITIONING.name}
                 </p>
-                <p className="text-center text-[9px] text-[hsl(220,12%,55%)]">Automotive revenue lifecycle</p>
+                <p className="text-center text-[11px] text-[hsl(220,12%,55%)]">Automotive revenue lifecycle</p>
               </>
             )}
           </div>
@@ -96,7 +96,7 @@ const DashboardSidebar = ({
 
         <nav className="scrollbar-sidebar min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-3">
           {expanded && (
-            <p className="mb-2 px-2 text-[10px] font-bold uppercase tracking-wider text-[hsl(220,12%,52%)]">Main menu</p>
+            <p className="mb-2 px-2 text-xs font-bold uppercase tracking-wider text-[hsl(220,12%,52%)]">Main menu</p>
           )}
           <div className="space-y-0.5">
             {MAIN_SIDEBAR.map((item) => {
@@ -118,16 +118,16 @@ const DashboardSidebar = ({
                   }}
                   title={locked ? access.reason : !expanded ? item.label : undefined}
                   disabled={locked}
-                  className={`flex w-full min-h-11 touch-manipulation items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+                  className={`flex w-full min-h-12 touch-manipulation items-center gap-3 rounded-xl px-3 py-2.5 text-left text-base font-semibold transition-colors ${
                     locked ? "cursor-not-allowed opacity-45" : active ? navActive : navIdle
                   }`}
                 >
-                  <Icon size={20} className="shrink-0" strokeWidth={active ? 2.25 : 2} />
+                  <Icon size={22} className="shrink-0" strokeWidth={active ? 2.25 : 2} />
                   {expanded && (
                     <>
-                      <span className="min-w-0 flex-1 truncate text-[13px]">{item.label}</span>
+                      <span className="min-w-0 flex-1 truncate text-[15px] leading-snug">{item.label}</span>
                       {item.badge != null && (
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums ${active ? "bg-white/20" : "bg-white/10"}`}>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${active ? "bg-white/20" : "bg-white/10"}`}>
                           {item.badge}
                         </span>
                       )}
@@ -143,10 +143,10 @@ const DashboardSidebar = ({
           <button
             type="button"
             onClick={logout}
-            className={`flex w-full min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${navIdle}`}
+            className={`flex w-full min-h-12 items-center gap-3 rounded-xl px-3 py-2.5 text-base font-semibold ${navIdle}`}
           >
-            <LogOut size={20} />
-            {expanded && <span>Logout</span>}
+            <LogOut size={22} />
+            {expanded && <span className="text-[15px]">Logout</span>}
           </button>
         </div>
       </aside>
