@@ -18,6 +18,8 @@ import { useZentroFlowStore } from "@/store/opportunity-store";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fetchActionContext, type ActionContext } from "@/api/action-engine.api";
 import { getStageMaster } from "@/domain/stages/stage-master";
+import { initiateSmartfloAgentCall } from "@/api/smartflo.api";
+import { ApiClientError } from "@/lib/api";
 
 type Props = { leadId?: string };
 
@@ -52,10 +54,31 @@ const LeadDetail = ({ leadId }: Props) => {
   const nextStep = opp ? getNextMicroStage(opp) : null;
   const [tab, setTab] = useState<string>("Overview");
   const [ivrLoading, setIvrLoading] = useState(false);
+  const [directCalling, setDirectCalling] = useState(false);
   const [actionCtx, setActionCtx] = useState<ActionContext | null>(null);
-  const { callLead, ivrCallLead, openWhatsApp } = useDashboardActions();
+  const { ivrCallLead, openWhatsApp } = useDashboardActions();
   const { run } = useOpportunityActions(lead?.opportunityId);
   const stageMaster = opp ? getStageMaster(opp.current_micro_stage) : undefined;
+
+  const handleDirectCall = async () => {
+    if (!lead?.mobile) {
+      toast.error("Phone number not found");
+      return;
+    }
+    setDirectCalling(true);
+    try {
+      await initiateSmartfloAgentCall({
+        phoneNumber: lead.mobile.replace(/\s/g, ""),
+        opportunityId: lead.opportunityId,
+        customerName: lead.customerName,
+      });
+      toast.success("Direct call initiated");
+    } catch (error) {
+      toast.error(error instanceof ApiClientError ? error.message : "Failed to initiate call");
+    } finally {
+      setDirectCalling(false);
+    }
+  };
 
   useEffect(() => {
     if (!lead?.opportunityId) return;
@@ -117,7 +140,9 @@ const LeadDetail = ({ leadId }: Props) => {
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2 border-t border-border/60 pt-4">
-          <Btn onClick={() => callLead(lead.mobile, lead.customerName)}>Call Customer</Btn>
+          <Btn disabled={directCalling} onClick={() => void handleDirectCall()}>
+            {directCalling ? "Calling…" : "Direct Call (Smartflo)"}
+          </Btn>
           <Btn
             variant="secondary"
             disabled={ivrLoading}

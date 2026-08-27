@@ -20,6 +20,10 @@ import { CampaignPanel } from "@/components/modules/autodialer/CampaignPanel";
 import { LeadsPanel } from "@/components/modules/autodialer/LeadsPanel";
 import { CallsPanel } from "@/components/modules/autodialer/CallsPanel";
 import { TestPanel } from "@/components/modules/autodialer/TestPanel";
+import { BulkWhatsAppButton } from "@/components/modules/BulkWhatsAppButton";
+import { BulkWhatsAppReportButton } from "@/components/modules/BulkWhatsAppReportButton";
+import { SmartfloSyncButton } from "@/components/modules/SmartfloSyncButton";
+import { Btn, ActionBar } from "@/components/shared/ModuleShell";
 
 function friendly(err: unknown): string {
   if (err instanceof ApiClientError) return err.message;
@@ -28,7 +32,7 @@ function friendly(err: unknown): string {
 
 const Autodialer = () => {
   const { user } = useAuth();
-  const { viewLead } = useDashboardActions();
+  const { viewLead, navigate } = useDashboardActions();
   const isAdmin = user?.role === "admin";
   const [campaign, setCampaign] = useState<DialerCampaign | null>(null);
   const [leads, setLeads] = useState<DialerLeadRow[]>([]);
@@ -119,7 +123,21 @@ const Autodialer = () => {
   };
 
   return (
-    <ModuleShell moduleId="autodialer">
+    <ModuleShell
+      moduleId="autodialer"
+      actions={
+        isAdmin ? (
+          <ActionBar>
+            <Btn variant="outline" onClick={() => navigate("lead-upload")}>
+              Bulk upload
+            </Btn>
+            <SmartfloSyncButton />
+            <BulkWhatsAppButton />
+            <BulkWhatsAppReportButton />
+          </ActionBar>
+        ) : undefined
+      }
+    >
       <Tabs defaultValue="agent">
         <TabsList className="mb-4 flex h-auto w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="agent">Agent</TabsTrigger>
