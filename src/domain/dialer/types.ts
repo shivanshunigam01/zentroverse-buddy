@@ -129,6 +129,40 @@ export type DialerSyncResult = {
   error?: string;
 };
 
+export type DialerLeadSyncStats = {
+  total: number;
+  alreadySynced: number;
+  pendingSync: number;
+  failed: number;
+  invalid: number;
+  eligible: number;
+  syncInProgress: boolean;
+};
+
+export type DialerSyncAllResult = {
+  success: boolean;
+  syncId: string;
+  total: number;
+  eligible: number;
+  uploaded: number;
+  alreadySynced: number;
+  invalid: number;
+  failed: number;
+  skipped: number;
+  status: "COMPLETED" | "PARTIAL" | "PROCESSING";
+  batchIds: string[];
+  batchResults: Array<{
+    batch_index: number;
+    batch_id: string | null;
+    status: "success" | "failed" | "processing";
+    uploaded_count: number;
+    failed_count: number;
+    lead_count: number;
+    error?: string;
+  }>;
+  invalidRows?: Array<{ opportunity_id: string; reason: string }>;
+};
+
 export type DialerTestLead = {
   local: {
     opportunity_id: string;

@@ -1,14 +1,17 @@
 import { Btn, Section, ActionBar } from "@/components/shared/ModuleShell";
+import { SyncAllLeadsDialog } from "@/components/modules/autodialer/SyncAllLeadsDialog";
 import type { DialerCampaign } from "@/domain/dialer/types";
 
 type Props = {
   campaign: DialerCampaign | null;
   loading: boolean;
+  isAdmin: boolean;
   onRefresh: () => void;
   onSyncPending: () => void;
+  onSyncComplete: () => void;
 };
 
-export function CampaignPanel({ campaign, loading, onRefresh, onSyncPending }: Props) {
+export function CampaignPanel({ campaign, loading, isAdmin, onRefresh, onSyncPending, onSyncComplete }: Props) {
   return (
     <>
       <Section title="Smartflo connection">
@@ -56,6 +59,7 @@ export function CampaignPanel({ campaign, loading, onRefresh, onSyncPending }: P
           <Btn disabled={loading} onClick={onRefresh}>
             Refresh status
           </Btn>
+          {isAdmin ? <SyncAllLeadsDialog disabled={loading} onComplete={onSyncComplete} /> : null}
           <Btn variant="secondary" disabled={loading} onClick={onSyncPending}>
             Sync pending leads
           </Btn>

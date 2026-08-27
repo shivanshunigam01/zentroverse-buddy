@@ -6,7 +6,9 @@ import type {
   DialerDisposition,
   DialerHealth,
   DialerLeadRow,
+  DialerLeadSyncStats,
   DialerSessionStatus,
+  DialerSyncAllResult,
   DialerSyncResult,
   DialerTestLead,
 } from "@/domain/dialer/types";
@@ -33,6 +35,18 @@ export function syncDialerLead(id: string): Promise<DialerSyncResult> {
 
 export function syncPendingDialerLeads(): Promise<{ total: number; results: DialerSyncResult[] }> {
   return api("/dialer/leads/sync", { method: "POST", timeoutMs: 600000 });
+}
+
+export function getDialerLeadSyncStats(): Promise<DialerLeadSyncStats> {
+  return api("/dialer/leads/sync/stats");
+}
+
+export function syncAllDialerLeads(): Promise<DialerSyncAllResult> {
+  return api("/dialer/leads/sync", {
+    method: "POST",
+    json: { syncAll: true },
+    timeoutMs: 600000,
+  });
 }
 
 export function getDialerDispositions(): Promise<DialerDisposition[]> {

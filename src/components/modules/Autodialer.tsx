@@ -99,8 +99,10 @@ const Autodialer = () => {
           <CampaignPanel
             campaign={campaign}
             loading={loading}
+            isAdmin={isAdmin}
             onRefresh={() => void refresh()}
             onSyncPending={() => void onSyncPending()}
+            onSyncComplete={() => void refresh()}
           />
         </TabsContent>
         <TabsContent value="leads">
