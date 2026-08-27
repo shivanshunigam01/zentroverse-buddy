@@ -21,12 +21,13 @@ import { LeadRowActions } from "@/components/shared/LeadRowActions";
 import { BulkWhatsAppButton } from "@/components/modules/BulkWhatsAppButton";
 import { BulkWhatsAppReportButton } from "@/components/modules/BulkWhatsAppReportButton";
 import { SmartfloSyncButton } from "@/components/modules/SmartfloSyncButton";
+import { AddLeadDialog } from "@/components/modules/AddLeadDialog";
 import { initiateSmartfloAgentCall } from "@/api/smartflo.api";
 import { syncDialerLead } from "@/api/dialer.api";
 import { ApiClientError } from "@/lib/api";
 
 const LeadInbox = () => {
-  const { viewLead, ivrCallLead, openWhatsApp, performAction } = useDashboardActions();
+  const { viewLead, ivrCallLead, openWhatsApp, performAction, navigate } = useDashboardActions();
   const [callingLeadId, setCallingLeadId] = useState<string | null>(null);
   const [ivrCallingId, setIvrCallingId] = useState<string | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
@@ -108,6 +109,7 @@ const LeadInbox = () => {
       moduleId="lead-inbox"
       actions={
         <ActionBar>
+          <AddLeadDialog onCreated={(id) => viewLead(id)} />
           <SmartfloSyncButton />
           <BulkWhatsAppButton />
           <BulkWhatsAppReportButton />
@@ -124,8 +126,15 @@ const LeadInbox = () => {
       {allLeads.length === 0 ? (
         <EmptyState
           title="Inbox is empty"
-          description="Import leads from Excel — each opportunity starts at C0.1 Contact. Complete stages in order before moving to C1."
-        />
+          description="Add a lead manually or import from Excel — each opportunity starts at C0.1 Contact."
+        >
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            <AddLeadDialog />
+            <Btn variant="outline" onClick={() => navigate("lead-upload")}>
+              Upload Excel
+            </Btn>
+          </div>
+        </EmptyState>
       ) : (
         <div className="flex flex-col gap-4">
           <Section title="Filter by pipeline stage">

@@ -1,5 +1,6 @@
 import { api, apiBlob } from "@/lib/api";
 import { isValidMobile, normalizeMobile } from "@/lib/mobile";
+import type { OpportunityDto } from "@/api/contracts/opportunities";
 import type { ExcelLeadRow } from "@/services/excel-import.service";
 
 export type ApiImportRow = {
@@ -15,6 +16,36 @@ export type ApiImportRow = {
   customerId?: string;
   opportunityId?: string;
 };
+
+export type CreateLeadRequest = {
+  customerName: string;
+  mobile: string;
+  product?: string;
+  requirement?: string;
+  district?: string;
+  source?: string;
+  branch?: string;
+  executive?: string;
+  email?: string;
+};
+
+/** POST /api/v1/leads — create a single lead from the frontend form */
+export async function createLead(body: CreateLeadRequest): Promise<OpportunityDto> {
+  return api<OpportunityDto>("/leads", {
+    method: "POST",
+    json: {
+      customerName: body.customerName.trim(),
+      mobile: body.mobile.trim(),
+      product: body.product?.trim() || "General",
+      requirement: body.requirement?.trim() || "",
+      district: body.district?.trim(),
+      source: body.source?.trim() || "Manual Entry",
+      branch: body.branch?.trim() || "Default Branch",
+      executive: body.executive?.trim(),
+      email: body.email?.trim(),
+    },
+  });
+}
 
 export function toApiRows(rows: ExcelLeadRow[]): ApiImportRow[] {
   return rows
