@@ -126,9 +126,11 @@ export function DashboardProvider({
           customerName,
           opportunityId,
         });
-        toast.success(result.message || "IVR call started", {
+        toast.success(result.message || "IVR call accepted", {
           id: toastId,
-          description: `${result.phoneNumber}${result.ivrId ? ` · IVR ${result.ivrId}` : ""}`,
+          description: result.call?.refId
+            ? `${result.call.phoneNumber || result.phoneNumber} · ref ${result.call.refId}`
+            : `${result.phoneNumber} · waiting for customer answer`,
         });
       } catch (err) {
         toast.error("IVR call failed", {

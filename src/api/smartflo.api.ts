@@ -25,12 +25,12 @@ export async function getSmartfloConfig(): Promise<{
   configured: boolean;
   clickToCallConfigured?: boolean;
   directAgentCallConfigured?: boolean;
-  ivrId?: string;
+  callerIdConfigured?: boolean;
 }> {
   return api("/admin/smartflo/config");
 }
 
-/** IVR Click-to-Call Support — POST /smartflo/call (unchanged) */
+/** IVR Click-to-Call Support — POST /smartflo/call */
 export async function initiateSmartfloIvrCall(body: {
   phoneNumber: string;
   opportunityId?: string;
@@ -39,8 +39,11 @@ export async function initiateSmartfloIvrCall(body: {
   success: boolean;
   message: string;
   phoneNumber: string;
-  ivrId?: string;
-  smartflo?: unknown;
+  call: {
+    refId: string | null;
+    phoneNumber: string;
+    status: "ACCEPTED" | string;
+  };
 }> {
   return api("/smartflo/call", {
     method: "POST",
