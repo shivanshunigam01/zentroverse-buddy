@@ -4,7 +4,7 @@ import ModuleShell, { StatCard, Section, Btn } from "@/components/shared/ModuleS
 import EmptyState from "@/components/shared/EmptyState";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useLiveStats } from "@/hooks/use-live-stats";
-import { useOpportunityLeads } from "@/store/selectors";
+import { useOpportunityLeads, useOpportunityList } from "@/store/selectors";
 import type { AppModuleId } from "@/domain/app-nav";
 import { fetchEngineHealth } from "@/api/action-engine.api";
 import { findGoldenRuleExceptions } from "@/domain/entities/golden-rule";
@@ -30,7 +30,7 @@ const STAT_LINKS: Partial<Record<string, AppModuleId>> = {
 const MainDashboard = () => {
   const { navigate, performAction } = useDashboardActions();
   const leads = useOpportunityLeads();
-  const opportunities = useZentroFlowStore((s) => s.listOpportunities());
+  const opportunities = useOpportunityList();
   const contactHealth = useZentroFlowStore((s) => s.contactHealth);
   const { dashboard, pipeline } = useLiveStats(leads.length > 0);
   const [engineHealth, setEngineHealth] = useState<Awaited<ReturnType<typeof fetchEngineHealth>> | null>(null);
