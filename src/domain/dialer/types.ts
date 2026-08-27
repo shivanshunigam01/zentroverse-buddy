@@ -2,6 +2,13 @@ export type DialerSyncStatus = "PENDING" | "SYNCED" | "FAILED";
 
 export type DialerMode = "dial_out_each_call" | "session";
 
+export type DialerCallState =
+  | "WAITING"
+  | "RINGING"
+  | "CONNECTED"
+  | "ENDED"
+  | "DISPOSITION_PENDING";
+
 export type DialerHealth = {
   smartflo: boolean;
   campaignConfigured: boolean;
@@ -51,9 +58,11 @@ export type DialerCampaignStatus = {
 export type DialerSessionStatus = {
   dialerMode: DialerMode | string;
   sessionEnabled: boolean;
+  active?: boolean;
   status: string;
   campaignId: string | null;
   startedAt: string | null;
+  endedAt?: string | null;
   message: string;
 };
 
@@ -119,6 +128,62 @@ export type DialerLeadRow = {
   smartflo_retry_count?: number;
 };
 
+export type DialerCurrentCall = {
+  call: DialerCall | null;
+  lead: DialerLeadRow | null;
+  campaignId: string | null;
+  state: DialerCallState | string;
+  agent?: { email: string | null; name: string | null } | null;
+};
+
+export type DialerStatistics = {
+  totalLeads: number;
+  synced: number;
+  pending: number;
+  failedSync: number;
+  dialed: number;
+  connected: number;
+  completed: number;
+  interested: number;
+  notInterested: number;
+  callbacks: number;
+  converted: number;
+  noAnswer: number;
+  busy: number;
+  failed: number;
+  connectionRate: number;
+  answerRate: number;
+  conversionRate: number;
+  interestRate: number;
+  averageCallDuration: number;
+};
+
+export type DialerSyncJob = {
+  syncId: string;
+  jobId: string;
+  syncType: string;
+  status: string;
+  totalLeads: number;
+  eligible: number;
+  uploaded: number;
+  failed: number;
+  skipped: number;
+  alreadySynced: number;
+  invalid: number;
+  batchResults: Array<{
+    batch_index: number;
+    batch_id: string | null;
+    status: "success" | "failed" | "processing";
+    uploaded_count: number;
+    failed_count: number;
+    lead_count: number;
+    error?: string;
+  }>;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type DialerSyncResult = {
   opportunity_id: string;
   lead_id?: string;
@@ -161,6 +226,18 @@ export type DialerSyncAllResult = {
     error?: string;
   }>;
   invalidRows?: Array<{ opportunity_id: string; reason: string }>;
+};
+
+export type DialerDispositionPayload = {
+  leadId?: string;
+  callId?: string;
+  dispositionStatus: string;
+  subDispositionStatus?: string;
+  note?: string;
+  notes?: string;
+  priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  feedback?: string;
+  callbackAt?: string;
 };
 
 export type DialerTestLead = {

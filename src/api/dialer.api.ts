@@ -3,12 +3,16 @@ import type {
   DialerCall,
   DialerCampaign,
   DialerCampaignStatus,
+  DialerCurrentCall,
   DialerDisposition,
+  DialerDispositionPayload,
   DialerHealth,
   DialerLeadRow,
   DialerLeadSyncStats,
   DialerSessionStatus,
+  DialerStatistics,
   DialerSyncAllResult,
+  DialerSyncJob,
   DialerSyncResult,
   DialerTestLead,
 } from "@/domain/dialer/types";
@@ -25,8 +29,9 @@ export function getDialerCampaignStatus(): Promise<DialerCampaignStatus> {
   return api("/dialer/campaign/status");
 }
 
-export function getDialerLeads(): Promise<DialerLeadRow[]> {
-  return api("/dialer/leads?limit=100");
+export function getDialerLeads(syncStatus?: string): Promise<DialerLeadRow[]> {
+  const q = syncStatus ? `?limit=200&syncStatus=${encodeURIComponent(syncStatus)}` : "?limit=200";
+  return api(`/dialer/leads${q}`);
 }
 
 export function syncDialerLead(id: string): Promise<DialerSyncResult> {
@@ -49,18 +54,66 @@ export function syncAllDialerLeads(): Promise<DialerSyncAllResult> {
   });
 }
 
+export function syncSelectedDialerLeads(leadIds: string[]): Promise<{
+  syncId: string;
+  total: number;
+  uploaded: number;
+  failed: number;
+  results: DialerSyncResult[];
+  status: string;
+}> {
+  return api("/dialer/leads/sync", {
+    method: "POST",
+    json: { leadIds },
+    timeoutMs: 600000,
+  });
+}
+
+export function retryFailedDialerLeads(): Promise<{
+  syncId: string;
+  total: number;
+  uploaded: number;
+  failed: number;
+  results: DialerSyncResult[];
+  status: string;
+}> {
+  return api("/dialer/leads/sync", {
+    method: "POST",
+    json: { retryFailed: true },
+    timeoutMs: 600000,
+  });
+}
+
+export function getDialerSyncJob(syncId: string): Promise<DialerSyncJob> {
+  return api(`/dialer/sync-jobs/${encodeURIComponent(syncId)}`);
+}
+
+export function getDialerStatistics(): Promise<DialerStatistics> {
+  return api("/dialer/statistics");
+}
+
+export function getDialerCurrentCall(): Promise<DialerCurrentCall> {
+  return api("/dialer/current-call");
+}
+
 export function getDialerDispositions(): Promise<DialerDisposition[]> {
   return api("/dialer/dispositions");
 }
 
-export function storeDialerDisposition(body: {
-  leadId?: string;
-  callId?: string;
-  dispositionStatus: string;
-  subDispositionStatus?: string;
-  note?: string;
-}): Promise<{ uniqueId: string; disposition: string; known: boolean }> {
+export function storeDialerDisposition(
+  body: DialerDispositionPayload,
+): Promise<{ uniqueId: string; disposition: string; known: boolean; callId?: string | null }> {
   return api("/dialer/disposition", { method: "POST", json: body });
+}
+
+export function storeCallDisposition(
+  callId: string,
+  body: Omit<DialerDispositionPayload, "callId">,
+): Promise<{ uniqueId: string; disposition: string; known: boolean }> {
+  return api(`/dialer/calls/${encodeURIComponent(callId)}/disposition`, {
+    method: "POST",
+    json: body,
+  });
 }
 
 export function getDialerCalls(): Promise<DialerCall[]> {
@@ -75,15 +128,15 @@ export function getDialerSessionStatus(): Promise<DialerSessionStatus> {
   return api("/dialer/session/status");
 }
 
-export function startDialerSession(): Promise<{ status: string }> {
+export function startDialerSession(): Promise<{ status: string; active?: boolean }> {
   return api("/dialer/session/start", { method: "POST" });
 }
 
-export function endDialerSession(): Promise<{ status: string }> {
+export function endDialerSession(): Promise<{ status: string; active?: boolean }> {
   return api("/dialer/session/end", { method: "POST" });
 }
 
-export function logoutDialerSession(): Promise<{ status: string }> {
+export function logoutDialerSession(): Promise<{ status: string; active?: boolean }> {
   return api("/dialer/session/logout", { method: "POST" });
 }
 

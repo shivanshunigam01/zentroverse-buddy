@@ -1,4 +1,5 @@
-import { Section } from "@/components/shared/ModuleShell";
+import { useMemo, useState } from "react";
+import { Btn, Section, ActionBar } from "@/components/shared/ModuleShell";
 import type { DialerCall } from "@/domain/dialer/types";
 
 function formatDuration(seconds: number | null | undefined): string {
@@ -11,12 +12,66 @@ function formatDuration(seconds: number | null | undefined): string {
 type Props = { calls: DialerCall[] };
 
 export function CallsPanel({ calls }: Props) {
+  const [statusFilter, setStatusFilter] = useState("");
+  const [dispositionFilter, setDispositionFilter] = useState("");
+
+  const statuses = useMemo(
+    () => [...new Set(calls.map((c) => c.status).filter(Boolean))] as string[],
+    [calls],
+  );
+  const dispositions = useMemo(
+    () => [...new Set(calls.map((c) => c.disposition).filter(Boolean))] as string[],
+    [calls],
+  );
+
+  const filtered = useMemo(() => {
+    return calls.filter((c) => {
+      if (statusFilter && c.status !== statusFilter) return false;
+      if (dispositionFilter && c.disposition !== dispositionFilter) return false;
+      return true;
+    });
+  }, [calls, statusFilter, dispositionFilter]);
+
   return (
     <Section title="Recent calls">
-      {calls.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No dialer calls stored yet. Webhooks and hangup events appear here.</p>
+      <ActionBar>
+        <select
+          className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="">All statuses</option>
+          {statuses.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+        <select
+          className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+          value={dispositionFilter}
+          onChange={(e) => setDispositionFilter(e.target.value)}
+        >
+          <option value="">All dispositions</option>
+          {dispositions.map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
+        </select>
+        {(statusFilter || dispositionFilter) && (
+          <Btn variant="outline" onClick={() => { setStatusFilter(""); setDispositionFilter(""); }}>
+            Clear filters
+          </Btn>
+        )}
+      </ActionBar>
+
+      {filtered.length === 0 ? (
+        <p className="mt-4 text-sm text-muted-foreground">
+          No dialer calls stored yet. Webhooks and hangup events appear here.
+        </p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[800px] text-left text-sm">
             <thead>
               <tr className="border-b text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
@@ -28,8 +83,8 @@ export function CallsPanel({ calls }: Props) {
               </tr>
             </thead>
             <tbody>
-              {calls.map((call) => (
-                <tr key={call._id ?? call.smartflo_call_id ?? call.smartflo_uuid ?? call.created_at} className="border-b border-border/50">
+              {filtered.map((call) => (
+                <tr key={call._id ?? call.id ?? call.smartflo_call_id ?? call.smartflo_uuid ?? call.created_at} className="border-b border-border/50">
                   <td className="px-3 py-2 font-mono text-xs">{call.customer_number ?? "—"}</td>
                   <td className="px-3 py-2 text-xs">{call.agent_name ?? call.agent_id ?? "—"}</td>
                   <td className="px-3 py-2 text-xs">{call.status ?? "—"}</td>

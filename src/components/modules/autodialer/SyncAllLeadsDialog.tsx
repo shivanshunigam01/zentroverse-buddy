@@ -12,7 +12,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Btn } from "@/components/shared/ModuleShell";
 import { ApiClientError } from "@/lib/api";
-import { getDialerLeadSyncStats, syncAllDialerLeads } from "@/api/dialer.api";
+import { getDialerLeadSyncStats, getDialerSyncJob, syncAllDialerLeads } from "@/api/dialer.api";
 import type { DialerLeadSyncStats, DialerSyncAllResult } from "@/domain/dialer/types";
 
 type Props = {
@@ -69,7 +69,25 @@ export function SyncAllLeadsDialog({ disabled, onComplete }: Props) {
     setRunning(true);
     setResult(null);
     try {
-      const syncResult = await syncAllDialerLeads();
+      let syncResult = await syncAllDialerLeads();
+      if (syncResult.status === "PROCESSING" && syncResult.syncId) {
+        for (let i = 0; i < 40; i += 1) {
+          await new Promise((r) => setTimeout(r, 3000));
+          const job = await getDialerSyncJob(syncResult.syncId);
+          if (job.status !== "PROCESSING" && job.status !== "RUNNING") {
+            syncResult = {
+              ...syncResult,
+              status: job.status === "COMPLETED" ? "COMPLETED" : "PARTIAL",
+              uploaded: job.uploaded,
+              failed: job.failed,
+              alreadySynced: job.alreadySynced,
+              invalid: job.invalid,
+              batchResults: job.batchResults,
+            };
+            break;
+          }
+        }
+      }
       setResult(syncResult);
       toast.success("Smartflo sync finished", {
         description: `${syncResult.uploaded.toLocaleString("en-IN")} uploaded · ${syncResult.alreadySynced.toLocaleString("en-IN")} already synced · ${syncResult.failed} failed`,
