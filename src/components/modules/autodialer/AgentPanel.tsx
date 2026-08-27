@@ -284,10 +284,12 @@ export function AgentPanel({ campaign }: AgentPanelProps) {
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
           {sessionActive
-            ? "Session is live — Smartflo will auto-dial synced leads. Use End Session when finished."
+            ? "Session is live — answer the first call; Smartflo will keep auto-dialing synced leads. Use End Session when finished."
             : sessionEnabled
-              ? "Session mode is on. Click Start Session to begin auto-dialing from Smartflo."
-              : "Session mode is off on the API (set SMARTFLO_DIALER_MODE=session). You can still nurture with Direct Call / IVR, or open the Smartflo panel."}
+              ? (session?.dialerMode === "dial_out_each_call" || campaign?.dialerMode === "dial_out_each_call"
+                ? "Dial Out (Each Call): click Start Session to go live, receive the first call, then autodialer continues."
+                : "Session mode is ready. Click Start Session to begin auto-dialing.")
+              : "Set SMARTFLO_API_TOKEN and SMARTFLO_CAMPAIGN_ID on the API, then Start Session will unlock."}
         </p>
         <ActionBar>
           <Btn
