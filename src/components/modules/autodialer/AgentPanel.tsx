@@ -297,7 +297,7 @@ export function AgentPanel({ campaign }: AgentPanelProps) {
           </Btn>
           <Btn
             variant="outline"
-            onClick={() => window.open("https://cloudphone.tatateleservices.com", "_blank", "noopener,noreferrer")}
+            onClick={() => window.open("https://cloudphone.tatateleservices.com/dialer/login", "_blank", "noopener,noreferrer")}
           >
             Open Smartflo Panel
           </Btn>
