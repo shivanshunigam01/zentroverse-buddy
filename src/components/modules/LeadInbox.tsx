@@ -64,8 +64,12 @@ const LeadInbox = () => {
   const handleDialerSync = async (lead: Lead) => {
     setSyncingId(lead.opportunityId);
     try {
-      await syncDialerLead(lead.opportunityId);
-      toast.success("Synced to Auto Dialer");
+      const result = await syncDialerLead(lead.opportunityId);
+      toast.success("Synced to Auto Dialer", {
+        description: result.smartflo_lead_id
+          ? `Smartflo lead ${result.smartflo_lead_id}`
+          : `${lead.customerName} is on the dialer list`,
+      });
     } catch (error) {
       toast.error(error instanceof ApiClientError ? error.message : "Unable to sync lead with Smartflo");
     } finally {

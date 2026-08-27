@@ -72,8 +72,10 @@ const Autodialer = () => {
   const onSync = async (id: string) => {
     setBusyId(id);
     try {
-      await syncDialerLead(id);
-      toast.success("Lead synced to Smartflo");
+      const result = await syncDialerLead(id);
+      toast.success("Lead synced to Auto Dialer", {
+        description: result.smartflo_sync_status === "SYNCED" ? "Ready for dialing" : result.smartflo_sync_status,
+      });
       await refresh();
     } catch (err) {
       toast.error(friendly(err));

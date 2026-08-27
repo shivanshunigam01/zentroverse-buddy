@@ -142,6 +142,12 @@ export function AgentPanel({ campaign }: AgentPanelProps) {
     return () => window.clearInterval(timer);
   }, [sessionEnabled, sessionActive, refreshCurrentCall]);
 
+  const SMARTFLO_PANEL_URL = "https://cloudphone.tatateleservices.com/dialer/login";
+
+  const openSmartfloPanel = () => {
+    window.open(SMARTFLO_PANEL_URL, "_blank", "noopener,noreferrer");
+  };
+
   const runSession = async (kind: "start" | "end" | "logout") => {
     setBusy(true);
     try {
@@ -152,7 +158,19 @@ export function AgentPanel({ campaign }: AgentPanelProps) {
       await refreshSession();
       await refreshCurrentCall();
     } catch (err) {
-      toast.error(friendly(err));
+      const code = err instanceof ApiClientError ? err.code : "";
+      if (kind === "start" && (code === "SMARTFLO_AGENT_NOT_LOGGED_IN" || /not logged into any campaign/i.test(friendly(err)))) {
+        toast.error("Log into Smartflo Dialer Panel first", {
+          description: "Open the panel, join the campaign, then click Start Session again.",
+          action: {
+            label: "Open Panel",
+            onClick: () => openSmartfloPanel(),
+          },
+        });
+        openSmartfloPanel();
+      } else {
+        toast.error(friendly(err));
+      }
     } finally {
       setBusy(false);
     }
@@ -225,8 +243,10 @@ export function AgentPanel({ campaign }: AgentPanelProps) {
     if (!nurtureOppId) return;
     setBusy(true);
     try {
-      await syncDialerLead(nurtureOppId);
-      toast.success("Lead synced to Auto Dialer list");
+      const result = await syncDialerLead(nurtureOppId);
+      toast.success("Lead synced to Auto Dialer", {
+        description: result.smartflo_lead_id ? `Smartflo ID ready` : "On the campaign lead list",
+      });
     } catch (err) {
       toast.error(friendly(err));
     } finally {
@@ -286,30 +306,25 @@ export function AgentPanel({ campaign }: AgentPanelProps) {
           {sessionActive
             ? "Session is live — answer the first call; Smartflo will keep auto-dialing synced leads. Use End Session when finished."
             : sessionEnabled
-              ? (session?.dialerMode === "dial_out_each_call" || campaign?.dialerMode === "dial_out_each_call"
-                ? "Dial Out (Each Call): click Start Session to go live, receive the first call, then autodialer continues."
-                : "Session mode is ready. Click Start Session to begin auto-dialing.")
+              ? "Step 1: Open Smartflo Dialer Panel and log in to the campaign. Step 2: Start Session. Step 3: Take the first call — autodialer continues."
               : "Set SMARTFLO_API_TOKEN and SMARTFLO_CAMPAIGN_ID on the API, then Start Session will unlock."}
         </p>
         <ActionBar>
+          <Btn variant="outline" onClick={openSmartfloPanel}>
+            1. Open Smartflo Panel
+          </Btn>
           <Btn
             disabled={busy || !sessionEnabled || sessionActive}
             onClick={() => void runSession("start")}
-            title={!sessionEnabled ? "Enable SMARTFLO_DIALER_MODE=session on the API" : sessionActive ? "Session already active" : "Start Smartflo auto-dial session"}
+            title={!sessionEnabled ? "Configure campaign on the API" : sessionActive ? "Session already active" : "Start after logging into Smartflo Panel"}
           >
-            {sessionActive ? "Session running" : "Start Session"}
+            {sessionActive ? "Session running" : "2. Start Session"}
           </Btn>
           <Btn variant="secondary" disabled={busy || !sessionEnabled || !sessionActive} onClick={() => void runSession("end")}>
             End Session
           </Btn>
           <Btn variant="outline" disabled={busy || !sessionEnabled} onClick={() => void runSession("logout")}>
             Logout
-          </Btn>
-          <Btn
-            variant="outline"
-            onClick={() => window.open("https://cloudphone.tatateleservices.com/dialer/login", "_blank", "noopener,noreferrer")}
-          >
-            Open Smartflo Panel
           </Btn>
         </ActionBar>
       </Section>
