@@ -271,25 +271,33 @@ export function AgentPanel({ campaign }: AgentPanelProps) {
             className={`rounded-md px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${
               sessionActive
                 ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                : "bg-secondary text-muted-foreground"
+                : sessionEnabled
+                  ? "bg-amber-500/15 text-amber-800 dark:text-amber-200"
+                  : "bg-secondary text-muted-foreground"
             }`}
           >
-            {sessionActive ? "ACTIVE" : "OFFLINE"}
+            {sessionActive ? "ACTIVE" : sessionEnabled ? "READY" : "OFFLINE"}
           </span>
           <span className="text-xs text-muted-foreground">
             Mode: {session?.dialerMode ?? campaign?.dialerMode ?? "—"}
           </span>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          {sessionEnabled
-            ? session?.message ?? "Start a session so Smartflo sequences synced leads automatically."
-            : "Session mode is off on the API. You can still nurture with Direct Call / IVR below, or open the Smartflo panel."}
+          {sessionActive
+            ? "Session is live — Smartflo will auto-dial synced leads. Use End Session when finished."
+            : sessionEnabled
+              ? "Session mode is on. Click Start Session to begin auto-dialing from Smartflo."
+              : "Session mode is off on the API (set SMARTFLO_DIALER_MODE=session). You can still nurture with Direct Call / IVR, or open the Smartflo panel."}
         </p>
         <ActionBar>
-          <Btn disabled={busy || !sessionEnabled} onClick={() => void runSession("start")}>
-            Start Session
+          <Btn
+            disabled={busy || !sessionEnabled || sessionActive}
+            onClick={() => void runSession("start")}
+            title={!sessionEnabled ? "Enable SMARTFLO_DIALER_MODE=session on the API" : sessionActive ? "Session already active" : "Start Smartflo auto-dial session"}
+          >
+            {sessionActive ? "Session running" : "Start Session"}
           </Btn>
-          <Btn variant="secondary" disabled={busy || !sessionEnabled} onClick={() => void runSession("end")}>
+          <Btn variant="secondary" disabled={busy || !sessionEnabled || !sessionActive} onClick={() => void runSession("end")}>
             End Session
           </Btn>
           <Btn variant="outline" disabled={busy || !sessionEnabled} onClick={() => void runSession("logout")}>
