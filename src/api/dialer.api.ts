@@ -34,8 +34,11 @@ export function getDialerLeads(syncStatus?: string): Promise<DialerLeadRow[]> {
   return api(`/dialer/leads${q}`);
 }
 
-export function syncDialerLead(id: string): Promise<DialerSyncResult> {
-  return api(`/dialer/leads/${encodeURIComponent(id)}/sync`, { method: "POST" });
+export function syncDialerLead(id: string, resync = false): Promise<DialerSyncResult> {
+  return api(`/dialer/leads/${encodeURIComponent(id)}/sync`, {
+    method: "POST",
+    json: resync ? { resync: true } : {},
+  });
 }
 
 export function syncPendingDialerLeads(): Promise<{ total: number; results: DialerSyncResult[] }> {
@@ -47,24 +50,30 @@ export function getDialerLeadSyncStats(): Promise<DialerLeadSyncStats> {
 }
 
 export function syncAllDialerLeads(): Promise<DialerSyncAllResult> {
-  return api("/dialer/leads/sync", {
+  return api("/dialer/leads/sync-all", {
     method: "POST",
-    json: { syncAll: true },
     timeoutMs: 600000,
   });
 }
 
-export function syncSelectedDialerLeads(leadIds: string[]): Promise<{
+export function syncSelectedDialerLeads(
+  leadIds: string[],
+  resync = false,
+): Promise<{
+  success?: boolean;
   syncId: string;
   total: number;
+  synced?: number;
   uploaded: number;
   failed: number;
+  alreadySynced?: number;
+  skipped?: number;
   results: DialerSyncResult[];
   status: string;
 }> {
   return api("/dialer/leads/sync", {
     method: "POST",
-    json: { leadIds },
+    json: { leadIds, resync },
     timeoutMs: 600000,
   });
 }

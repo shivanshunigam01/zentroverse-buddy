@@ -22,21 +22,54 @@ import { BulkWhatsAppReportButton } from "@/components/modules/BulkWhatsAppRepor
 import { SmartfloSyncButton } from "@/components/modules/SmartfloSyncButton";
 import { AddLeadDialog } from "@/components/modules/AddLeadDialog";
 import { initiateSmartfloAgentCall } from "@/api/smartflo.api";
-import { syncDialerLead } from "@/api/dialer.api";
+import { syncDialerLead, syncSelectedDialerLeads } from "@/api/dialer.api";
 import { ApiClientError } from "@/lib/api";
+import { refreshFromApi, refreshOpportunity } from "@/services/sync.service";
+import { Radio } from "lucide-react";
+
+function toastForSyncResult(
+  result: {
+    result?: string;
+    skipped?: boolean;
+    smartflo_sync_status?: string;
+    smartflo_lead_id?: string | null;
+    error?: string;
+  },
+  customerName: string,
+) {
+  if (result.result === "already_synced" || result.skipped) {
+    toast.message("Already exists in Smartflo", {
+      description: `${customerName} was skipped (already synced). Use Resync to force upload.`,
+    });
+    return;
+  }
+  if (result.smartflo_sync_status === "FAILED" || result.result === "failed") {
+    toast.error("Failed", {
+      description: result.error || `Could not sync ${customerName}`,
+    });
+    return;
+  }
+  toast.success("Synced successfully", {
+    description: result.smartflo_lead_id
+      ? `Smartflo lead ${result.smartflo_lead_id}`
+      : `${customerName} is on the dialer list`,
+  });
+}
 
 const LeadInbox = () => {
   const { viewLead, ivrCallLead, openWhatsApp, performAction, navigate } = useDashboardActions();
   const [callingLeadId, setCallingLeadId] = useState<string | null>(null);
   const [ivrCallingId, setIvrCallingId] = useState<string | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [bulkSyncing, setBulkSyncing] = useState(false);
 
   const handleCallLead = async (lead: Lead) => {
     setCallingLeadId(lead.leadId);
     try {
       const phoneNumber = (lead.mobile || "").replace(/\s/g, "");
       if (!phoneNumber) {
-        toast.error("Phone number not found");
+        toast.error("Invalid phone number");
         return;
       }
       await initiateSmartfloAgentCall({
@@ -63,17 +96,62 @@ const LeadInbox = () => {
 
   const handleDialerSync = async (lead: Lead) => {
     setSyncingId(lead.opportunityId);
+    const resync = lead.smartfloSyncStatus === "SYNCED";
     try {
-      const result = await syncDialerLead(lead.opportunityId);
-      toast.success("Synced to Auto Dialer", {
-        description: result.smartflo_lead_id
-          ? `Smartflo lead ${result.smartflo_lead_id}`
-          : `${lead.customerName} is on the dialer list`,
-      });
+      const result = await syncDialerLead(lead.opportunityId, resync);
+      toastForSyncResult(result, lead.customerName);
+      await refreshOpportunity(lead.opportunityId).catch(() => undefined);
     } catch (error) {
-      toast.error(error instanceof ApiClientError ? error.message : "Unable to sync lead with Smartflo");
+      const msg = error instanceof ApiClientError ? error.message : "Unable to sync lead with Smartflo";
+      const code = error instanceof ApiClientError ? error.code : "";
+      if (code === "INVALID_LEAD" || /phone|mobile/i.test(msg)) {
+        toast.error("Invalid phone number", { description: msg });
+      } else {
+        toast.error("Failed", { description: msg });
+      }
     } finally {
       setSyncingId(null);
+    }
+  };
+
+  const toggleSelect = (opportunityId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(opportunityId)) next.delete(opportunityId);
+      else next.add(opportunityId);
+      return next;
+    });
+  };
+
+  const handleSyncSelected = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) {
+      toast.message("Select leads first", { description: "Check one or more leads, then Sync to Smartflo." });
+      return;
+    }
+    setBulkSyncing(true);
+    try {
+      const result = await syncSelectedDialerLeads(ids, false);
+      const parts = [
+        result.synced != null ? `${result.synced} synced` : `${result.uploaded} synced`,
+        result.alreadySynced ? `${result.alreadySynced} already exists` : null,
+        result.failed ? `${result.failed} failed` : null,
+      ].filter(Boolean);
+      if (result.failed && result.failed > 0) {
+        toast.error("Sync finished with errors", { description: parts.join(" · ") });
+      } else if (result.alreadySynced && result.alreadySynced === result.total) {
+        toast.message("Already exists", { description: "Selected leads were already on the Smartflo list." });
+      } else {
+        toast.success("Synced successfully", { description: parts.join(" · ") });
+      }
+      setSelectedIds(new Set());
+      await refreshFromApi().catch(() => undefined);
+    } catch (error) {
+      toast.error("Failed", {
+        description: error instanceof ApiClientError ? error.message : "Could not sync selected leads",
+      });
+    } finally {
+      setBulkSyncing(false);
     }
   };
 
@@ -96,12 +174,37 @@ const LeadInbox = () => {
     pagination.setPage(1);
   };
 
+  const pageAllSelected =
+    pageItems.length > 0 && pageItems.every((l) => selectedIds.has(l.opportunityId));
+
+  const toggleSelectPage = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (pageAllSelected) {
+        pageItems.forEach((l) => next.delete(l.opportunityId));
+      } else {
+        pageItems.forEach((l) => next.add(l.opportunityId));
+      }
+      return next;
+    });
+  };
+
   return (
     <ModuleShell
       moduleId="lead-inbox"
       actions={
         <ActionBar>
           <AddLeadDialog onCreated={(id) => viewLead(id)} />
+          <Btn
+            variant="outline"
+            disabled={bulkSyncing || selectedIds.size === 0}
+            onClick={() => void handleSyncSelected()}
+          >
+            <span className="inline-flex items-center gap-2">
+              <Radio className="h-4 w-4" aria-hidden />
+              {bulkSyncing ? "Syncing…" : `Sync to Smartflo${selectedIds.size ? ` (${selectedIds.size})` : ""}`}
+            </span>
+          </Btn>
           <SmartfloSyncButton />
           <BulkWhatsAppButton />
           <BulkWhatsAppReportButton />
@@ -187,9 +290,22 @@ const LeadInbox = () => {
           )}
 
           <Section title="Lead showcase">
-            <p className="mb-4 text-sm text-muted-foreground">
-              Review each lead, then nurture with Direct Call, IVR, WhatsApp, or Auto Dialer — or move stage when ready.
-            </p>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                Select leads, then Sync to Smartflo — or sync one lead from its card. Already-synced leads are skipped unless you Resync.
+              </p>
+              {pageItems.length > 0 ? (
+                <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={pageAllSelected}
+                    onChange={toggleSelectPage}
+                    className="h-4 w-4 rounded border-border accent-primary"
+                  />
+                  Select page ({pageItems.length})
+                </label>
+              ) : null}
+            </div>
             {pageItems.length === 0 ? (
               <EmptyInbox stageFilter={stageFilter} />
             ) : (
@@ -198,6 +314,8 @@ const LeadInbox = () => {
                   <LeadShowcaseCard
                     key={l.leadId}
                     lead={l}
+                    selected={selectedIds.has(l.opportunityId)}
+                    onToggleSelect={() => toggleSelect(l.opportunityId)}
                     onView={() => viewLead(l.opportunityId)}
                     onMove={() => setMoveLead(l)}
                     onCall={() => void handleCallLead(l)}

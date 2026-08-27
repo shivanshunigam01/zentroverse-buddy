@@ -74,6 +74,9 @@ export type Lead = {
   slaCountdown?: string;
   escalationOwner: string;
   status: OpportunityMaster["status"];
+  smartfloSyncStatus?: "PENDING" | "SYNCING" | "SYNCED" | "FAILED" | "SKIPPED" | null;
+  smartfloSyncError?: string | null;
+  smartfloLeadId?: string | null;
 };
 
 export function opportunityToLead(opp: OpportunityMaster, customer: CustomerMaster): Lead {
@@ -107,6 +110,9 @@ export function opportunityToLead(opp: OpportunityMaster, customer: CustomerMast
     slaCountdown: slaCountdown(opp),
     escalationOwner: opp.escalation_owner,
     status: opp.status,
+    smartfloSyncStatus: opp.smartflo_sync_status ?? null,
+    smartfloSyncError: opp.smartflo_sync_error ?? null,
+    smartfloLeadId: opp.smartflo_lead_id ?? null,
   };
 }
 

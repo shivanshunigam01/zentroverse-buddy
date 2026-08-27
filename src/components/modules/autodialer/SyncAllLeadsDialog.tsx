@@ -115,7 +115,7 @@ export function SyncAllLeadsDialog({ disabled, onComplete }: Props) {
       <Btn disabled={disabled || running} onClick={handleOpen}>
         <span className="inline-flex items-center gap-2">
           <UploadCloud className="h-4 w-4" aria-hidden />
-          Sync All Leads to Smartflo
+          Sync All Leads
         </span>
       </Btn>
 

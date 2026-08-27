@@ -67,7 +67,7 @@ export interface OpportunityMaster {
   /** Smartflo Auto Dialer mapping */
   smartflo_lead_id?: string | null;
   smartflo_lead_list_id?: string | null;
-  smartflo_sync_status?: "PENDING" | "SYNCED" | "FAILED" | null;
+  smartflo_sync_status?: "PENDING" | "SYNCING" | "SYNCED" | "FAILED" | "SKIPPED" | null;
   smartflo_sync_error?: string | null;
   smartflo_last_synced_at?: string | null;
   smartflo_dial_status?: string | null;

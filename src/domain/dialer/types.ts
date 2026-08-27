@@ -191,6 +191,7 @@ export type DialerSyncResult = {
   smartflo_lead_list_id?: string;
   smartflo_sync_status: string;
   result?: string;
+  skipped?: boolean;
   error?: string;
 };
 

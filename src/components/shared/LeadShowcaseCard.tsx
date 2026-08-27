@@ -34,6 +34,7 @@ type ActionHandlers = {
   onIvrCall: () => void;
   onWhatsApp: () => void;
   onDialerSync?: () => void;
+  onToggleSelect?: () => void;
   callLoading?: boolean;
   ivrLoading?: boolean;
   dialerLoading?: boolean;
@@ -43,6 +44,18 @@ type Props = {
   lead: Lead;
   selected?: boolean;
 } & ActionHandlers;
+
+function syncBadge(status: Lead["smartfloSyncStatus"]): { label: string; className: string } | null {
+  if (!status) return null;
+  const map: Record<string, { label: string; className: string }> = {
+    SYNCED: { label: "Synced", className: "bg-emerald-500/12 text-emerald-700 ring-emerald-500/25 dark:text-emerald-300" },
+    SYNCING: { label: "Syncing…", className: "bg-sky-500/12 text-sky-700 ring-sky-500/25 dark:text-sky-300" },
+    FAILED: { label: "Sync failed", className: "bg-destructive/12 text-destructive ring-destructive/25" },
+    PENDING: { label: "Pending sync", className: "bg-secondary text-muted-foreground ring-border" },
+    SKIPPED: { label: "Skipped", className: "bg-secondary text-muted-foreground ring-border" },
+  };
+  return map[status] ?? null;
+}
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -101,11 +114,13 @@ export function LeadShowcaseCard({
   onIvrCall,
   onWhatsApp,
   onDialerSync,
+  onToggleSelect,
   callLoading,
   ivrLoading,
   dialerLoading,
 }: Props) {
   const overdue = lead.slaCountdown === "Overdue";
+  const badge = syncBadge(lead.smartfloSyncStatus);
 
   return (
     <article
@@ -121,7 +136,23 @@ export function LeadShowcaseCard({
         aria-hidden
       />
 
-      <div className="relative grid gap-4 p-4 pl-5 sm:p-5 sm:pl-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] lg:items-start">
+      <div className="relative grid gap-4 p-4 pl-5 sm:p-5 sm:pl-6 lg:grid-cols-[auto_minmax(0,1.4fr)_minmax(0,1fr)_auto] lg:items-start">
+        {onToggleSelect ? (
+          <div className="pt-1">
+            <input
+              type="checkbox"
+              checked={Boolean(selected)}
+              onChange={(e) => {
+                e.stopPropagation();
+                onToggleSelect();
+              }}
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`Select ${lead.customerName}`}
+              className="h-4 w-4 rounded border-border text-primary accent-primary"
+            />
+          </div>
+        ) : null}
+
         {/* Identity */}
         <div className="min-w-0">
           <div className="flex items-start gap-3">
@@ -151,6 +182,14 @@ export function LeadShowcaseCard({
                 <span className="rounded-full bg-secondary/80 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
                   {lead.status}
                 </span>
+                {badge ? (
+                  <span
+                    className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ring-inset", badge.className)}
+                    title={lead.smartfloSyncError || undefined}
+                  >
+                    {badge.label}
+                  </span>
+                ) : null}
               </div>
               <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                 <span className="font-mono text-xs text-foreground/80">{lead.mobile || "No mobile"}</span>
@@ -224,7 +263,13 @@ export function LeadShowcaseCard({
         <ActionChip label="WhatsApp" icon={MessageCircle} onClick={onWhatsApp} tone="wa" />
         {onDialerSync ? (
           <ActionChip
-            label={dialerLoading ? "Syncing…" : "Auto Dialer"}
+            label={
+              dialerLoading
+                ? "Syncing…"
+                : lead.smartfloSyncStatus === "SYNCED"
+                  ? "Resync"
+                  : "Sync to Smartflo"
+            }
             icon={Radio}
             onClick={onDialerSync}
             loading={dialerLoading}
