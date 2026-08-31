@@ -18,6 +18,8 @@ export function useStageGates(selectedOpportunityId?: string) {
       "dashboard", "lead-upload", "lead-inbox", "lead-detail", "action-engine",
       "autodialer", "whatsapp-bot", "sales-pipeline", "finance-desk", "booking-billing",
       "delivery-desk", "lifecycle-crm", "re-engagement", "reports", "masters",
+      "crm-dashboard", "crm-leads", "crm-lead-detail", "crm-customers", "crm-followups",
+      "crm-settings", "crm-test-drives", "crm-quotations", "crm-bookings", "crm-retail", "crm-lost-leads",
     ];
     for (const m of modules) {
       map[m] = canAccessModule(m, opportunities);

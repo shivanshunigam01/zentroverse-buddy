@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, LogOut, X } from "lucide-react";
 import zentroverseLogo from "@/assets/zentroverse-logo.png";
-import { MAIN_SIDEBAR, MODULE_ICONS, type AppModuleId } from "@/domain/app-nav";
+import { MAIN_SIDEBAR, CRM_SIDEBAR, MODULE_ICONS, type AppModuleId } from "@/domain/app-nav";
 import { POSITIONING } from "@/domain/platform";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { useStageGates } from "@/hooks/use-stage-gates";
@@ -132,6 +132,42 @@ const DashboardSidebar = ({
                         </span>
                       )}
                     </>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {expanded && (
+            <p className="mb-2 mt-4 px-2 text-xs font-bold uppercase tracking-wider text-[hsl(220,12%,52%)]">CRM</p>
+          )}
+          <div className="space-y-0.5">
+            {CRM_SIDEBAR.map((item) => {
+              const Icon = MODULE_ICONS[item.id];
+              const active = activeModule === item.id;
+              const access = moduleAccess[item.id];
+              const locked = !access.allowed;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    if (locked) {
+                      toast.error("Module locked", { description: access.reason });
+                      return;
+                    }
+                    onModuleChange(item.id);
+                    if (isMobile) onMobileClose();
+                  }}
+                  title={locked ? access.reason : !expanded ? item.label : undefined}
+                  disabled={locked}
+                  className={`flex w-full min-h-12 touch-manipulation items-center gap-3 rounded-xl px-3 py-2.5 text-left text-base font-semibold transition-colors ${
+                    locked ? "cursor-not-allowed opacity-45" : active ? navActive : navIdle
+                  }`}
+                >
+                  <Icon size={22} className="shrink-0" strokeWidth={active ? 2.25 : 2} />
+                  {expanded && (
+                    <span className="min-w-0 flex-1 truncate text-[15px] leading-snug">{item.label}</span>
                   )}
                 </button>
               );

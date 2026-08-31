@@ -19,10 +19,21 @@ import LifecycleCrm from "@/components/modules/LifecycleCrm";
 import Reengagement from "@/components/modules/Reengagement";
 import Reports from "@/components/modules/Reports";
 import MastersSettings from "@/components/modules/MastersSettings";
+import CrmDashboard from "@/components/modules/crm/CrmDashboard";
+import CrmLeadList from "@/components/modules/crm/CrmLeadList";
+import CrmLead360 from "@/components/modules/crm/CrmLead360";
+import CrmCustomers from "@/components/modules/crm/CrmCustomers";
+import CrmFollowups from "@/components/modules/crm/CrmFollowups";
+import CrmSettings from "@/components/modules/crm/CrmSettings";
+import CrmJourneyList from "@/components/modules/crm/CrmJourneyList";
+import { fetchCrmTestDrives, fetchCrmQuotations, fetchCrmBookings, fetchCrmRetail, fetchCrmLeads } from "@/api/crm.api";
+import { useCrmStore } from "@/store/crm-store";
 import { useApiBootstrap } from "@/hooks/use-api-bootstrap";
 
 const Dashboard = () => {
   const { syncing } = useApiBootstrap();
+  const setSelectedCrmLeadId = useCrmStore((s) => s.setSelectedLeadId);
+  const selectedCrmLeadId = useCrmStore((s) => s.selectedLeadId);
   const [activeModule, setActiveModule] = useState<AppModuleId>("lead-upload");
   const [selectedLeadId, setSelectedLeadId] = useState<string | undefined>();
   const [collapsed, setCollapsed] = useState(false);
@@ -65,6 +76,102 @@ const Dashboard = () => {
         return <Reports />;
       case "masters":
         return <MastersSettings />;
+      case "crm-dashboard":
+        return <CrmDashboard />;
+      case "crm-leads":
+        return (
+          <CrmLeadList
+            onViewLead={(id) => {
+              setSelectedCrmLeadId(id);
+              setActiveModule("crm-lead-detail");
+            }}
+          />
+        );
+      case "crm-lead-detail":
+        return <CrmLead360 leadId={selectedCrmLeadId ?? undefined} />;
+      case "crm-customers":
+        return <CrmCustomers />;
+      case "crm-followups":
+        return <CrmFollowups />;
+      case "crm-settings":
+        return <CrmSettings />;
+      case "crm-test-drives":
+        return (
+          <CrmJourneyList
+            moduleId="crm-test-drives"
+            title="Test Drives"
+            fetchList={fetchCrmTestDrives}
+            columns={[
+              { key: "test_drive_id", label: "ID" },
+              { key: "lead_id", label: "Lead" },
+              { key: "product", label: "Product" },
+              { key: "scheduled_date", label: "Date" },
+              { key: "status", label: "Status" },
+            ]}
+          />
+        );
+      case "crm-quotations":
+        return (
+          <CrmJourneyList
+            moduleId="crm-quotations"
+            title="Quotations"
+            fetchList={fetchCrmQuotations}
+            columns={[
+              { key: "quotation_id", label: "ID" },
+              { key: "lead_id", label: "Lead" },
+              { key: "product", label: "Product" },
+              { key: "amount", label: "Amount" },
+              { key: "status", label: "Status" },
+            ]}
+          />
+        );
+      case "crm-bookings":
+        return (
+          <CrmJourneyList
+            moduleId="crm-bookings"
+            title="Bookings"
+            fetchList={fetchCrmBookings}
+            columns={[
+              { key: "booking_id", label: "ID" },
+              { key: "lead_id", label: "Lead" },
+              { key: "product", label: "Product" },
+              { key: "booking_date", label: "Date" },
+              { key: "status", label: "Status" },
+            ]}
+          />
+        );
+      case "crm-retail":
+        return (
+          <CrmJourneyList
+            moduleId="crm-retail"
+            title="Retail"
+            fetchList={fetchCrmRetail}
+            columns={[
+              { key: "retail_id", label: "ID" },
+              { key: "lead_id", label: "Lead" },
+              { key: "product", label: "Product" },
+              { key: "retail_date", label: "Date" },
+              { key: "delivery_status", label: "Delivery" },
+            ]}
+          />
+        );
+      case "crm-lost-leads":
+        return (
+          <CrmJourneyList
+            moduleId="crm-lost-leads"
+            title="Lost Leads"
+            fetchList={async (params) => {
+              const result = await fetchCrmLeads({ ...params, status: "Lost" });
+              return { data: result.data as unknown as Array<Record<string, unknown>>, meta: result.meta };
+            }}
+            columns={[
+              { key: "lead_id", label: "Lead ID" },
+              { key: "customer_name", label: "Customer" },
+              { key: "source", label: "Source" },
+              { key: "current_owner", label: "Owner" },
+            ]}
+          />
+        );
       default:
         return <MainDashboard />;
     }

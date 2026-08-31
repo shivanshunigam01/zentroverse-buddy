@@ -1,5 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ComponentType } from "react";
 import { toast } from "sonner";
+import {
+  CalendarClock,
+  FileSpreadsheet,
+  Inbox,
+  MessageCircle,
+  type LucideProps,
+} from "lucide-react";
 import { Btn, Section, ActionBar } from "@/components/shared/ModuleShell";
 import EmptyState from "@/components/shared/EmptyState";
 import LeadCardStrip from "@/components/shared/LeadCardStrip";
@@ -7,6 +14,7 @@ import { useOpportunityLeads } from "@/store/selectors";
 import { DIALER_PRIORITIES } from "@/domain/platform";
 import { useDashboardActions } from "@/hooks/use-dashboard-actions";
 import { ApiClientError } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { initiateSmartfloAgentCall } from "@/api/smartflo.api";
 import {
   endDialerSession,
@@ -28,6 +36,63 @@ import type {
 function friendly(err: unknown): string {
   if (err instanceof ApiClientError) return err.message;
   return "Unable to complete dialer request";
+}
+
+function NurtureShortcut({
+  label,
+  hint,
+  icon: Icon,
+  onClick,
+  disabled,
+  tone = "neutral",
+}: {
+  label: string;
+  hint?: string;
+  icon: ComponentType<LucideProps>;
+  onClick: () => void;
+  disabled?: boolean;
+  tone?: "neutral" | "inbox" | "wa" | "retry";
+}) {
+  const tones = {
+    neutral: "border-border/70 bg-background hover:border-primary/30 hover:bg-primary/[0.04]",
+    inbox: "border-sky-500/25 bg-sky-500/[0.06] hover:bg-sky-500/10 text-sky-900 dark:text-sky-100",
+    wa: "border-green-600/25 bg-green-600/[0.07] hover:bg-green-600/12 text-green-800 dark:text-green-300",
+    retry: "border-amber-500/25 bg-amber-500/[0.07] hover:bg-amber-500/12 text-amber-900 dark:text-amber-200",
+  };
+  const iconTones = {
+    neutral: "bg-secondary text-foreground",
+    inbox: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
+    wa: "bg-green-600/15 text-green-700 dark:text-green-400",
+    retry: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  };
+
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "inline-flex min-h-11 items-center gap-2.5 rounded-xl border px-3.5 py-2 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+        tones[tone],
+      )}
+    >
+      <span
+        className={cn(
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+          iconTones[tone],
+        )}
+        aria-hidden
+      >
+        <Icon className="h-4 w-4" strokeWidth={2.25} />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold leading-tight text-foreground">{label}</span>
+        {hint ? (
+          <span className="mt-0.5 block text-[11px] font-medium text-muted-foreground">{hint}</span>
+        ) : null}
+      </span>
+    </button>
+  );
 }
 
 const STATE_LABEL: Record<string, string> = {
@@ -260,28 +325,37 @@ export function AgentPanel({ campaign }: AgentPanelProps) {
         <p className="mb-3 text-sm text-muted-foreground">
           Move leads through C0 stages with upload, WhatsApp (AiSensy), Direct Call, and IVR — then auto-dial when ready.
         </p>
-        <ActionBar>
-          <Btn variant="outline" onClick={() => navigate("lead-upload")}>
-            Bulk Excel upload
-          </Btn>
-          <Btn variant="outline" onClick={() => navigate("lead-inbox")}>
-            Lead Inbox · AiSensy / stages
-          </Btn>
-          <Btn
-            variant="secondary"
+        <div className="flex flex-wrap gap-2.5">
+          <NurtureShortcut
+            label="Bulk Excel upload"
+            hint="Import leads"
+            icon={FileSpreadsheet}
+            onClick={() => navigate("lead-upload")}
+          />
+          <NurtureShortcut
+            label="Lead Inbox"
+            hint="AiSensy · stages"
+            icon={Inbox}
+            tone="inbox"
+            onClick={() => navigate("lead-inbox")}
+          />
+          <NurtureShortcut
+            label="WhatsApp bot"
+            hint="AiSensy nurture"
+            icon={MessageCircle}
+            tone="wa"
             disabled={!nurtureOppId}
             onClick={() => nurtureOppId && openWhatsApp(nurtureOppId)}
-          >
-            WhatsApp bot
-          </Btn>
-          <Btn
-            variant="outline"
+          />
+          <NurtureShortcut
+            label="Schedule retry"
+            hint="Follow-up later"
+            icon={CalendarClock}
+            tone="retry"
             disabled={!nurtureOppId}
             onClick={() => nurtureOppId && void performAction("Schedule Retry", { opportunityId: nurtureOppId })}
-          >
-            Schedule retry
-          </Btn>
-        </ActionBar>
+          />
+        </div>
       </Section>
 
       <Section title="Live session (auto-dial)">

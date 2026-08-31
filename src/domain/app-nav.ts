@@ -17,6 +17,11 @@ import {
   RotateCcw,
   BarChart3,
   Settings,
+  Users,
+  Contact,
+  CalendarClock,
+  PieChart,
+  SlidersHorizontal,
 } from "lucide-react";
 
 export type AppModuleId =
@@ -34,7 +39,18 @@ export type AppModuleId =
   | "lifecycle-crm"
   | "re-engagement"
   | "reports"
-  | "masters";
+  | "masters"
+  | "crm-dashboard"
+  | "crm-leads"
+  | "crm-lead-detail"
+  | "crm-customers"
+  | "crm-followups"
+  | "crm-settings"
+  | "crm-test-drives"
+  | "crm-quotations"
+  | "crm-bookings"
+  | "crm-retail"
+  | "crm-lost-leads";
 
 export type NavItem = {
   id: AppModuleId;
@@ -60,6 +76,20 @@ export const MAIN_SIDEBAR: NavItem[] = [
   { id: "masters", label: "Masters / Settings" },
 ];
 
+export const CRM_SIDEBAR: NavItem[] = [
+  { id: "crm-dashboard", label: "CRM Dashboard" },
+  { id: "crm-leads", label: "CRM Leads" },
+  { id: "crm-lead-detail", label: "Lead 360" },
+  { id: "crm-customers", label: "Customers" },
+  { id: "crm-followups", label: "Follow-ups" },
+  { id: "crm-test-drives", label: "Test Drives" },
+  { id: "crm-quotations", label: "Quotations" },
+  { id: "crm-bookings", label: "Bookings" },
+  { id: "crm-retail", label: "Retail" },
+  { id: "crm-lost-leads", label: "Lost Leads" },
+  { id: "crm-settings", label: "CRM Settings" },
+];
+
 export const MODULE_ICONS: Record<AppModuleId, LucideIcon> = {
   dashboard: LayoutDashboard,
   "lead-upload": Upload,
@@ -76,6 +106,17 @@ export const MODULE_ICONS: Record<AppModuleId, LucideIcon> = {
   "re-engagement": RotateCcw,
   reports: BarChart3,
   masters: Settings,
+  "crm-dashboard": PieChart,
+  "crm-leads": Inbox,
+  "crm-lead-detail": Contact,
+  "crm-customers": Users,
+  "crm-followups": CalendarClock,
+  "crm-settings": SlidersHorizontal,
+  "crm-test-drives": Truck,
+  "crm-quotations": ClipboardCheck,
+  "crm-bookings": Landmark,
+  "crm-retail": TrendingUp,
+  "crm-lost-leads": RotateCcw,
 };
 
 export const MODULE_TITLES: Record<AppModuleId, { title: string; subtitle: string }> = {
@@ -94,4 +135,15 @@ export const MODULE_TITLES: Record<AppModuleId, { title: string; subtitle: strin
   "re-engagement": { title: "Re-engagement", subtitle: "Dormant, nurture, recycle buckets" },
   reports: { title: "Reports", subtitle: "Source, stage, executive, campaign ROI" },
   masters: { title: "Masters / Settings", subtitle: "Branches, executives, products, rules" },
+  "crm-dashboard": { title: "CRM Dashboard", subtitle: "Tenant-scoped lead metrics and pipeline health" },
+  "crm-leads": { title: "CRM Leads", subtitle: "Server-paginated lead management" },
+  "crm-lead-detail": { title: "Lead 360", subtitle: "Customer, stage, timeline, and communications" },
+  "crm-customers": { title: "CRM Customers", subtitle: "Customer identity and enquiry history" },
+  "crm-followups": { title: "CRM Follow-ups", subtitle: "Today, overdue, and upcoming follow-up queue" },
+  "crm-settings": { title: "CRM Settings", subtitle: "Score rules, stages, routing, and integrations" },
+  "crm-test-drives": { title: "Test Drives", subtitle: "Scheduled test drives across leads" },
+  "crm-quotations": { title: "Quotations", subtitle: "Quotes and pricing for leads" },
+  "crm-bookings": { title: "Bookings", subtitle: "Confirmed bookings" },
+  "crm-retail": { title: "Retail", subtitle: "Retail and delivery records" },
+  "crm-lost-leads": { title: "Lost Leads", subtitle: "Leads marked as lost" },
 };

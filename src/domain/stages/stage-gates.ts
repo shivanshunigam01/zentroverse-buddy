@@ -85,6 +85,22 @@ export function canAccessModule(
     return { allowed: true };
   }
 
+  if (
+    moduleId === "crm-dashboard" ||
+    moduleId === "crm-leads" ||
+    moduleId === "crm-lead-detail" ||
+    moduleId === "crm-customers" ||
+    moduleId === "crm-followups" ||
+    moduleId === "crm-settings" ||
+    moduleId === "crm-test-drives" ||
+    moduleId === "crm-quotations" ||
+    moduleId === "crm-bookings" ||
+    moduleId === "crm-retail" ||
+    moduleId === "crm-lost-leads"
+  ) {
+    return { allowed: true };
+  }
+
   if (opportunities.length === 0) {
     return { allowed: false, reason: "Upload leads from Excel to begin" };
   }
