@@ -21,8 +21,12 @@ const MetaItem = ({ label, value }: { label: string; value: string }) => (
 );
 
 const CrmLead360 = ({ leadId }: Props) => {
-  const { selectedLeadId, lead360, setLead360, setLoading, loading, setError } = useCrmStore();
+  const selectedLeadId = useCrmStore((s) => s.selectedLeadId);
+  const lead360 = useCrmStore((s) => s.lead360);
+  const setLead360 = useCrmStore((s) => s.setLead360);
   const resolvedId = leadId ?? selectedLeadId ?? undefined;
+  const [loading, setLoading] = useState(Boolean(resolvedId));
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [assignOwner, setAssignOwner] = useState("");
   const [stageTarget, setStageTarget] = useState("");
   const [busy, setBusy] = useState(false);
@@ -40,12 +44,14 @@ const CrmLead360 = ({ leadId }: Props) => {
   useEffect(() => {
     if (!resolvedId) {
       setLead360(null);
+      setLoading(false);
+      setLoadError(null);
       return;
     }
     let cancelled = false;
+    setLoading(true);
+    setLoadError(null);
     (async () => {
-      setLoading(true);
-      setError(null);
       try {
         const data = await fetchCrmLead360(resolvedId);
         if (!cancelled) {
@@ -54,7 +60,8 @@ const CrmLead360 = ({ leadId }: Props) => {
         }
       } catch (e) {
         if (!cancelled) {
-          setError(e instanceof ApiClientError ? e.message : "Failed to load lead");
+          setLoadError(e instanceof ApiClientError ? e.message : "Failed to load lead");
+          setLead360(null);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -63,7 +70,7 @@ const CrmLead360 = ({ leadId }: Props) => {
     return () => {
       cancelled = true;
     };
-  }, [resolvedId, setError, setLead360, setLoading]);
+  }, [resolvedId, setLead360]);
 
   if (!resolvedId) {
     return (
@@ -73,7 +80,9 @@ const CrmLead360 = ({ leadId }: Props) => {
     );
   }
 
-  if (loading && !lead360) {
+  const leadMatches = lead360?.lead?.opportunity_id === resolvedId;
+
+  if (loading || (resolvedId && !leadMatches && !loadError)) {
     return (
       <ModuleShell moduleId={"crm-lead-detail" as AppModuleId}>
         <div className="flex min-h-[40vh] items-center justify-center text-muted-foreground">Loading Lead 360…</div>
@@ -81,7 +90,15 @@ const CrmLead360 = ({ leadId }: Props) => {
     );
   }
 
-  if (!lead360) {
+  if (loadError) {
+    return (
+      <ModuleShell moduleId={"crm-lead-detail" as AppModuleId}>
+        <EmptyState title="Could not load lead" description={loadError} />
+      </ModuleShell>
+    );
+  }
+
+  if (!lead360 || !leadMatches) {
     return (
       <ModuleShell moduleId={"crm-lead-detail" as AppModuleId}>
         <EmptyState title="Lead not found" description="This lead may belong to another tenant or was removed." />

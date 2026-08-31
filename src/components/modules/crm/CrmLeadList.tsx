@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search, X } from "lucide-react";
 import { toast } from "sonner";
@@ -31,16 +31,14 @@ const CrmLeadList = ({ onViewLead }: Props) => {
     pageSize,
     leads,
     leadsMeta,
-    loading,
-    error,
     setFilters,
     clearFilters,
     setPage,
     setLeads,
-    setLoading,
-    setError,
     setSelectedLeadId,
   } = useCrmStore();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (hydrated.current) return;
@@ -96,7 +94,7 @@ const CrmLeadList = ({ onViewLead }: Props) => {
     } finally {
       setLoading(false);
     }
-  }, [filters, page, pageSize, setError, setLeads, setLoading]);
+  }, [filters, page, pageSize, setLeads]);
 
   useEffect(() => {
     loadLeads();

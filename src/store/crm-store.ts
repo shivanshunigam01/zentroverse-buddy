@@ -44,8 +44,6 @@ type CrmStore = {
   dashboard: CrmDashboardStats | null;
   selectedLeadId: string | null;
   lead360: CrmLead360 | null;
-  loading: boolean;
-  error: string | null;
   setFilters: (patch: Partial<CrmLeadFilters>) => void;
   clearFilters: () => void;
   setPage: (page: number) => void;
@@ -53,8 +51,6 @@ type CrmStore = {
   setLeads: (items: CrmLeadRow[], meta: PaginatedMeta) => void;
   setDashboard: (stats: CrmDashboardStats) => void;
   setLead360: (payload: CrmLead360 | null) => void;
-  setLoading: (v: boolean) => void;
-  setError: (msg: string | null) => void;
 };
 
 export const useCrmStore = create<CrmStore>((set) => ({
@@ -66,8 +62,6 @@ export const useCrmStore = create<CrmStore>((set) => ({
   dashboard: null,
   selectedLeadId: null,
   lead360: null,
-  loading: false,
-  error: null,
   setFilters: (patch) => set((s) => ({ filters: { ...s.filters, ...patch }, page: 1 })),
   clearFilters: () => set({ filters: { ...defaultFilters }, page: 1 }),
   setPage: (page) => set({ page }),
@@ -75,6 +69,4 @@ export const useCrmStore = create<CrmStore>((set) => ({
   setLeads: (items, meta) => set({ leads: items, leadsMeta: meta }),
   setDashboard: (stats) => set({ dashboard: stats }),
   setLead360: (payload) => set({ lead360: payload }),
-  setLoading: (v) => set({ loading: v }),
-  setError: (msg) => set({ error: msg }),
 }));
